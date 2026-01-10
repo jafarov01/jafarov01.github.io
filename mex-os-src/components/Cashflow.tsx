@@ -414,7 +414,7 @@ export function Cashflow() {
 											</button>
 											<div className="text-right">
 												<div className="text-sm font-bold text-white">€{tx.amount}</div>
-												<div className="text-[10px] text-gray-500 uppercase">{tx.category}</div>
+												<div className="text-xs text-gray-400 uppercase">{tx.category}</div>
 											</div>
 										</div>
 									</div>

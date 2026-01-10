@@ -169,17 +169,23 @@ export function Dashboard() {
 		}
 	};
 
+	// Filter tracked skills for display and counting
+	const trackedSkills = useMemo(() => 
+		skillDefinitions.filter(s => s.is_tracked !== false),
+		[skillDefinitions]
+	);
+
 	const completedCount = useMemo(() => {
 		let count = 0;
 		habitDefinitions.forEach(def => {
 			const val = todayHabit?.habits[def.id];
 			if (def.trackingType === 'boolean' ? Boolean(val) : (val as number) >= (def.target || 1)) count++;
 		});
-		skillDefinitions.forEach(def => {
+		trackedSkills.forEach(def => {
 			if ((todayHabit?.skills[def.id] || '0 mins') !== '0 mins') count++;
 		});
 		return count;
-	}, [todayHabit, habitDefinitions, skillDefinitions]);
+	}, [todayHabit, habitDefinitions, trackedSkills]);
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -692,8 +698,8 @@ export function Dashboard() {
 								);
 							})}
 
-							{/* Skills - Time selection */}
-							{skillDefinitions.map(def => {
+							{/* Skills - Time selection (only tracked skills) */}
+							{trackedSkills.map(def => {
 								const value = todayHabit?.skills[def.id] || '0 mins';
 								const isComplete = value !== '0 mins';
 								const options = def.trackingOptions || ['0 mins', '15 mins', '30 mins', '60 mins'];
@@ -718,18 +724,18 @@ export function Dashboard() {
 								);
 							})}
 
-							{habitDefinitions.length === 0 && skillDefinitions.length === 0 && (
+							{habitDefinitions.length === 0 && trackedSkills.length === 0 && (
 								<p className="text-gray-500 text-sm text-center py-2">
-									No habits or skills defined yet.
+									No habits or skills being tracked.
 									<Link to="/habits" className="text-neon-cyan ml-1 hover:underline">Add some!</Link>
 								</p>
 							)}
 						</div>
 
 						{/* Progress indicator */}
-						{(habitDefinitions.length > 0 || skillDefinitions.length > 0) && (
+						{(habitDefinitions.length > 0 || trackedSkills.length > 0) && (
 							<div className="mt-4 pt-3 border-t border-dark-600 text-xs text-gray-500">
-								✓ {completedCount}/{habitDefinitions.length + skillDefinitions.length} logged today
+								✓ {completedCount}/{habitDefinitions.length + trackedSkills.length} logged today
 							</div>
 						)}
 					</div>
