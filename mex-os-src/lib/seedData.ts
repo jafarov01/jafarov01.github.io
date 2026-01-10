@@ -1,6 +1,10 @@
 import { doc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
+// ============================================================================
+// TYPE DEFINITIONS - All data is dynamic and stored in Firestore
+// ============================================================================
+
 export interface Profile {
 	name: string;
 	unipd_id: string;
@@ -9,18 +13,43 @@ export interface Profile {
 	ranking_position: number;
 }
 
+// Dynamic skill definition - users can add/remove/edit skills
+export interface SkillDefinition {
+	id: string;
+	name: string;           // "Python", "Italian", "German", etc.
+	icon: string;           // Lucide icon name: "code", "languages", "music", etc.
+	color: string;          // Neon color: "neon-yellow", "neon-purple", "neon-cyan"
+	targetPerDay: string;   // "30 mins", "1 hour", "2 hours"
+	trackingOptions: string[]; // ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"]
+	createdAt: string;
+}
+
+// Dynamic habit definition - users can add/remove/edit habits
+export interface HabitDefinition {
+	id: string;
+	name: string;           // "Gym Session", "Deep Work", "Meditation"
+	icon: string;           // Lucide icon name
+	color: string;          // Neon color token
+	trackingType: 'boolean' | 'hours' | 'count';
+	target?: number;        // Target value (e.g., 4 for 4h deep work, 8 for 8h sleep)
+	maxValue?: number;      // For hours/count: max selectable value
+	createdAt: string;
+}
+
+// Exam with full state machine support
 export interface Exam {
 	id: string;
 	name: string;
 	cfu: number;
-	status: 'booked' | 'enrolled' | 'passed' | 'dropped' | 'intel';
-	exam_date: string;
+	status: 'study_plan' | 'enrolled' | 'planned' | 'booked' | 'passed' | 'dropped';
+	exam_date: string | null;  // null = TBD (date not yet known)
 	strategy_notes: string;
 	is_scholarship_critical: boolean;
 	category: string;
+	createdAt: string;
 }
 
-// Scholarship/Funding entries (existing)
+// Scholarship/Funding entries
 export interface FinanceEntry {
 	id: string;
 	source: string;
@@ -31,19 +60,19 @@ export interface FinanceEntry {
 	expected_date: string;
 }
 
-// NEW: Cashflow transactions
+// Cashflow transactions
 export interface Transaction {
 	id: string;
 	date: string;
 	description: string;
 	amount: number;
 	type: 'income' | 'expense';
-	category: 'salary' | 'freelance' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'other';
+	category: 'salary' | 'freelance' | 'scholarship' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other';
 	recurring: boolean;
 	notes?: string;
 }
 
-// NEW: Bureaucracy documents
+// Bureaucracy documents
 export interface BureaucracyDoc {
 	id: string;
 	name: string;
@@ -55,28 +84,78 @@ export interface BureaucracyDoc {
 	is_critical: boolean;
 }
 
+// Dynamic habit entry - uses IDs from definitions, not hardcoded keys
 export interface HabitEntry {
 	date: string;
-	habits: {
-		deep_work_hours: number;
-		sleep_hours: number;
-		gym_session: boolean;
-		calories: number;
-	};
-	skills: {
-		python_practice: string;
-		italian_practice: string;
-	};
+	habits: Record<string, number | boolean>;  // { [habitId]: value }
+	skills: Record<string, string>;            // { [skillId]: "30 mins" }
 }
 
-// Real data from prompt.md
+// ============================================================================
+// INITIAL SEED DATA - Only used for first-time setup, never overwrites user data
+// ============================================================================
+
 export const profileData: Profile = {
-	name: "Mex Jafarov",
-	unipd_id: "2195746",
-	cf: "JFRMHL01S1522530",
-	visa_expiry: "UNKNOWN (Warning)",
-	ranking_position: 60
+	name: "New User",
+	unipd_id: "",
+	cf: "",
+	visa_expiry: "",
+	ranking_position: 0
 };
+
+// Default skill definitions (users can modify these)
+export const skillDefinitionsData: SkillDefinition[] = [
+	{
+		id: "python",
+		name: "Python",
+		icon: "code",
+		color: "neon-yellow",
+		targetPerDay: "30 mins",
+		trackingOptions: ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"],
+		createdAt: new Date().toISOString()
+	},
+	{
+		id: "italian",
+		name: "Italian",
+		icon: "languages",
+		color: "neon-purple",
+		targetPerDay: "20 mins",
+		trackingOptions: ["0 mins", "10 mins", "20 mins", "30 mins", "1 hour"],
+		createdAt: new Date().toISOString()
+	}
+];
+
+// Default habit definitions (users can modify these)
+export const habitDefinitionsData: HabitDefinition[] = [
+	{
+		id: "gym_session",
+		name: "Gym Session",
+		icon: "dumbbell",
+		color: "neon-green",
+		trackingType: "boolean",
+		createdAt: new Date().toISOString()
+	},
+	{
+		id: "deep_work_hours",
+		name: "Deep Work",
+		icon: "brain",
+		color: "neon-cyan",
+		trackingType: "hours",
+		target: 4,
+		maxValue: 8,
+		createdAt: new Date().toISOString()
+	},
+	{
+		id: "sleep_hours",
+		name: "Sleep",
+		icon: "moon",
+		color: "neon-purple",
+		trackingType: "hours",
+		target: 8,
+		maxValue: 12,
+		createdAt: new Date().toISOString()
+	}
+];
 
 export const examsData: Exam[] = [
 	{
@@ -87,27 +166,30 @@ export const examsData: Exam[] = [
 		exam_date: "2026-01-23T09:00:00",
 		strategy_notes: "Main Event. 13 days deep work.",
 		is_scholarship_critical: true,
-		category: "Mandatory Core"
+		category: "Mandatory Core",
+		createdAt: new Date().toISOString()
 	},
 	{
 		id: "economics",
 		name: "Economics",
 		cfu: 6,
-		status: "intel",
+		status: "planned",
 		exam_date: "2026-01-27T09:00:00",
 		strategy_notes: "Easy Win",
 		is_scholarship_critical: true,
-		category: "Mandatory Core"
+		category: "Mandatory Core",
+		createdAt: new Date().toISOString()
 	},
 	{
 		id: "web_info_mgmt",
 		name: "Web Info Management",
 		cfu: 6,
-		status: "intel",
+		status: "planned",
 		exam_date: "2026-01-30T09:00:00",
 		strategy_notes: "KILL SWITCH if no project",
 		is_scholarship_critical: true,
-		category: "Mandatory Core"
+		category: "Mandatory Core",
+		createdAt: new Date().toISOString()
 	},
 	{
 		id: "sw_verification",
@@ -117,7 +199,8 @@ export const examsData: Exam[] = [
 		exam_date: "2026-02-03T09:00:00",
 		strategy_notes: "Oral Exam",
 		is_scholarship_critical: true,
-		category: "Mandatory Core"
+		category: "Mandatory Core",
+		createdAt: new Date().toISOString()
 	},
 	{
 		id: "runtimes",
@@ -127,7 +210,8 @@ export const examsData: Exam[] = [
 		exam_date: "2026-02-20T09:00:00",
 		strategy_notes: "Project based",
 		is_scholarship_critical: true,
-		category: "Mandatory Core"
+		category: "Mandatory Core",
+		createdAt: new Date().toISOString()
 	}
 ];
 
@@ -161,7 +245,6 @@ export const financeData: FinanceEntry[] = [
 	}
 ];
 
-// NEW: Sample transactions for cashflow
 export const transactionsData: Transaction[] = [
 	{
 		id: "tx_salary_jan",
@@ -202,7 +285,6 @@ export const transactionsData: Transaction[] = [
 	}
 ];
 
-// NEW: Bureaucracy documents
 export const bureaucracyData: BureaucracyDoc[] = [
 	{
 		id: "visa_permit",
@@ -218,114 +300,115 @@ export const bureaucracyData: BureaucracyDoc[] = [
 		type: "tax",
 		status: "valid",
 		issue_date: "2025-09-15",
-		notes: "JFRMHL01S1522530 - Permanent, no expiry",
+		notes: "Permanent, no expiry",
 		is_critical: false
 	},
 	{
 		id: "uni_enrollment",
-		name: "UniPD Enrollment 2025-2026",
+		name: "University Enrollment",
 		type: "university",
 		status: "valid",
 		issue_date: "2025-09-01",
 		expiry_date: "2026-09-30",
-		notes: "MSc Computer Science - Year 1",
+		notes: "Academic Year Enrollment",
 		is_critical: true
 	},
 	{
 		id: "health_insurance",
-		name: "EHIC / Health Coverage",
+		name: "Health Coverage",
 		type: "insurance",
 		status: "pending",
-		notes: "Verify Italian health system registration",
+		notes: "Verify health system registration",
 		is_critical: true
 	}
 ];
 
-export const initialHabitData: HabitEntry = {
-	date: new Date().toISOString().split('T')[0],
-	habits: {
-		deep_work_hours: 0,
-		sleep_hours: 0,
-		gym_session: false,
-		calories: 0
-	},
-	skills: {
-		python_practice: "0 mins",
-		italian_practice: "0 mins"
-	}
-};
+// Create initial habit entry with default values based on definitions
+function createInitialHabitEntry(): HabitEntry {
+	const habits: Record<string, number | boolean> = {};
+	const skills: Record<string, string> = {};
+
+	habitDefinitionsData.forEach(def => {
+		if (def.trackingType === 'boolean') {
+			habits[def.id] = false;
+		} else {
+			habits[def.id] = 0;
+		}
+	});
+
+	skillDefinitionsData.forEach(def => {
+		skills[def.id] = def.trackingOptions[0]; // First option (usually "0 mins")
+	});
+
+	return {
+		date: new Date().toISOString().split('T')[0],
+		habits,
+		skills
+	};
+}
+
+// ============================================================================
+// SEED FUNCTION - Only seeds collections that don't exist yet
+// ============================================================================
 
 export async function seedUserData(userId: string): Promise<boolean> {
 	try {
-		// Check if data already exists
-		const academicsRef = collection(db, 'users', userId, 'academics');
-		const academicsSnapshot = await getDocs(academicsRef);
+		const batch = writeBatch(db);
+		let needsSeed = false;
 
-		if (!academicsSnapshot.empty) {
-			// Check if new collections need seeding
-			const transactionsRef = collection(db, 'users', userId, 'transactions');
-			const transactionsSnapshot = await getDocs(transactionsRef);
+		// Check each collection and seed only if empty
+		const collections = [
+			{ name: 'academics', data: examsData, keyField: 'id' },
+			{ name: 'finance', data: financeData, keyField: 'id' },
+			{ name: 'transactions', data: transactionsData, keyField: 'id' },
+			{ name: 'bureaucracy', data: bureaucracyData, keyField: 'id' },
+			{ name: 'skills', data: skillDefinitionsData, keyField: 'id' },
+			{ name: 'habitDefinitions', data: habitDefinitionsData, keyField: 'id' }
+		];
 
-			if (transactionsSnapshot.empty) {
-				// Seed only new collections for existing users
-				console.log('Seeding new collections for existing user...');
-				const batch = writeBatch(db);
+		for (const col of collections) {
+			const colRef = collection(db, 'users', userId, col.name);
+			const snapshot = await getDocs(colRef);
 
-				for (const tx of transactionsData) {
-					const txRef = doc(db, 'users', userId, 'transactions', tx.id);
-					batch.set(txRef, tx);
+			if (snapshot.empty) {
+				needsSeed = true;
+				console.log(`Seeding collection: ${col.name}`);
+				for (const item of col.data) {
+					const docRef = doc(db, 'users', userId, col.name, (item as { id: string }).id);
+					batch.set(docRef, item);
 				}
-
-				for (const docEntry of bureaucracyData) {
-					const docRef = doc(db, 'users', userId, 'bureaucracy', docEntry.id);
-					batch.set(docRef, docEntry);
-				}
-
-				await batch.commit();
-				console.log('New collections seeded for existing user');
-			} else {
-				console.log('Data already exists, skipping seed');
 			}
+		}
+
+		// Check and seed profile
+		const userDocRef = doc(db, 'users', userId);
+		const userDoc = await getDocs(collection(db, 'users'));
+		const userExists = userDoc.docs.some(d => d.id === userId);
+
+		if (!userExists) {
+			needsSeed = true;
+			batch.set(userDocRef, { profile: profileData });
+		}
+
+		// Check and seed lifestyle (today's habit entry)
+		const lifestyleRef = collection(db, 'users', userId, 'lifestyle');
+		const lifestyleSnapshot = await getDocs(lifestyleRef);
+
+		if (lifestyleSnapshot.empty) {
+			needsSeed = true;
+			const initialHabit = createInitialHabitEntry();
+			const habitRef = doc(db, 'users', userId, 'lifestyle', initialHabit.date);
+			batch.set(habitRef, initialHabit);
+		}
+
+		if (needsSeed) {
+			await batch.commit();
+			console.log('Seed data uploaded successfully');
+			return true;
+		} else {
+			console.log('Data already exists, skipping seed');
 			return false;
 		}
-
-		const batch = writeBatch(db);
-		const userDocRef = doc(db, 'users', userId);
-
-		// Seed profile
-		batch.set(userDocRef, { profile: profileData });
-
-		// Seed exams
-		for (const exam of examsData) {
-			const examRef = doc(db, 'users', userId, 'academics', exam.id);
-			batch.set(examRef, exam);
-		}
-
-		// Seed scholarship finance
-		for (const entry of financeData) {
-			const financeRef = doc(db, 'users', userId, 'finance', entry.id);
-			batch.set(financeRef, entry);
-		}
-
-		// Seed transactions (NEW)
-		for (const tx of transactionsData) {
-			const txRef = doc(db, 'users', userId, 'transactions', tx.id);
-			batch.set(txRef, tx);
-		}
-
-		// Seed bureaucracy (NEW)
-		for (const docEntry of bureaucracyData) {
-			const docRef = doc(db, 'users', userId, 'bureaucracy', docEntry.id);
-			batch.set(docRef, docEntry);
-		}
-
-		// Seed initial habit entry
-		const habitRef = doc(db, 'users', userId, 'lifestyle', initialHabitData.date);
-		batch.set(habitRef, initialHabitData);
-
-		await batch.commit();
-		console.log('Seed data uploaded successfully');
-		return true;
 	} catch (error) {
 		console.error('Error seeding data:', error);
 		throw error;

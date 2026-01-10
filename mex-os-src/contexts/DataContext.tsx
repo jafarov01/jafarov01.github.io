@@ -18,28 +18,66 @@ import {
 	type HabitEntry,
 	type Transaction,
 	type BureaucracyDoc,
+	type SkillDefinition,
+	type HabitDefinition,
 	profileData
 } from '../lib/seedData';
 
 interface DataContextType {
+	// Data
 	profile: Profile | null;
 	exams: Exam[];
 	finances: FinanceEntry[];
 	habits: HabitEntry[];
 	transactions: Transaction[];
 	bureaucracy: BureaucracyDoc[];
+	skillDefinitions: SkillDefinition[];
+	habitDefinitions: HabitDefinition[];
 	loading: boolean;
+
+	// Profile
+	updateProfile: (data: Partial<Profile>) => Promise<void>;
+
+	// Exams
 	updateExamStatus: (examId: string, status: Exam['status']) => Promise<void>;
+	updateExam: (examId: string, data: Partial<Exam>) => Promise<void>;
+	addExam: (exam: Omit<Exam, 'id' | 'createdAt'>) => Promise<void>;
+	deleteExam: (examId: string) => Promise<void>;
+
+	// Habits
 	updateHabit: (date: string, habitData: Partial<HabitEntry>) => Promise<void>;
+
+	// Habit Definitions
+	addHabitDefinition: (def: Omit<HabitDefinition, 'id' | 'createdAt'>) => Promise<void>;
+	updateHabitDefinition: (id: string, data: Partial<HabitDefinition>) => Promise<void>;
+	deleteHabitDefinition: (id: string) => Promise<void>;
+
+	// Skill Definitions
+	addSkillDefinition: (def: Omit<SkillDefinition, 'id' | 'createdAt'>) => Promise<void>;
+	updateSkillDefinition: (id: string, data: Partial<SkillDefinition>) => Promise<void>;
+	deleteSkillDefinition: (id: string) => Promise<void>;
+
+	// Finance
+	updateFinance: (id: string, data: Partial<FinanceEntry>) => Promise<void>;
+	addFinance: (entry: Omit<FinanceEntry, 'id'>) => Promise<void>;
+	deleteFinance: (id: string) => Promise<void>;
+
+	// Transactions
 	addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
+	updateTransaction: (id: string, data: Partial<Transaction>) => Promise<void>;
 	deleteTransaction: (txId: string) => Promise<void>;
+
+	// Bureaucracy
 	updateBureaucracy: (docId: string, data: Partial<BureaucracyDoc>) => Promise<void>;
+	addBureaucracy: (doc: Omit<BureaucracyDoc, 'id'>) => Promise<void>;
+	deleteBureaucracy: (id: string) => Promise<void>;
+
+	// Derived calculations
 	getPassedCFUs: () => number;
 	getUnlockedMoney: () => number;
 	getLockedMoney: () => number;
 	getPendingMoney: () => number;
 	getGlobalStatus: () => 'green' | 'yellow' | 'red';
-	// Cashflow helpers
 	getMonthlyIncome: (year: number, month: number) => number;
 	getMonthlyExpenses: (year: number, month: number) => number;
 	getNetBalance: () => number;
@@ -55,6 +93,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	const [habits, setHabits] = useState<HabitEntry[]>([]);
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	const [bureaucracy, setBureaucracy] = useState<BureaucracyDoc[]>([]);
+	const [skillDefinitions, setSkillDefinitions] = useState<SkillDefinition[]>([]);
+	const [habitDefinitions, setHabitDefinitions] = useState<HabitDefinition[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -65,13 +105,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setHabits([]);
 			setTransactions([]);
 			setBureaucracy([]);
+			setSkillDefinitions([]);
+			setHabitDefinitions([]);
 			setLoading(false);
 			return;
 		}
 
 		setLoading(true);
 		let loadedCount = 0;
-		const totalCollections = 6;
+		const totalCollections = 8;
 
 		const checkLoaded = () => {
 			loadedCount++;
@@ -96,9 +138,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			snapshot.forEach((doc) => {
 				examList.push({ ...doc.data(), id: doc.id } as Exam);
 			});
-			setExams(examList.sort((a, b) =>
-				new Date(a.exam_date).getTime() - new Date(b.exam_date).getTime()
-			));
+			setExams(examList.sort((a, b) => {
+				// TBD exams go to the end
+				if (!a.exam_date && !b.exam_date) return 0;
+				if (!a.exam_date) return 1;
+				if (!b.exam_date) return -1;
+				return new Date(a.exam_date).getTime() - new Date(b.exam_date).getTime();
+			}));
 			checkLoaded();
 		});
 
@@ -113,7 +159,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			checkLoaded();
 		});
 
-		// Subscribe to transactions (NEW)
+		// Subscribe to transactions
 		const transactionsRef = collection(db, 'users', user.uid, 'transactions');
 		const unsubTransactions = onSnapshot(transactionsRef, (snapshot) => {
 			const txList: Transaction[] = [];
@@ -126,7 +172,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			checkLoaded();
 		});
 
-		// Subscribe to bureaucracy (NEW)
+		// Subscribe to bureaucracy
 		const bureaucracyRef = collection(db, 'users', user.uid, 'bureaucracy');
 		const unsubBureaucracy = onSnapshot(bureaucracyRef, (snapshot) => {
 			const docList: BureaucracyDoc[] = [];
@@ -134,11 +180,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
 				docList.push({ ...doc.data(), id: doc.id } as BureaucracyDoc);
 			});
 			setBureaucracy(docList.sort((a, b) => {
-				// Critical items first
 				if (a.is_critical && !b.is_critical) return -1;
 				if (!a.is_critical && b.is_critical) return 1;
 				return 0;
 			}));
+			checkLoaded();
+		});
+
+		// Subscribe to skill definitions
+		const skillsRef = collection(db, 'users', user.uid, 'skills');
+		const unsubSkills = onSnapshot(skillsRef, (snapshot) => {
+			const skillList: SkillDefinition[] = [];
+			snapshot.forEach((doc) => {
+				skillList.push({ ...doc.data(), id: doc.id } as SkillDefinition);
+			});
+			setSkillDefinitions(skillList.sort((a, b) =>
+				new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+			));
+			checkLoaded();
+		});
+
+		// Subscribe to habit definitions
+		const habitDefsRef = collection(db, 'users', user.uid, 'habitDefinitions');
+		const unsubHabitDefs = onSnapshot(habitDefsRef, (snapshot) => {
+			const habitDefList: HabitDefinition[] = [];
+			snapshot.forEach((doc) => {
+				habitDefList.push({ ...doc.data(), id: doc.id } as HabitDefinition);
+			});
+			setHabitDefinitions(habitDefList.sort((a, b) =>
+				new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+			));
 			checkLoaded();
 		});
 
@@ -161,15 +232,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			unsubFinance();
 			unsubTransactions();
 			unsubBureaucracy();
+			unsubSkills();
+			unsubHabitDefs();
 			unsubLifestyle();
 		};
 	}, [user]);
 
+	// =========================================================================
+	// Profile Operations
+	// =========================================================================
+	const updateProfile = async (data: Partial<Profile>) => {
+		if (!user) return;
+		const userDocRef = doc(db, 'users', user.uid);
+		await updateDoc(userDocRef, { profile: { ...profile, ...data } });
+	};
+
+	// =========================================================================
+	// Exam Operations
+	// =========================================================================
 	const updateExamStatus = async (examId: string, status: Exam['status']) => {
 		if (!user) return;
 		const examRef = doc(db, 'users', user.uid, 'academics', examId);
 		await updateDoc(examRef, { status });
 
+		// Check for scholarship unlock
 		const examBeingUpdated = exams.find(e => e.id === examId);
 		const currentPassedCFUs = exams
 			.filter(e => e.status === 'passed' && e.is_scholarship_critical && e.id !== examId)
@@ -187,37 +273,134 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		}
 	};
 
+	const updateExam = async (examId: string, data: Partial<Exam>) => {
+		if (!user) return;
+		const examRef = doc(db, 'users', user.uid, 'academics', examId);
+		await updateDoc(examRef, data);
+	};
+
+	const addExam = async (exam: Omit<Exam, 'id' | 'createdAt'>) => {
+		if (!user) return;
+		const examRef = collection(db, 'users', user.uid, 'academics');
+		await addDoc(examRef, { ...exam, createdAt: new Date().toISOString() });
+	};
+
+	const deleteExam = async (examId: string) => {
+		if (!user) return;
+		const examRef = doc(db, 'users', user.uid, 'academics', examId);
+		await deleteDoc(examRef);
+	};
+
+	// =========================================================================
+	// Habit Entry Operations
+	// =========================================================================
 	const updateHabit = async (date: string, habitData: Partial<HabitEntry>) => {
 		if (!user) return;
 		const habitRef = doc(db, 'users', user.uid, 'lifestyle', date);
 		const habitDoc = await getDoc(habitRef);
 
 		if (habitDoc.exists()) {
-			await updateDoc(habitRef, habitData);
+			const existing = habitDoc.data() as HabitEntry;
+			await updateDoc(habitRef, {
+				habits: { ...existing.habits, ...(habitData.habits || {}) },
+				skills: { ...existing.skills, ...(habitData.skills || {}) }
+			});
 		} else {
+			// Create new entry with defaults
+			const defaultHabits: Record<string, number | boolean> = {};
+			const defaultSkills: Record<string, string> = {};
+
+			habitDefinitions.forEach(def => {
+				defaultHabits[def.id] = def.trackingType === 'boolean' ? false : 0;
+			});
+			skillDefinitions.forEach(def => {
+				defaultSkills[def.id] = def.trackingOptions[0];
+			});
+
 			await setDoc(habitRef, {
 				date,
-				habits: {
-					deep_work_hours: 0,
-					sleep_hours: 0,
-					gym_session: false,
-					calories: 0,
-					...(habitData.habits || {})
-				},
-				skills: {
-					python_practice: "0 mins",
-					italian_practice: "0 mins",
-					...(habitData.skills || {})
-				}
+				habits: { ...defaultHabits, ...(habitData.habits || {}) },
+				skills: { ...defaultSkills, ...(habitData.skills || {}) }
 			});
 		}
 	};
 
-	// NEW: Transaction management
+	// =========================================================================
+	// Habit Definition Operations
+	// =========================================================================
+	const addHabitDefinition = async (def: Omit<HabitDefinition, 'id' | 'createdAt'>) => {
+		if (!user) return;
+		const colRef = collection(db, 'users', user.uid, 'habitDefinitions');
+		await addDoc(colRef, { ...def, createdAt: new Date().toISOString() });
+	};
+
+	const updateHabitDefinition = async (id: string, data: Partial<HabitDefinition>) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'habitDefinitions', id);
+		await updateDoc(docRef, data);
+	};
+
+	const deleteHabitDefinition = async (id: string) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'habitDefinitions', id);
+		await deleteDoc(docRef);
+	};
+
+	// =========================================================================
+	// Skill Definition Operations
+	// =========================================================================
+	const addSkillDefinition = async (def: Omit<SkillDefinition, 'id' | 'createdAt'>) => {
+		if (!user) return;
+		const colRef = collection(db, 'users', user.uid, 'skills');
+		await addDoc(colRef, { ...def, createdAt: new Date().toISOString() });
+	};
+
+	const updateSkillDefinition = async (id: string, data: Partial<SkillDefinition>) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'skills', id);
+		await updateDoc(docRef, data);
+	};
+
+	const deleteSkillDefinition = async (id: string) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'skills', id);
+		await deleteDoc(docRef);
+	};
+
+	// =========================================================================
+	// Finance Operations
+	// =========================================================================
+	const updateFinance = async (id: string, data: Partial<FinanceEntry>) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'finance', id);
+		await updateDoc(docRef, data);
+	};
+
+	const addFinance = async (entry: Omit<FinanceEntry, 'id'>) => {
+		if (!user) return;
+		const colRef = collection(db, 'users', user.uid, 'finance');
+		await addDoc(colRef, entry);
+	};
+
+	const deleteFinance = async (id: string) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'finance', id);
+		await deleteDoc(docRef);
+	};
+
+	// =========================================================================
+	// Transaction Operations
+	// =========================================================================
 	const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
 		if (!user) return;
 		const txRef = collection(db, 'users', user.uid, 'transactions');
 		await addDoc(txRef, tx);
+	};
+
+	const updateTransaction = async (id: string, data: Partial<Transaction>) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'transactions', id);
+		await updateDoc(docRef, data);
 	};
 
 	const deleteTransaction = async (txId: string) => {
@@ -226,13 +409,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		await deleteDoc(txRef);
 	};
 
-	// NEW: Bureaucracy management
+	// =========================================================================
+	// Bureaucracy Operations
+	// =========================================================================
 	const updateBureaucracy = async (docId: string, data: Partial<BureaucracyDoc>) => {
 		if (!user) return;
 		const docRef = doc(db, 'users', user.uid, 'bureaucracy', docId);
 		await updateDoc(docRef, data);
 	};
 
+	const addBureaucracy = async (docData: Omit<BureaucracyDoc, 'id'>) => {
+		if (!user) return;
+		const colRef = collection(db, 'users', user.uid, 'bureaucracy');
+		await addDoc(colRef, docData);
+	};
+
+	const deleteBureaucracy = async (id: string) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'bureaucracy', id);
+		await deleteDoc(docRef);
+	};
+
+	// =========================================================================
+	// Derived Calculations
+	// =========================================================================
 	const getPassedCFUs = useCallback(() => {
 		return exams
 			.filter(e => e.status === 'passed' && e.is_scholarship_critical)
@@ -257,7 +457,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			.reduce((sum, f) => sum + f.amount, 0);
 	}, [finances]);
 
-	// NEW: Cashflow calculations
 	const getMonthlyIncome = useCallback((year: number, month: number) => {
 		return transactions
 			.filter(tx => {
@@ -292,7 +491,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 	const getGlobalStatus = useCallback((): 'green' | 'yellow' | 'red' => {
 		const now = new Date();
-		const nextExam = exams.find(e => new Date(e.exam_date) > now && e.status !== 'passed');
+		const nextExam = exams.find(e =>
+			e.exam_date && new Date(e.exam_date) > now && e.status !== 'passed'
+		);
 
 		// Check bureaucracy for critical warnings
 		const hasCriticalBureaucracy = bureaucracy.some(
@@ -301,22 +502,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 		if (hasCriticalBureaucracy) return 'red';
 
-		if (!nextExam) return 'green';
+		if (!nextExam || !nextExam.exam_date) return 'green';
 
 		const daysUntil = Math.ceil(
 			(new Date(nextExam.exam_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		);
 
-		if (daysUntil <= 7 || profile?.visa_expiry.includes('WARNING')) {
-			return 'red';
-		}
-
-		if (daysUntil <= 14) {
-			return 'yellow';
-		}
+		if (daysUntil <= 7) return 'red';
+		if (daysUntil <= 14) return 'yellow';
 
 		return 'green';
-	}, [exams, profile, bureaucracy]);
+	}, [exams, bureaucracy]);
 
 	return (
 		<DataContext.Provider value={{
@@ -326,12 +522,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			habits,
 			transactions,
 			bureaucracy,
+			skillDefinitions,
+			habitDefinitions,
 			loading,
+			updateProfile,
 			updateExamStatus,
+			updateExam,
+			addExam,
+			deleteExam,
 			updateHabit,
+			addHabitDefinition,
+			updateHabitDefinition,
+			deleteHabitDefinition,
+			addSkillDefinition,
+			updateSkillDefinition,
+			deleteSkillDefinition,
+			updateFinance,
+			addFinance,
+			deleteFinance,
 			addTransaction,
+			updateTransaction,
 			deleteTransaction,
 			updateBureaucracy,
+			addBureaucracy,
+			deleteBureaucracy,
 			getPassedCFUs,
 			getUnlockedMoney,
 			getLockedMoney,

@@ -4,9 +4,18 @@ import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
 
 export default defineConfig({
-	plugins: [react(), tailwindcss()],
+	plugins: [
+		react(),
+		tailwindcss()
+	],
 	base: '/mex-os/',
 	publicDir: 'mex-os-public',
+	// Exclude root files from being processed
+	server: {
+		watch: {
+			ignored: ['**/index.html']
+		}
+	},
 	build: {
 		outDir: 'mex-os',
 		emptyOutDir: true,

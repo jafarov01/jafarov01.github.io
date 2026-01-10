@@ -10,7 +10,8 @@ import {
 	Activity,
 	Lock,
 	Unlock,
-	ChevronRight
+	ChevronRight,
+	FileText
 } from 'lucide-react';
 import { differenceInDays, differenceInHours, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -24,24 +25,37 @@ export function Dashboard() {
 		getLockedMoney,
 		getPendingMoney,
 		getGlobalStatus,
-		habits
+		habits,
+		skillDefinitions,
+		habitDefinitions,
+		bureaucracy
 	} = useData();
 
 	const now = new Date();
-	const nextExam = exams.find(e => new Date(e.exam_date) > now && e.status !== 'passed');
+	const nextExam = exams.find(e => e.exam_date && new Date(e.exam_date) > now && e.status !== 'passed');
 	const passedCFUs = getPassedCFUs();
 	const status = getGlobalStatus();
 
-	const daysUntilNextExam = nextExam
+	const daysUntilNextExam = nextExam?.exam_date
 		? differenceInDays(new Date(nextExam.exam_date), now)
-		: 0;
-	const hoursUntilNextExam = nextExam
+		: null;
+	const hoursUntilNextExam = nextExam?.exam_date
 		? differenceInHours(new Date(nextExam.exam_date), now) % 24
 		: 0;
 
 	const cfuProgress = (passedCFUs / 20) * 100;
 
 	const todayHabit = habits.find(h => h.date === format(now, 'yyyy-MM-dd'));
+
+	// Get exam date range dynamically
+	const upcomingExams = exams.filter(e => e.exam_date && new Date(e.exam_date) > now && e.status !== 'passed');
+	const examDateRange = upcomingExams.length > 0
+		? `${format(new Date(upcomingExams[0].exam_date!), 'MMM d')} - ${format(new Date(upcomingExams[upcomingExams.length - 1].exam_date!), 'MMM d')}`
+		: 'No upcoming exams';
+
+	// Check for critical items
+	const criticalBureaucracy = bureaucracy.filter(b => b.is_critical && (b.status === 'unknown' || b.status === 'expired'));
+
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -52,9 +66,9 @@ export function Dashboard() {
 						<Zap className={`w-8 h-8 ${status === 'green' ? 'text-neon-green' :
 							status === 'yellow' ? 'text-neon-yellow' : 'text-neon-red'
 							}`} />
-						The Winter Campaign
+						{profile?.name ? `${profile.name}'s Cockpit` : 'Survival Cockpit'}
 					</h1>
-					<p className="text-gray-500 mt-1">Survival Cockpit • {format(now, 'EEEE, MMM d, yyyy')}</p>
+					<p className="text-gray-500 mt-1">{format(now, 'EEEE, MMM d, yyyy')}</p>
 				</div>
 				<div className={`
           px-4 py-2 rounded-lg border text-sm font-medium
@@ -69,7 +83,7 @@ export function Dashboard() {
 			</div>
 
 			{/* Main countdown card */}
-			{nextExam && (
+			{nextExam && daysUntilNextExam !== null && (
 				<div className={`card-cyber p-6 ${daysUntilNextExam <= 7 ? 'border-neon-red neon-border-red' :
 					daysUntilNextExam <= 14 ? 'border-neon-yellow neon-border-yellow' :
 						'border-neon-green neon-border-green'
@@ -85,7 +99,7 @@ export function Dashboard() {
 							<div className="flex items-center gap-4 mt-4">
 								<span className="text-sm text-gray-400">
 									<Calendar className="w-4 h-4 inline mr-1" />
-									{format(new Date(nextExam.exam_date), 'EEEE, MMM d @ HH:mm')}
+									{nextExam.exam_date ? format(new Date(nextExam.exam_date), 'EEEE, MMM d @ HH:mm') : 'Date TBD'}
 								</span>
 								<span className="px-2 py-1 rounded text-xs bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">
 									{nextExam.cfu} CFU
@@ -180,7 +194,7 @@ export function Dashboard() {
 					<div className="flex items-center justify-between mb-4">
 						<h3 className="text-lg font-semibold text-white flex items-center gap-2">
 							<BookOpen className="w-5 h-5 text-neon-cyan" />
-							Kill List (Jan 23 - Feb 20)
+							Upcoming Exams {upcomingExams.length > 0 && `(${examDateRange})`}
 						</h3>
 						<Link
 							to="/academics"
@@ -189,65 +203,70 @@ export function Dashboard() {
 							View All <ChevronRight className="w-4 h-4" />
 						</Link>
 					</div>
-					<div className="space-y-3">
-						{exams.map(exam => {
-							const examDate = new Date(exam.exam_date);
-							const daysLeft = differenceInDays(examDate, now);
-							const isPassed = exam.status === 'passed';
-							const isKillSwitch = exam.strategy_notes.includes('KILL SWITCH');
 
-							return (
-								<div
-									key={exam.id}
-									className={`p-3 rounded-lg border transition-all ${isPassed
-										? 'bg-neon-green/5 border-neon-green/20'
-										: isKillSwitch
-											? 'bg-neon-red/5 border-neon-red/30 animate-pulse'
-											: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
-										}`}
-								>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											{isKillSwitch && !isPassed && (
-												<AlertTriangle className="w-5 h-5 text-neon-red" />
-											)}
-											<div>
-												<span className={`font-medium ${isPassed ? 'text-neon-green line-through' : 'text-white'
-													}`}>
-													{exam.name}
+					{exams.length === 0 ? (
+						<p className="text-gray-500 text-center py-8">No exams tracked yet. Add exams in the Academics section.</p>
+					) : (
+						<div className="space-y-3">
+							{exams.slice(0, 5).map(exam => {
+								const examDate = exam.exam_date ? new Date(exam.exam_date) : null;
+								const daysLeft = examDate ? differenceInDays(examDate, now) : null;
+								const isPassed = exam.status === 'passed';
+								const isKillSwitch = exam.strategy_notes.includes('KILL SWITCH');
+
+								return (
+									<div
+										key={exam.id}
+										className={`p-3 rounded-lg border transition-all ${isPassed
+											? 'bg-neon-green/5 border-neon-green/20'
+											: isKillSwitch
+												? 'bg-neon-red/5 border-neon-red/30 animate-pulse'
+												: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
+											}`}
+									>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-3">
+												{isKillSwitch && !isPassed && (
+													<AlertTriangle className="w-5 h-5 text-neon-red" />
+												)}
+												<div>
+													<span className={`font-medium ${isPassed ? 'text-neon-green line-through' : 'text-white'
+														}`}>
+														{exam.name}
+													</span>
+													<span className="text-gray-500 text-sm ml-2">({exam.cfu} CFU)</span>
+												</div>
+											</div>
+											<div className="flex items-center gap-3">
+												<span className="text-sm text-gray-400">
+													{examDate ? format(examDate, 'MMM d') : 'TBD'}
 												</span>
-												<span className="text-gray-500 text-sm ml-2">({exam.cfu} CFU)</span>
+												{!isPassed && daysLeft !== null && daysLeft > 0 && (
+													<span className={`text-sm font-medium ${daysLeft <= 7 ? 'text-neon-red' :
+														daysLeft <= 14 ? 'text-neon-yellow' : 'text-gray-400'
+														}`}>
+														{daysLeft}d
+													</span>
+												)}
+												<span className={`px-2 py-1 rounded text-xs uppercase ${isPassed ? 'bg-neon-green/20 text-neon-green' :
+													exam.status === 'booked' ? 'bg-neon-cyan/10 text-neon-cyan' :
+														'bg-neon-yellow/10 text-neon-yellow'
+													}`}>
+													{exam.status}
+												</span>
 											</div>
 										</div>
-										<div className="flex items-center gap-3">
-											<span className="text-sm text-gray-400">
-												{format(examDate, 'MMM d')}
-											</span>
-											{!isPassed && daysLeft > 0 && (
-												<span className={`text-sm font-medium ${daysLeft <= 7 ? 'text-neon-red' :
-													daysLeft <= 14 ? 'text-neon-yellow' : 'text-gray-400'
-													}`}>
-													{daysLeft}d
-												</span>
-											)}
-											<span className={`px-2 py-1 rounded text-xs uppercase ${isPassed ? 'bg-neon-green/20 text-neon-green' :
-												exam.status === 'booked' ? 'bg-neon-cyan/10 text-neon-cyan' :
-													'bg-neon-yellow/10 text-neon-yellow'
-												}`}>
-												{exam.status}
-											</span>
-										</div>
+										{isKillSwitch && !isPassed && (
+											<div className="mt-2 text-xs text-neon-red flex items-center gap-1">
+												<AlertTriangle className="w-3 h-3" />
+												{exam.strategy_notes}
+											</div>
+										)}
 									</div>
-									{isKillSwitch && !isPassed && (
-										<div className="mt-2 text-xs text-neon-red flex items-center gap-1">
-											<AlertTriangle className="w-3 h-3" />
-											{exam.strategy_notes}
-										</div>
-									)}
-								</div>
-							);
-						})}
-					</div>
+								);
+							})}
+						</div>
+					)}
 				</div>
 
 				{/* Quick Actions & Today's Protocol */}
@@ -274,61 +293,83 @@ export function Dashboard() {
 								Update Exam Status
 							</Link>
 							<Link
-								to="/finance"
+								to="/cashflow"
 								className="w-full btn-cyber py-3 flex items-center justify-center gap-2"
 							>
 								<DollarSign className="w-4 h-4" />
-								View Finances
+								Add Transaction
 							</Link>
 						</div>
 					</div>
 
-					{/* Today's Protocol Status */}
+					{/* Today's Protocol Status - Dynamic */}
 					<div className="card-cyber p-6">
 						<h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
 							<Activity className="w-5 h-5 text-neon-purple" />
 							Today's Protocol
 						</h3>
 						<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<span className="text-gray-400">Deep Work</span>
-								<span className={`font-medium ${(todayHabit?.habits.deep_work_hours || 0) >= 4
-									? 'text-neon-green' : 'text-gray-500'
-									}`}>
-									{todayHabit?.habits.deep_work_hours || 0}h / 4h
-								</span>
-							</div>
-							<div className="flex items-center justify-between">
-								<span className="text-gray-400">Gym</span>
-								<span className={`font-medium ${todayHabit?.habits.gym_session ? 'text-neon-green' : 'text-neon-red'
-									}`}>
-									{todayHabit?.habits.gym_session ? '✓ DONE' : '✗ PENDING'}
-								</span>
-							</div>
-							<div className="flex items-center justify-between">
-								<span className="text-gray-400">Python</span>
-								<span className={`font-medium ${todayHabit?.skills.python_practice !== '0 mins'
-									? 'text-neon-green' : 'text-gray-500'
-									}`}>
-									{todayHabit?.skills.python_practice || '0 mins'}
-								</span>
-							</div>
+							{/* Dynamic Habits */}
+							{habitDefinitions.slice(0, 2).map(def => {
+								const value = todayHabit?.habits[def.id];
+								const isComplete = def.trackingType === 'boolean'
+									? Boolean(value)
+									: typeof value === 'number' && value >= (def.target || 1);
+
+								return (
+									<div key={def.id} className="flex items-center justify-between">
+										<span className="text-gray-400">{def.name}</span>
+										<span className={`font-medium ${isComplete ? 'text-neon-green' : 'text-gray-500'}`}>
+											{def.trackingType === 'boolean'
+												? (value ? '✓ DONE' : '✗ PENDING')
+												: `${value || 0}${def.trackingType === 'hours' ? 'h' : ''} / ${def.target || 1}${def.trackingType === 'hours' ? 'h' : ''}`
+											}
+										</span>
+									</div>
+								);
+							})}
+
+							{/* Dynamic Skills */}
+							{skillDefinitions.slice(0, 2).map(def => {
+								const value = todayHabit?.skills[def.id] || '0 mins';
+								const isComplete = value !== '0 mins';
+
+								return (
+									<div key={def.id} className="flex items-center justify-between">
+										<span className="text-gray-400">{def.name}</span>
+										<span className={`font-medium ${isComplete ? 'text-neon-green' : 'text-gray-500'}`}>
+											{value}
+										</span>
+									</div>
+								);
+							})}
+
+							{habitDefinitions.length === 0 && skillDefinitions.length === 0 && (
+								<p className="text-gray-500 text-sm text-center py-2">
+									No habits or skills defined yet.
+									<Link to="/habits" className="text-neon-cyan ml-1 hover:underline">Add some!</Link>
+								</p>
+							)}
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Visa Warning Banner */}
-			{profile?.visa_expiry.includes('WARNING') && (
+			{/* Critical Alerts Banner */}
+			{criticalBureaucracy.length > 0 && (
 				<div className="card-cyber p-4 border-neon-red neon-border-red bg-neon-red/5">
 					<div className="flex items-center gap-3">
 						<AlertTriangle className="w-6 h-6 text-neon-red animate-pulse" />
-						<div>
-							<h4 className="font-semibold text-neon-red">VISA STATUS: CRITICAL</h4>
+						<div className="flex-1">
+							<h4 className="font-semibold text-neon-red">CRITICAL: {criticalBureaucracy.length} Document(s) Need Attention</h4>
 							<p className="text-sm text-gray-400">
-								Permit expiry data missing. Update your visa status immediately to avoid system lockout.
+								{criticalBureaucracy.map(b => b.name).join(', ')}
 							</p>
 						</div>
+						<Link to="/bureaucracy" className="btn-cyber px-4 py-2 text-sm">
+							<FileText className="w-4 h-4 inline mr-1" />
+							Review
+						</Link>
 					</div>
 				</div>
 			)}
