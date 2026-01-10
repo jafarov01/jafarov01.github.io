@@ -106,11 +106,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		const examRef = doc(db, 'users', user.uid, 'academics', examId);
 		await updateDoc(examRef, { status });
 
-		// Update scholarship unlock if 20 CFUs reached
-		const passedCFUs = getPassedCFUs() + (status === 'passed' ?
-			(exams.find(e => e.id === examId)?.cfu || 0) : 0);
+		// Calculate CFUs correctly: current passed CFUs excluding this exam, plus this exam's CFUs if now passed
+		const examBeingUpdated = exams.find(e => e.id === examId);
+		const currentPassedCFUs = exams
+			.filter(e => e.status === 'passed' && e.is_scholarship_critical && e.id !== examId)
+			.reduce((sum, e) => sum + e.cfu, 0);
 
-		if (passedCFUs >= 20) {
+		const newTotalCFUs = currentPassedCFUs +
+			(status === 'passed' && examBeingUpdated?.is_scholarship_critical ? (examBeingUpdated?.cfu || 0) : 0);
+
+		// Update scholarship unlock if 20 CFUs reached
+		if (newTotalCFUs >= 20) {
 			const meritInstallment = finances.find(f => f.id === 'installment_2_merit');
 			if (meritInstallment && meritInstallment.status === 'locked') {
 				const financeRef = doc(db, 'users', user.uid, 'finance', 'installment_2_merit');

@@ -44,10 +44,18 @@ export function Habits() {
 
 	const getStreak = (field: 'gym_session' | 'deep_work_hours') => {
 		let streak = 0;
+		const today = format(new Date(), 'yyyy-MM-dd');
+
 		for (let i = 0; i < 30; i++) {
 			const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
 			const habit = habits.find(h => h.date === date);
+
+			// Skip today if no entry yet (don't break streak for today)
+			if (!habit && date === today) continue;
+
+			// Break if no entry for past day
 			if (!habit) break;
+
 			if (field === 'gym_session' && !habit.habits.gym_session) break;
 			if (field === 'deep_work_hours' && habit.habits.deep_work_hours < 4) break;
 			streak++;
