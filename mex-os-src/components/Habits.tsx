@@ -13,7 +13,7 @@ import {
 	Moon,
 	Plus,
 	Trash2,
-
+	Edit2,
 	X,
 	Music,
 	Book,
@@ -22,10 +22,13 @@ import {
 	Target,
 	Zap,
 	Coffee,
-	Pencil
+	Pencil,
+	ChevronLeft,
+	ChevronRight
 } from 'lucide-react';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, addDays, isFuture } from 'date-fns';
 import { type SkillDefinition, type HabitDefinition } from '../lib/seedData';
+import { QuickDateSelector } from './QuickDateSelector';
 
 // Icon mapping for dynamic rendering
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -52,16 +55,22 @@ export function Habits() {
 		skillDefinitions,
 		habitDefinitions,
 		addSkillDefinition,
+		updateSkillDefinition,
 		deleteSkillDefinition,
 		addHabitDefinition,
+		updateHabitDefinition,
 		deleteHabitDefinition
 	} = useData();
 
-	const [selectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+	const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 	const [showAddSkill, setShowAddSkill] = useState(false);
 	const [showAddHabit, setShowAddHabit] = useState(false);
-	const [newSkill, setNewSkill] = useState({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
-	const [newHabit, setNewHabit] = useState<{ name: string; icon: string; color: string; trackingType: 'boolean' | 'hours' | 'count'; target: number; maxValue: number }>({ name: '', icon: 'dumbbell', color: 'neon-green', trackingType: 'boolean', target: 1, maxValue: 1 });
+
+	const [editingSkill, setEditingSkill] = useState<SkillDefinition | null>(null);
+	const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
+
+	const [skillForm, setSkillForm] = useState({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
+	const [habitForm, setHabitForm] = useState<{ name: string; icon: string; color: string; trackingType: 'boolean' | 'hours' | 'count'; target: number; maxValue: number }>({ name: '', icon: 'dumbbell', color: 'neon-green', trackingType: 'boolean', target: 1, maxValue: 1 });
 
 	const todayHabit = useMemo(() => {
 		const existing = habits.find(h => h.date === selectedDate);
@@ -91,8 +100,110 @@ export function Habits() {
 		await updateHabit(selectedDate, { skills: { [skillId]: value } });
 	};
 
+	// --- Habit Form Handlers ---
 
+	const openAddHabit = () => {
+		setEditingHabit(null);
+		setHabitForm({ name: '', icon: 'dumbbell', color: 'neon-green', trackingType: 'boolean', target: 1, maxValue: 1 });
+		setShowAddHabit(true);
+	};
 
+	const openEditHabit = (def: HabitDefinition) => {
+		setEditingHabit(def);
+		setHabitForm({
+			name: def.name,
+			icon: def.icon,
+			color: def.color,
+			trackingType: def.trackingType,
+			target: def.target || 1,
+			maxValue: def.maxValue || 1
+		});
+		setShowAddHabit(true);
+	};
+
+	const handleSaveHabit = async () => {
+		if (!habitForm.name.trim()) return;
+
+		const data = {
+			name: habitForm.name,
+			icon: habitForm.icon,
+			color: habitForm.color,
+			trackingType: habitForm.trackingType,
+			target: habitForm.trackingType !== 'boolean' ? habitForm.target : undefined,
+			maxValue: habitForm.trackingType !== 'boolean' ? habitForm.maxValue : undefined
+		};
+
+		if (editingHabit) {
+			await updateHabitDefinition(editingHabit.id, data);
+		} else {
+			await addHabitDefinition(data);
+		}
+
+		setShowAddHabit(false);
+	};
+
+	// --- Skill Form Handlers ---
+
+	const openAddSkill = () => {
+		setEditingSkill(null);
+		setSkillForm({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
+		setShowAddSkill(true);
+	};
+
+	const openEditSkill = (def: SkillDefinition) => {
+		setEditingSkill(def);
+		setSkillForm({
+			name: def.name,
+			icon: def.icon,
+			color: def.color,
+			targetPerDay: def.targetPerDay
+		});
+		setShowAddSkill(true);
+	};
+
+	const handleSaveSkill = async () => {
+		if (!skillForm.name.trim()) return;
+
+		const data = {
+			name: skillForm.name,
+			icon: skillForm.icon,
+			color: skillForm.color,
+			targetPerDay: skillForm.targetPerDay,
+			trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours']
+		};
+
+		if (editingSkill) {
+			await updateSkillDefinition(editingSkill.id, data);
+		} else {
+			await addSkillDefinition(data);
+		}
+
+		setShowAddSkill(false);
+	};
+
+	const handleDeleteHabit = async (id: string) => {
+		if (confirm('Delete this habit? History will be preserved but the tracker will be removed.')) {
+			await deleteHabitDefinition(id);
+		}
+	};
+
+	const handleDeleteSkill = async (id: string) => {
+		if (confirm('Delete this skill? History will be preserved but the tracker will be removed.')) {
+			await deleteSkillDefinition(id);
+		}
+	};
+
+	const IconComponent = ({ name, className }: { name: string; className?: string }) => {
+		const Icon = iconMap[name] || Activity;
+		return <Icon className={className} />;
+	};
+
+	const changeDate = (days: number) => {
+		const newDate = addDays(new Date(selectedDate), days);
+		setSelectedDate(format(newDate, 'yyyy-MM-dd'));
+	};
+
+	// Heatmap Helper
 	const getSkillHeatmapColor = (date: string, skillDef: SkillDefinition) => {
 		const habit = habits.find(h => h.date === date);
 		if (!habit) return 'bg-dark-700';
@@ -114,7 +225,6 @@ export function Habits() {
 		for (let i = 0; i < 30; i++) {
 			const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
 			const habit = habits.find(h => h.date === date);
-
 			if (!habit && date === today) continue;
 			if (!habit) break;
 
@@ -130,49 +240,36 @@ export function Habits() {
 		return streak;
 	};
 
-	const handleAddSkill = async () => {
-		if (!newSkill.name.trim()) return;
-
-		await addSkillDefinition({
-			name: newSkill.name,
-			icon: newSkill.icon,
-			color: newSkill.color,
-			targetPerDay: newSkill.targetPerDay,
-			trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours']
-		});
-
-		setNewSkill({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
-		setShowAddSkill(false);
-	};
-
-	const handleAddHabit = async () => {
-		if (!newHabit.name.trim()) return;
-
-		await addHabitDefinition({
-			name: newHabit.name,
-			icon: newHabit.icon,
-			color: newHabit.color,
-			trackingType: newHabit.trackingType,
-			target: newHabit.trackingType !== 'boolean' ? newHabit.target : undefined,
-			maxValue: newHabit.trackingType !== 'boolean' ? newHabit.maxValue : undefined
-		});
-
-		setNewHabit({ name: '', icon: 'dumbbell', color: 'neon-green', trackingType: 'boolean', target: 1, maxValue: 1 });
-		setShowAddHabit(false);
-	};
-
-	const IconComponent = ({ name, className }: { name: string; className?: string }) => {
-		const Icon = iconMap[name] || Activity;
-		return <Icon className={className} />;
-	};
-
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
-			<div>
-				<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-					<Activity className="w-8 h-8 text-neon-purple" />Protocol
-				</h1>
-				<p className="text-gray-500 mt-1">Daily Habit & Skill Tracking • {format(new Date(), 'EEEE, MMM d')}</p>
+			{/* Header with Date Navigation */}
+			<div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold text-white flex items-center gap-3">
+						<Activity className="w-8 h-8 text-neon-purple" />Protocol
+					</h1>
+					<p className="text-gray-500 mt-1">Daily Habit & Skill Tracking</p>
+				</div>
+
+				<div className="flex flex-col items-end gap-2">
+					<div className="flex items-center gap-2 bg-dark-700 p-1 rounded-lg border border-dark-600">
+						<button onClick={() => changeDate(-1)} className="p-1 hover:text-white text-gray-400"><ChevronLeft className="w-5 h-5" /></button>
+						<input
+							type="date"
+							value={selectedDate}
+							onChange={(e) => setSelectedDate(e.target.value)}
+							className="bg-transparent text-white text-center font-mono border-none focus:ring-0 w-32"
+						/>
+						<button
+							onClick={() => changeDate(1)}
+							disabled={isFuture(addDays(new Date(selectedDate), 1))}
+							className="p-1 hover:text-white text-gray-400 disabled:opacity-30"
+						>
+							<ChevronRight className="w-5 h-5" />
+						</button>
+					</div>
+					<QuickDateSelector onSelect={setSelectedDate} currentDate={selectedDate} />
+				</div>
 			</div>
 
 			{/* Streak Cards */}
@@ -193,14 +290,15 @@ export function Habits() {
 				))}
 			</div>
 
-			{/* Today's Habits */}
+			{/* Habits Section */}
 			<div className="card-cyber p-6">
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-lg font-semibold text-white flex items-center gap-2">
-						<Calendar className="w-5 h-5" />Today's Habits
+						<Calendar className="w-5 h-5" />
+						{selectedDate === format(new Date(), 'yyyy-MM-dd') ? "Today's Habits" : `Habits for ${format(new Date(selectedDate), 'MMM d')}`}
 					</h2>
 					<button
-						onClick={() => setShowAddHabit(true)}
+						onClick={openAddHabit}
 						className="btn-cyber px-3 py-1.5 text-sm flex items-center gap-2"
 					>
 						<Plus className="w-4 h-4" />Add Habit
@@ -216,15 +314,23 @@ export function Habits() {
 							const value = todayHabit.habits[def.id];
 
 							return (
-								<div key={def.id} className={`p-4 rounded-lg bg-dark-700 border border-dark-600 group relative`}>
-									<button
-										onClick={() => deleteHabitDefinition(def.id)}
-										className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red transition-all"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+								<div key={def.id} className={`p-4 rounded-lg bg-dark-700 border border-dark-600 group relative hover:border-dark-500`}>
+									<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+										<button
+											onClick={() => openEditHabit(def)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-cyan/20 text-gray-500 hover:text-neon-cyan"
+										>
+											<Edit2 className="w-4 h-4" />
+										</button>
+										<button
+											onClick={() => handleDeleteHabit(def.id)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
+										>
+											<Trash2 className="w-4 h-4" />
+										</button>
+									</div>
 
-									<div className="flex items-center justify-between mb-3">
+									<div className="flex items-center justify-between mb-3 pr-16">
 										<div className="flex items-center gap-3">
 											<IconComponent name={def.icon} className={`w-5 h-5 ${colors.text}`} />
 											<span className="text-white font-medium">{def.name}</span>
@@ -264,14 +370,14 @@ export function Habits() {
 				)}
 			</div>
 
-			{/* Today's Skills */}
+			{/* Skills Section */}
 			<div className="card-cyber p-6">
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-lg font-semibold text-white flex items-center gap-2">
 						<Target className="w-5 h-5" />Skills Practice
 					</h2>
 					<button
-						onClick={() => setShowAddSkill(true)}
+						onClick={openAddSkill}
 						className="btn-cyber px-3 py-1.5 text-sm flex items-center gap-2"
 					>
 						<Plus className="w-4 h-4" />Add Skill
@@ -287,13 +393,21 @@ export function Habits() {
 							const value = todayHabit.skills[def.id] || def.trackingOptions?.[0] || '0 mins';
 
 							return (
-								<div key={def.id} className="p-4 rounded-lg bg-dark-700 border border-dark-600 group relative">
-									<button
-										onClick={() => deleteSkillDefinition(def.id)}
-										className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red transition-all"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+								<div key={def.id} className="p-4 rounded-lg bg-dark-700 border border-dark-600 group relative hover:border-dark-500">
+									<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+										<button
+											onClick={() => openEditSkill(def)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-cyan/20 text-gray-500 hover:text-neon-cyan"
+										>
+											<Edit2 className="w-4 h-4" />
+										</button>
+										<button
+											onClick={() => handleDeleteSkill(def.id)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
+										>
+											<Trash2 className="w-4 h-4" />
+										</button>
+									</div>
 
 									<div className="flex items-center justify-between mb-3">
 										<div className="flex items-center gap-3">
@@ -321,7 +435,7 @@ export function Habits() {
 				)}
 			</div>
 
-			{/* Heatmaps */}
+			{/* Heatmaps (30 days) */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 				{habitDefinitions.slice(0, 4).map(def => {
 					const colors = colorMap[def.color] || colorMap['neon-green'];
@@ -358,16 +472,6 @@ export function Habits() {
 										/>
 									);
 								})}
-							</div>
-							<div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-								<span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-dark-700" />Missed</span>
-								{def.trackingType !== 'boolean' && (
-									<>
-										<span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-neon-yellow/50" />Low</span>
-										<span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-neon-yellow" />Mid</span>
-									</>
-								)}
-								<span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-neon-green" />Done</span>
 							</div>
 						</div>
 					);
@@ -408,12 +512,13 @@ export function Habits() {
 				</div>
 			)}
 
-			{/* Add Skill Modal */}
+
+			{/* Add/Edit Skill Modal */}
 			{showAddSkill && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
 					<div className="card-cyber p-6 w-full max-w-md">
 						<div className="flex items-center justify-between mb-6">
-							<h3 className="text-xl font-bold text-white">Add New Skill</h3>
+							<h3 className="text-xl font-bold text-white">{editingSkill ? 'Edit Skill' : 'Add New Skill'}</h3>
 							<button onClick={() => setShowAddSkill(false)} className="text-gray-500 hover:text-white">
 								<X className="w-6 h-6" />
 							</button>
@@ -424,8 +529,8 @@ export function Habits() {
 								<label className="block text-sm text-gray-400 mb-2">Skill Name</label>
 								<input
 									type="text"
-									value={newSkill.name}
-									onChange={e => setNewSkill({ ...newSkill, name: e.target.value })}
+									value={skillForm.name}
+									onChange={e => setSkillForm({ ...skillForm, name: e.target.value })}
 									placeholder="e.g., German, Piano, Drawing"
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
 								/>
@@ -439,8 +544,8 @@ export function Habits() {
 										return (
 											<button
 												key={icon}
-												onClick={() => setNewSkill({ ...newSkill, icon })}
-												className={`p-2 rounded-lg transition-all ${newSkill.icon === icon ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
+												onClick={() => setSkillForm({ ...skillForm, icon })}
+												className={`p-2 rounded-lg transition-all ${skillForm.icon === icon ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
 											>
 												<Icon className="w-5 h-5" />
 											</button>
@@ -457,8 +562,8 @@ export function Habits() {
 										return (
 											<button
 												key={color}
-												onClick={() => setNewSkill({ ...newSkill, color })}
-												className={`w-10 h-10 rounded-lg transition-all ${colors.bg} ${newSkill.color === color ? `ring-2 ring-offset-2 ring-offset-dark-800 ${colors.border.replace('border-', 'ring-')}` : ''}`}
+												onClick={() => setSkillForm({ ...skillForm, color })}
+												className={`w-10 h-10 rounded-lg transition-all ${colors.bg} ${skillForm.color === color ? `ring-2 ring-offset-2 ring-offset-dark-800 ${colors.border.replace('border-', 'ring-')}` : ''}`}
 											/>
 										);
 									})}
@@ -468,8 +573,8 @@ export function Habits() {
 							<div>
 								<label className="block text-sm text-gray-400 mb-2">Daily Target</label>
 								<select
-									value={newSkill.targetPerDay}
-									onChange={e => setNewSkill({ ...newSkill, targetPerDay: e.target.value })}
+									value={skillForm.targetPerDay}
+									onChange={e => setSkillForm({ ...skillForm, targetPerDay: e.target.value })}
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 								>
 									<option value="15 mins">15 mins</option>
@@ -484,20 +589,20 @@ export function Habits() {
 							<button onClick={() => setShowAddSkill(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
 								Cancel
 							</button>
-							<button onClick={handleAddSkill} className="flex-1 btn-cyber py-2">
-								Add Skill
+							<button onClick={handleSaveSkill} className="flex-1 btn-cyber py-2">
+								{editingSkill ? 'Save Changes' : 'Add Skill'}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
 
-			{/* Add Habit Modal */}
+			{/* Add/Edit Habit Modal */}
 			{showAddHabit && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
 					<div className="card-cyber p-6 w-full max-w-md">
 						<div className="flex items-center justify-between mb-6">
-							<h3 className="text-xl font-bold text-white">Add New Habit</h3>
+							<h3 className="text-xl font-bold text-white">{editingHabit ? 'Edit Habit' : 'Add New Habit'}</h3>
 							<button onClick={() => setShowAddHabit(false)} className="text-gray-500 hover:text-white">
 								<X className="w-6 h-6" />
 							</button>
@@ -508,8 +613,8 @@ export function Habits() {
 								<label className="block text-sm text-gray-400 mb-2">Habit Name</label>
 								<input
 									type="text"
-									value={newHabit.name}
-									onChange={e => setNewHabit({ ...newHabit, name: e.target.value })}
+									value={habitForm.name}
+									onChange={e => setHabitForm({ ...habitForm, name: e.target.value })}
 									placeholder="e.g., Meditation, Reading, Walk"
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
 								/>
@@ -521,8 +626,8 @@ export function Habits() {
 									{(['boolean', 'hours', 'count'] as const).map(type => (
 										<button
 											key={type}
-											onClick={() => setNewHabit({ ...newHabit, trackingType: type })}
-											className={`flex-1 py-2 rounded-lg transition-all ${newHabit.trackingType === type ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
+											onClick={() => setHabitForm({ ...habitForm, trackingType: type })}
+											className={`flex-1 py-2 rounded-lg transition-all ${habitForm.trackingType === type ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
 										>
 											{type === 'boolean' ? 'Yes/No' : type === 'hours' ? 'Hours' : 'Count'}
 										</button>
@@ -530,7 +635,7 @@ export function Habits() {
 								</div>
 							</div>
 
-							{newHabit.trackingType !== 'boolean' && (
+							{habitForm.trackingType !== 'boolean' && (
 								<>
 									<div>
 										<label className="block text-sm text-gray-400 mb-2">Daily Target</label>
@@ -538,8 +643,8 @@ export function Habits() {
 											type="number"
 											min="1"
 											max="24"
-											value={newHabit.target}
-											onChange={e => setNewHabit({ ...newHabit, target: parseInt(e.target.value) || 1 })}
+											value={habitForm.target}
+											onChange={e => setHabitForm({ ...habitForm, target: parseInt(e.target.value) || 1 })}
 											className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 										/>
 									</div>
@@ -549,8 +654,8 @@ export function Habits() {
 											type="number"
 											min="1"
 											max="24"
-											value={newHabit.maxValue}
-											onChange={e => setNewHabit({ ...newHabit, maxValue: parseInt(e.target.value) || 1 })}
+											value={habitForm.maxValue}
+											onChange={e => setHabitForm({ ...habitForm, maxValue: parseInt(e.target.value) || 1 })}
 											className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 										/>
 									</div>
@@ -565,8 +670,8 @@ export function Habits() {
 										return (
 											<button
 												key={icon}
-												onClick={() => setNewHabit({ ...newHabit, icon })}
-												className={`p-2 rounded-lg transition-all ${newHabit.icon === icon ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
+												onClick={() => setHabitForm({ ...habitForm, icon })}
+												className={`p-2 rounded-lg transition-all ${habitForm.icon === icon ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
 											>
 												<Icon className="w-5 h-5" />
 											</button>
@@ -583,8 +688,8 @@ export function Habits() {
 										return (
 											<button
 												key={color}
-												onClick={() => setNewHabit({ ...newHabit, color })}
-												className={`w-10 h-10 rounded-lg transition-all ${colors.bg} ${newHabit.color === color ? `ring-2 ring-offset-2 ring-offset-dark-800 ${colors.border.replace('border-', 'ring-')}` : ''}`}
+												onClick={() => setHabitForm({ ...habitForm, color })}
+												className={`w-10 h-10 rounded-lg transition-all ${colors.bg} ${habitForm.color === color ? `ring-2 ring-offset-2 ring-offset-dark-800 ${colors.border.replace('border-', 'ring-')}` : ''}`}
 											/>
 										);
 									})}
@@ -596,8 +701,8 @@ export function Habits() {
 							<button onClick={() => setShowAddHabit(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
 								Cancel
 							</button>
-							<button onClick={handleAddHabit} className="flex-1 btn-cyber py-2">
-								Add Habit
+							<button onClick={handleSaveHabit} className="flex-1 btn-cyber py-2">
+								{editingHabit ? 'Save Changes' : 'Add Habit'}
 							</button>
 						</div>
 					</div>
