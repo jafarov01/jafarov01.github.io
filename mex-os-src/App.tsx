@@ -14,6 +14,7 @@ import { Funding } from './components/Funding';
 import { Cashflow } from './components/Cashflow';
 import { Career } from './components/Career';
 import { Strategy } from './components/Strategy';
+import { SkillMastery } from './components/SkillMastery';
 import './index.css';
 
 function ProtectedRoute() {
@@ -60,6 +61,7 @@ function App() {
 						<Route path="/funding" element={<Funding />} />
 						<Route path="/bureaucracy" element={<Bureaucracy />} />
 						<Route path="/habits" element={<Habits />} />
+						<Route path="/skills" element={<SkillMastery />} />
 						<Route path="/career" element={<Career />} />
 						<Route path="/strategy" element={<Strategy />} />
 						<Route path="/settings" element={<ProfileSettings />} />

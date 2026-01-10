@@ -16,6 +16,7 @@ export interface Profile {
 
 // Dynamic skill definition - users can add/remove/edit skills
 // v5.0: Enhanced for CV generation (Level + Proficiency)
+// v6.0: Unified Skill Registry - single source of truth for all skills
 export interface SkillDefinition {
 	id: string;
 	name: string;           // "Python", "Italian", "German", etc.
@@ -24,10 +25,12 @@ export interface SkillDefinition {
 	targetPerDay: string;   // "30 mins", "1 hour", "2 hours"
 	trackingOptions: string[]; // ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"]
 	// v5.0 additions
-	category?: 'language' | 'frontend' | 'backend' | 'devops' | 'soft-skill' | 'other';
-	proficiency_level?: 1 | 2 | 3 | 4 | 5; // 1=Novice, 5=Expert
-	years_experience?: number;
+	category?: 'language' | 'frontend' | 'backend' | 'devops' | 'database' | 'tools' | 'soft-skill' | 'other';
+	proficiency_level?: 1 | 2 | 3 | 4 | 5; // 1=Novice, 5=Expert (now CALCULATED from practice)
+	years_experience?: number;  // Prior experience before tracking started
 	show_on_cv?: boolean;   // Toggle visibility for Career page
+	// v6.0 additions - Unified Skill Registry
+	is_tracked?: boolean;   // Whether to show in Protocol for daily practice tracking
 	createdAt: string;
 }
 

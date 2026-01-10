@@ -427,39 +427,26 @@ export function Habits() {
 					<h2 className="text-lg font-semibold text-white flex items-center gap-2">
 						<Target className="w-5 h-5" />Skills Practice
 					</h2>
-					<button
-						onClick={openAddSkill}
+					<a
+						href="#/skills"
 						className="btn-cyber px-3 py-1.5 text-sm flex items-center gap-2"
 					>
-						<Plus className="w-4 h-4" />Add Skill
-					</button>
+						<Plus className="w-4 h-4" />Manage in Skill Mastery
+					</a>
 				</div>
 
-				{skillDefinitions.length === 0 ? (
-					<p className="text-gray-500 text-center py-8">No skills defined. Click "Add Skill" to start tracking!</p>
+				{skillDefinitions.filter(s => s.is_tracked !== false).length === 0 ? (
+					<p className="text-gray-500 text-center py-8">
+						No skills being tracked. Go to <a href="#/skills" className="text-neon-cyan hover:underline">Skill Mastery</a> to add skills and enable tracking.
+					</p>
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{skillDefinitions.map(def => {
+						{skillDefinitions.filter(s => s.is_tracked !== false).map(def => {
 							const colors = colorMap[def.color] || colorMap['neon-yellow'];
 							const value = todayHabit.skills[def.id] || def.trackingOptions?.[0] || '0 mins';
 
 							return (
-								<div key={def.id} className="p-4 rounded-lg bg-dark-700 border border-dark-600 group relative hover:border-dark-500">
-									<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-										<button
-											onClick={() => openEditSkill(def)}
-											className="p-1.5 rounded bg-dark-600 hover:bg-neon-cyan/20 text-gray-500 hover:text-neon-cyan"
-										>
-											<Edit2 className="w-4 h-4" />
-										</button>
-										<button
-											onClick={() => handleDeleteRequest(def.id, 'skill')}
-											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
-										>
-											<Trash2 className="w-4 h-4" />
-										</button>
-									</div>
-
+								<div key={def.id} className="p-4 rounded-lg bg-dark-700 border border-dark-600 hover:border-dark-500">
 									<div className="flex items-center justify-between mb-3">
 										<div className="flex items-center gap-3">
 											<IconComponent name={def.icon} className={`w-5 h-5 ${colors.text}`} />

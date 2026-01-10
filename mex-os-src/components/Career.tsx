@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -19,7 +19,8 @@ import {
 	ChevronDown,
 	ChevronUp,
 	DollarSign,
-	Loader2
+	Loader2,
+	Check
 } from 'lucide-react';
 import { format, differenceInMonths } from 'date-fns';
 import { type Job, type Education, type JobType, type EducationStatus } from '../lib/seedData';
@@ -33,7 +34,8 @@ export function Career() {
 		jobs, education, skillDefinitions,
 		addJob, updateJob, deleteJob,
 		addEducation, updateEducation, deleteEducation,
-		profile
+		profile,
+		getAllSkillAnalytics
 	} = useData();
 	const { showToast } = useToast();
 
@@ -60,10 +62,13 @@ export function Career() {
 		endDate: '',
 		salary_gross_yr: 0,
 		currency: 'EUR',
-		tech_stack: '',
+		tech_stack: [] as string[], // Now array of skill names
 		achievements: '',
 		is_current: false
 	});
+
+	// Tech stack dropdown state
+	const [techDropdownOpen, setTechDropdownOpen] = useState(false);
 
 	const [eduForm, setEduForm] = useState({
 		institution: '',
@@ -85,11 +90,12 @@ export function Career() {
 			endDate: '',
 			salary_gross_yr: 0,
 			currency: 'EUR',
-			tech_stack: '',
+			tech_stack: [],
 			achievements: '',
 			is_current: false
 		});
 		setEditingJob(null);
+		setTechDropdownOpen(false);
 	};
 
 	const resetEduForm = () => {
@@ -116,7 +122,7 @@ export function Career() {
 			endDate: job.endDate || '',
 			salary_gross_yr: job.salary_gross_yr || 0,
 			currency: job.currency || 'EUR',
-			tech_stack: job.tech_stack.join(', '),
+			tech_stack: job.tech_stack || [], // Already an array
 			achievements: job.achievements?.join('\n') || '',
 			is_current: job.is_current
 		});
@@ -151,7 +157,7 @@ export function Career() {
 				endDate: jobForm.is_current ? null : (jobForm.endDate || null),
 				salary_gross_yr: jobForm.salary_gross_yr || undefined,
 				currency: jobForm.currency,
-				tech_stack: jobForm.tech_stack.split(',').map(s => s.trim()).filter(Boolean),
+				tech_stack: jobForm.tech_stack, // Already an array
 				achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
 				is_current: jobForm.is_current
 			};
@@ -276,6 +282,14 @@ export function Career() {
 
 	// CV-ready skills
 	const cvSkills = skillDefinitions.filter(s => s.show_on_cv);
+
+	// Get skill analytics for calculated proficiency
+	const skillAnalytics = useMemo(() => {
+		const analytics = getAllSkillAnalytics();
+		const map = new Map<string, { level: number; totalHours: number; levelName: string }>();
+		analytics.forEach(a => map.set(a.skillId, { level: a.level, totalHours: a.totalHours, levelName: a.levelName }));
+		return map;
+	}, [getAllSkillAnalytics]);
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -560,56 +574,67 @@ export function Career() {
 							CV-Ready Skills Matrix
 						</h3>
 						<p className="text-sm text-gray-500 mb-4">
-							Skills marked as "Show on CV" from your Protocol settings will appear here.
-							Go to Protocol → Manage Skills to update proficiency levels.
+							Skills marked as "Show on CV" from Skill Mastery appear here.
+							Proficiency is <span className="text-neon-green">calculated from your practice history</span>.
 						</p>
 
 						{cvSkills.length === 0 ? (
 							<div className="text-center py-8 text-gray-500">
-								No skills configured for CV. Add skills in the Protocol section and enable "Show on CV".
+								No skills configured for CV. Add skills in Skill Mastery and enable "Show on CV".
 							</div>
 						) : (
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-								{cvSkills.map(skill => (
-									<div
-										key={skill.id}
-										className="p-4 bg-dark-700 rounded-lg border border-dark-600 hover:border-neon-purple/30 transition-all"
-									>
-										<div className="flex items-center justify-between mb-2">
-											<span className="font-medium text-white">{skill.name}</span>
-											<span className={`text-xs px-2 py-0.5 rounded ${skill.category === 'language' ? 'bg-neon-cyan/20 text-neon-cyan' :
-												skill.category === 'frontend' ? 'bg-neon-purple/20 text-neon-purple' :
-													skill.category === 'backend' ? 'bg-neon-green/20 text-neon-green' :
-														skill.category === 'devops' ? 'bg-neon-yellow/20 text-neon-yellow' :
-															'bg-dark-600 text-gray-400'
-												}`}>
-												{skill.category || 'other'}
-											</span>
-										</div>
+								{cvSkills.map(skill => {
+									const analytics = skillAnalytics.get(skill.id);
+									const level = analytics?.level || 1;
+									const levelName = analytics?.levelName || 'Novice';
+									const hours = analytics?.totalHours || 0;
 
-										{/* Proficiency bar */}
-										<div className="flex items-center gap-2 mb-2">
-											<span className="text-xs text-gray-500">Proficiency:</span>
-											<div className="flex gap-1">
-												{[1, 2, 3, 4, 5].map(level => (
-													<div
-														key={level}
-														className={`w-4 h-2 rounded ${level <= (skill.proficiency_level || 1)
-															? 'bg-neon-green'
-															: 'bg-dark-600'
-															}`}
-													/>
-												))}
+									return (
+										<div
+											key={skill.id}
+											className="p-4 bg-dark-700 rounded-lg border border-dark-600 hover:border-neon-purple/30 transition-all"
+										>
+											<div className="flex items-center justify-between mb-2">
+												<span className="font-medium text-white">{skill.name}</span>
+												<span className={`text-xs px-2 py-0.5 rounded ${skill.category === 'language' ? 'bg-neon-cyan/20 text-neon-cyan' :
+													skill.category === 'frontend' ? 'bg-neon-purple/20 text-neon-purple' :
+														skill.category === 'backend' ? 'bg-neon-green/20 text-neon-green' :
+															skill.category === 'devops' ? 'bg-neon-yellow/20 text-neon-yellow' :
+																skill.category === 'database' ? 'bg-neon-cyan/20 text-neon-cyan' :
+																	'bg-dark-600 text-gray-400'
+													}`}>
+													{skill.category || 'other'}
+												</span>
+											</div>
+
+											{/* Proficiency bar - now calculated! */}
+											<div className="flex items-center gap-2 mb-2">
+												<span className="text-xs text-gray-500">Lv.{level} {levelName}:</span>
+												<div className="flex gap-1">
+													{[1, 2, 3, 4, 5].map(lvl => (
+														<div
+															key={lvl}
+															className={`w-4 h-2 rounded ${lvl <= level
+																? 'bg-neon-green'
+																: 'bg-dark-600'
+																}`}
+														/>
+													))}
+												</div>
+											</div>
+
+											<div className="flex items-center justify-between text-xs text-gray-500">
+												{hours > 0 && (
+													<span>{hours}h practiced</span>
+												)}
+												{skill.years_experience !== undefined && skill.years_experience > 0 && (
+													<span>+{skill.years_experience}y prior</span>
+												)}
 											</div>
 										</div>
-
-										{skill.years_experience !== undefined && (
-											<span className="text-xs text-gray-500">
-												{skill.years_experience} year{skill.years_experience !== 1 ? 's' : ''} experience
-											</span>
-										)}
-									</div>
-								))}
+									);
+								})}
 							</div>
 						)}
 					</div>
@@ -763,14 +788,89 @@ export function Career() {
 							</div>
 
 							<div>
-								<label className="block text-sm text-gray-400 mb-1">Tech Stack (comma-separated)</label>
-								<input
-									type="text"
-									value={jobForm.tech_stack}
-									onChange={e => setJobForm({ ...jobForm, tech_stack: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-									placeholder="e.g. React, TypeScript, Node.js, AWS"
-								/>
+								<label className="block text-sm text-gray-400 mb-1">
+									Tech Stack
+									<span className="text-gray-600 ml-1">(from Skill Registry)</span>
+								</label>
+								<div className="relative">
+									<button
+										type="button"
+										onClick={() => setTechDropdownOpen(!techDropdownOpen)}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-left text-white focus:border-neon-purple focus:outline-none flex items-center justify-between"
+									>
+										<span className={jobForm.tech_stack.length === 0 ? 'text-gray-500' : 'text-white'}>
+											{jobForm.tech_stack.length === 0
+												? 'Select skills...'
+												: `${jobForm.tech_stack.length} skill${jobForm.tech_stack.length !== 1 ? 's' : ''} selected`}
+										</span>
+										<ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${techDropdownOpen ? 'rotate-180' : ''}`} />
+									</button>
+
+									{techDropdownOpen && (
+										<div className="absolute z-10 w-full mt-1 bg-dark-700 border border-dark-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+											{skillDefinitions.length === 0 ? (
+												<div className="p-3 text-sm text-gray-500 text-center">
+													No skills in registry. Add skills in Skill Mastery first.
+												</div>
+											) : (
+												<>
+													{skillDefinitions.map(skill => {
+														const isSelected = jobForm.tech_stack.includes(skill.name);
+														return (
+															<button
+																key={skill.id}
+																type="button"
+																onClick={() => {
+																	if (isSelected) {
+																		setJobForm({
+																			...jobForm,
+																			tech_stack: jobForm.tech_stack.filter(s => s !== skill.name)
+																		});
+																	} else {
+																		setJobForm({
+																			...jobForm,
+																			tech_stack: [...jobForm.tech_stack, skill.name]
+																		});
+																	}
+																}}
+																className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-dark-600 transition-colors ${
+																	isSelected ? 'bg-neon-purple/10' : ''
+																}`}
+															>
+																<span className="text-white">{skill.name}</span>
+																{isSelected && <Check className="w-4 h-4 text-neon-purple" />}
+															</button>
+														);
+													})}
+												</>
+											)}
+										</div>
+									)}
+								</div>
+
+								{/* Selected skills display */}
+								{jobForm.tech_stack.length > 0 && (
+									<div className="flex flex-wrap gap-2 mt-2">
+										{jobForm.tech_stack.map(tech => (
+											<span
+												key={tech}
+												className="inline-flex items-center gap-1 px-2 py-1 bg-neon-purple/20 text-neon-purple text-sm rounded"
+											>
+												{tech}
+												<button
+													type="button"
+													onClick={() => setJobForm({
+														...jobForm,
+														tech_stack: jobForm.tech_stack.filter(s => s !== tech)
+													})}
+													className="hover:text-white"
+												>
+													<X className="w-3 h-3" />
+												</button>
+											</span>
+										))}
+									</div>
+								)}
 							</div>
 
 							<div>

@@ -20,6 +20,7 @@ import {
 	profileData,
 	validateImportData
 } from '../lib/seedData';
+import { calculateSkillAnalytics, calculateAllSkillAnalytics, type SkillAnalytics } from '../lib/skillAlgorithm';
 
 interface DataContextType {
 	// Data
@@ -97,6 +98,10 @@ interface DataContextType {
 	getMonthlyIncome: (year: number, month: number) => number;
 	getMonthlyExpenses: (year: number, month: number) => number;
 	getNetBalance: () => number;
+	
+	// v6.0 Skill Analytics
+	getSkillAnalytics: (skillId: string) => SkillAnalytics | null;
+	getAllSkillAnalytics: () => SkillAnalytics[];
 
 	// Data Management
 	exportData: () => Promise<FullUserData>;
@@ -776,6 +781,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		return 'green';
 	}, [bureaucracy, campaigns]);
 
+	// v6.0 Skill Analytics
+	const getSkillAnalytics = useCallback((skillId: string): SkillAnalytics | null => {
+		const skill = skillDefinitions.find(s => s.id === skillId);
+		if (!skill) return null;
+		return calculateSkillAnalytics(skill, habits);
+	}, [skillDefinitions, habits]);
+
+	const getAllSkillAnalytics = useCallback((): SkillAnalytics[] => {
+		return calculateAllSkillAnalytics(skillDefinitions, habits);
+	}, [skillDefinitions, habits]);
+
 
 	return (
 		<DataContext.Provider value={{
@@ -834,6 +850,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			getMonthlyIncome,
 			getMonthlyExpenses,
 			getNetBalance,
+			// v6.0 Skill Analytics
+			getSkillAnalytics,
+			getAllSkillAnalytics,
 			exportData,
 			importData,
 			hardResetData

@@ -4,7 +4,7 @@ import { useData } from '../contexts/DataContext';
 import {
 	Terminal, LogOut, User, BookOpen, Wallet, Activity,
 	GraduationCap, Shield, DollarSign, ChevronDown, Settings,
-	Briefcase, Target
+	Briefcase, Target, Crosshair
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
@@ -121,6 +121,11 @@ export function Navigation() {
 							<Activity className="w-4 h-4" />Protocol
 						</NavLink>
 
+						{/* Skill Mastery */}
+						<NavLink to="/skills" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+							<Crosshair className="w-4 h-4" />Skills
+						</NavLink>
+
 						{/* Career */}
 						<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 							<Briefcase className="w-4 h-4" />Career
@@ -175,6 +180,10 @@ export function Navigation() {
 					<NavLink to="/habits" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Protocol">
 						<Activity className="w-4 h-4" />
 						<span className="sr-only">Protocol</span>
+					</NavLink>
+					<NavLink to="/skills" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Skills">
+						<Crosshair className="w-4 h-4" />
+						<span className="sr-only">Skills</span>
 					</NavLink>
 					<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Career">
 						<Briefcase className="w-4 h-4" />
