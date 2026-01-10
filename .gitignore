@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs (will be rebuilt during CI)
+# mex-os/  # Uncomment to ignore if not committing built files
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables (for local development)
+.env
+.env.local
+.env.*.local

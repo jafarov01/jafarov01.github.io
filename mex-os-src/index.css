@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-green: #00ff88;
+  --color-neon-yellow: #ffee00;
+  --color-neon-red: #ff3366;
+  --color-neon-cyan: #00ffff;
+  --color-neon-purple: #9d00ff;
+  --color-dark-900: #0a0a0f;
+  --color-dark-800: #12121a;
+  --color-dark-700: #1a1a25;
+  --color-dark-600: #252532;
+  --color-dark-500: #32324a;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #32324a #12121a;
+}
+
+body {
+  background-color: var(--color-dark-900);
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* Neon glow effects */
+.neon-text-green {
+  text-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88, 0 0 20px #00ff8866;
+}
+
+.neon-text-red {
+  text-shadow: 0 0 5px #ff3366, 0 0 10px #ff3366, 0 0 20px #ff336666;
+}
+
+.neon-text-yellow {
+  text-shadow: 0 0 5px #ffee00, 0 0 10px #ffee00, 0 0 20px #ffee0066;
+}
+
+.neon-text-cyan {
+  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff66;
+}
+
+.neon-border-green {
+  box-shadow: 0 0 5px #00ff88, 0 0 10px #00ff8844, inset 0 0 5px #00ff8822;
+}
+
+.neon-border-red {
+  box-shadow: 0 0 5px #ff3366, 0 0 10px #ff336644, inset 0 0 5px #ff336622;
+}
+
+.neon-border-yellow {
+  box-shadow: 0 0 5px #ffee00, 0 0 10px #ffee0044, inset 0 0 5px #ffee0022;
+}
+
+/* Animated pulse */
+@keyframes pulse-neon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
+/* Glitch effect */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* Card styling */
+.card-cyber {
+  background: linear-gradient(135deg, #12121a 0%, #1a1a25 100%);
+  border: 1px solid #32324a;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.card-cyber:hover {
+  border-color: #00ff8844;
+  box-shadow: 0 0 20px #00ff8822;
+}
+
+/* Status indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
+.status-green { background-color: #00ff88; }
+.status-yellow { background-color: #ffee00; }
+.status-red { background-color: #ff3366; }
+
+/* Progress bar */
+.progress-bar-cyber {
+  background: linear-gradient(90deg, #00ff88, #00ffff);
+  box-shadow: 0 0 10px #00ff8866;
+}
+
+/* Input styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  background-color: #1a1a25;
+  border: 1px solid #32324a;
+  color: #e0e0e0;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 10px #00ff8844;
+}
+
+/* Button styling */
+.btn-cyber {
+  background: linear-gradient(135deg, #00ff8822, #00ffff22);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-cyber:hover {
+  background: linear-gradient(135deg, #00ff8844, #00ffff44);
+  box-shadow: 0 0 20px #00ff8844;
+  transform: translateY(-2px);
+}
+
+.btn-cyber:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-danger {
+  border-color: #ff3366;
+  color: #ff3366;
+  background: linear-gradient(135deg, #ff336622, #ff006622);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #ff336644, #ff006644);
+  box-shadow: 0 0 20px #ff336644;
+}
