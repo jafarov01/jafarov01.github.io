@@ -503,15 +503,18 @@ export function Habits() {
 			{/* Add/Edit Habit Modal */}
 			{showAddHabit && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
 							<h3 className="text-xl font-bold text-white">{editingHabit ? 'Edit Habit' : 'Add New Habit'}</h3>
 							<button onClick={() => setShowAddHabit(false)} className="text-gray-500 hover:text-white">
 								<X className="w-6 h-6" />
 							</button>
 						</div>
 
-						<div className="space-y-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
+							<div className="space-y-4">
 							<div>
 								<label className="block text-sm text-gray-400 mb-2">Habit Name</label>
 								<input
@@ -597,10 +600,12 @@ export function Habits() {
 										);
 									})}
 								</div>
+								</div>
 							</div>
 						</div>
 
-						<div className="flex gap-3 mt-6">
+						{/* Fixed Footer */}
+						<div className="flex gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button onClick={() => setShowAddHabit(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
 								Cancel
 							</button>

@@ -491,8 +491,9 @@ export function Academics() {
 			{/* Add/Edit Exam Modal */}
 			{isModalOpen && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-lg max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-lg max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
 							<h3 className="text-xl font-bold text-white">
 								{editingExam ? 'Edit Exam' : 'Add New Exam'}
 							</h3>
@@ -501,94 +502,98 @@ export function Academics() {
 							</button>
 						</div>
 
-						<div className="space-y-4">
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Exam Name *</label>
-								<input
-									type="text"
-									value={formData.name}
-									onChange={e => setFormData({ ...formData, name: e.target.value })}
-									placeholder="e.g., Machine Learning"
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
-								/>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
+							<div className="space-y-4">
 								<div>
-									<label className="block text-sm text-gray-400 mb-2">CFU</label>
+									<label className="block text-sm text-gray-400 mb-2">Exam Name *</label>
 									<input
-										type="number"
-										min="1"
-										max="24"
-										value={formData.cfu}
-										onChange={e => setFormData({ ...formData, cfu: parseInt(e.target.value) || 1 })}
-										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
+										type="text"
+										value={formData.name}
+										onChange={e => setFormData({ ...formData, name: e.target.value })}
+										placeholder="e.g., Machine Learning"
+										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
 									/>
 								</div>
+
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-2">CFU</label>
+										<input
+											type="number"
+											min="1"
+											max="24"
+											value={formData.cfu}
+											onChange={e => setFormData({ ...formData, cfu: parseInt(e.target.value) || 1 })}
+											className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-2">Category</label>
+										<select
+											value={formData.category}
+											onChange={e => setFormData({ ...formData, category: e.target.value })}
+											className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
+										>
+											{examCategories.map(cat => (
+												<option key={cat} value={cat}>{cat}</option>
+											))}
+										</select>
+									</div>
+								</div>
+
 								<div>
-									<label className="block text-sm text-gray-400 mb-2">Category</label>
+									<label className="block text-sm text-gray-400 mb-2">Status</label>
 									<select
-										value={formData.category}
-										onChange={e => setFormData({ ...formData, category: e.target.value })}
+										value={formData.status}
+										onChange={e => setFormData({ ...formData, status: e.target.value as Exam['status'] })}
 										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 									>
-										{examCategories.map(cat => (
-											<option key={cat} value={cat}>{cat}</option>
+										{examStatuses.map(status => (
+											<option key={status} value={status}>{getStatusLabel(status)}</option>
 										))}
 									</select>
 								</div>
-							</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Status</label>
-								<select
-									value={formData.status}
-									onChange={e => setFormData({ ...formData, status: e.target.value as Exam['status'] })}
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
-								>
-									{examStatuses.map(status => (
-										<option key={status} value={status}>{getStatusLabel(status)}</option>
-									))}
-								</select>
-							</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-2">Exam Date (optional)</label>
+									<input
+										type="datetime-local"
+										value={formData.exam_date}
+										onChange={e => setFormData({ ...formData, exam_date: e.target.value })}
+										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
+									/>
+									<p className="text-xs text-gray-500 mt-1">Leave empty if date is TBD</p>
+								</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Exam Date (optional)</label>
-								<input
-									type="datetime-local"
-									value={formData.exam_date}
-									onChange={e => setFormData({ ...formData, exam_date: e.target.value })}
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
-								/>
-								<p className="text-xs text-gray-500 mt-1">Leave empty if date is TBD</p>
-							</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-2">Strategy Notes</label>
+									<textarea
+										value={formData.strategy_notes}
+										onChange={e => setFormData({ ...formData, strategy_notes: e.target.value })}
+										placeholder="e.g., Focus on chapters 1-5, project deadline..."
+										rows={2}
+										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none resize-none"
+									/>
+								</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Strategy Notes</label>
-								<textarea
-									value={formData.strategy_notes}
-									onChange={e => setFormData({ ...formData, strategy_notes: e.target.value })}
-									placeholder="e.g., Focus on chapters 1-5, project deadline..."
-									rows={2}
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none resize-none"
-								/>
-							</div>
-
-							<div className="flex items-center gap-3">
-								<input
-									type="checkbox"
-									id="scholarship_critical"
-									checked={formData.is_scholarship_critical}
-									onChange={e => setFormData({ ...formData, is_scholarship_critical: e.target.checked })}
-									className="w-4 h-4 rounded bg-dark-700 border-dark-600 text-neon-cyan focus:ring-neon-cyan"
-								/>
-								<label htmlFor="scholarship_critical" className="text-gray-400 select-none cursor-pointer">
-									Scholarship Critical (counts toward 20 CFU goal)
-								</label>
+								<div className="flex items-center gap-3">
+									<input
+										type="checkbox"
+										id="scholarship_critical"
+										checked={formData.is_scholarship_critical}
+										onChange={e => setFormData({ ...formData, is_scholarship_critical: e.target.checked })}
+										className="w-4 h-4 rounded bg-dark-700 border-dark-600 text-neon-cyan focus:ring-neon-cyan"
+									/>
+									<label htmlFor="scholarship_critical" className="text-gray-400 select-none cursor-pointer">
+										Scholarship Critical (counts toward 20 CFU goal)
+									</label>
+								</div>
 							</div>
 						</div>
 
-						<div className="flex gap-3 mt-6">
+						{/* Fixed Footer */}
+						<div className="flex gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button
 								onClick={() => setIsModalOpen(false)}
 								className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600"

@@ -526,7 +526,8 @@ export function Cashflow() {
 			{/* Add/Edit Modal */}
 			{isModalOpen && (
 				<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
-					<div className="bg-dark-800 border border-dark-600 rounded-xl w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
+					<div className="bg-dark-800 border border-dark-600 rounded-xl w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
 						<div className="p-6 border-b border-dark-600 flex justify-between items-center">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								{editingTx ? <Edit2 className="w-5 h-5 text-neon-cyan" /> : <Plus className="w-5 h-5 text-neon-green" />}
@@ -536,7 +537,9 @@ export function Cashflow() {
 								<X className="w-5 h-5" />
 							</button>
 						</div>
-						<form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+						{/* Scrollable Content */}
+						<form id="cashflow-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
 
 							{/* Type Toggle */}
 							<div className="flex bg-dark-900 p-1 rounded-lg border border-dark-600">
@@ -631,28 +634,31 @@ export function Cashflow() {
 									<Repeat className="w-3 h-3" /> Monthly Recurring
 								</label>
 							</div>
-
-							<div className="pt-4 flex justify-end gap-3 border-t border-dark-600 mt-4">
-								<button
-									type="button"
-									onClick={() => setIsModalOpen(false)}
-									className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-								>
-									Cancel
-								</button>
-								<button
-									type="submit"
-									disabled={isSaving}
-									className="btn-cyber flex items-center gap-2 disabled:opacity-50"
-								>
-									{isSaving ? (
-										<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-									) : (
-										<><Save className="w-4 h-4" /> Save Transaction</>
-									)}
-								</button>
-							</div>
 						</form>
+
+						{/* Fixed Footer */}
+						<div className="flex justify-end gap-3 p-6 pt-4 border-t border-dark-600 bg-dark-800">
+							<button
+								type="button"
+								onClick={() => setIsModalOpen(false)}
+								className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								form="cashflow-form"
+								disabled={isSaving}
+								className="btn-cyber flex items-center gap-2 disabled:opacity-50"
+								onClick={handleSubmit}
+							>
+								{isSaving ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									<><Save className="w-4 h-4" /> Save Transaction</>
+								)}
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

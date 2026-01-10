@@ -21,13 +21,6 @@ const QUICK_CATEGORIES = {
 	]
 };
 
-const PRESETS = [
-	{ label: '☕ Coffee', amount: 3, category: 'food' },
-	{ label: '🚌 Tram', amount: 2, category: 'transport' },
-	{ label: '🥪 Lunch', amount: 8, category: 'food' },
-	{ label: '🛒 Groceries', amount: 30, category: 'food' },
-];
-
 export function QuickAddTransaction() {
 	const { addTransaction } = useData();
 	const { showToast } = useToast();
@@ -67,25 +60,6 @@ export function QuickAddTransaction() {
 		}
 	};
 
-	const quickAddPreset = async (preset: { label: string; amount: number; category: string }) => {
-		setIsSaving(true);
-		try {
-			await addTransaction({
-				date: format(new Date(), 'yyyy-MM-dd'),
-				amount: preset.amount,
-				type: 'expense',
-				category: preset.category as any,
-				description: preset.label.replace(/^[^\s]+\s/, ''), // Remove emoji
-				recurring: false
-			});
-			showToast(`€${preset.amount} added`, 'success');
-		} catch {
-			showToast('Failed to add', 'error');
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Enter') {
 			e.preventDefault();
@@ -95,28 +69,6 @@ export function QuickAddTransaction() {
 
 	return (
 		<div className="card-cyber p-4 space-y-3">
-			{/* Quick Presets - 1 tap */}
-			<div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-				{PRESETS.map(preset => (
-					<button
-						key={preset.label}
-						type="button"
-						onClick={() => quickAddPreset(preset)}
-						disabled={isSaving}
-						className="flex-shrink-0 px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm text-gray-300 hover:border-neon-cyan hover:text-white transition-colors disabled:opacity-50"
-					>
-						{preset.label} €{preset.amount}
-					</button>
-				))}
-			</div>
-
-			{/* Separator */}
-			<div className="flex items-center gap-3 text-xs text-gray-600">
-				<div className="flex-1 h-px bg-dark-600"></div>
-				<span>or custom</span>
-				<div className="flex-1 h-px bg-dark-600"></div>
-			</div>
-
 			{/* Quick Add Form */}
 			<form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
 				{/* Type Toggle */}

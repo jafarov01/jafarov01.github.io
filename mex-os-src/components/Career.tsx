@@ -665,8 +665,9 @@ export function Career() {
 			{/* Job Modal */}
 			{isJobModalOpen && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<Briefcase className="w-5 h-5 text-neon-purple" />
 								{editingJob ? 'Edit Position' : 'Add New Position'}
@@ -679,7 +680,9 @@ export function Career() {
 							</button>
 						</div>
 
-						<div className="space-y-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
+							<div className="space-y-4">
 							<div className="grid grid-cols-2 gap-4">
 								<div>
 									<label className="block text-sm text-gray-400 mb-1">Company *</label>
@@ -882,9 +885,11 @@ export function Career() {
 									placeholder="• Improved system performance by 40%&#10;• Led migration to microservices"
 								/>
 							</div>
+							</div>
 						</div>
 
-						<div className="flex justify-end gap-3 mt-6 pt-4 border-t border-dark-600">
+						{/* Fixed Footer */}
+						<div className="flex justify-end gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button
 								onClick={() => { setIsJobModalOpen(false); resetJobForm(); }}
 								className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
@@ -911,8 +916,9 @@ export function Career() {
 			{/* Education Modal */}
 			{isEduModalOpen && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<GraduationCap className="w-5 h-5 text-neon-cyan" />
 								{editingEdu ? 'Edit Education' : 'Add Education'}
@@ -925,7 +931,9 @@ export function Career() {
 							</button>
 						</div>
 
-						<div className="space-y-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
+							<div className="space-y-4">
 							<div>
 								<label className="block text-sm text-gray-400 mb-1">Institution *</label>
 								<input
@@ -1003,9 +1011,11 @@ export function Career() {
 									placeholder="e.g. Machine Learning for Edge Computing"
 								/>
 							</div>
+							</div>
 						</div>
 
-						<div className="flex justify-end gap-3 mt-6 pt-4 border-t border-dark-600">
+						{/* Fixed Footer */}
+						<div className="flex justify-end gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button
 								onClick={() => { setIsEduModalOpen(false); resetEduForm(); }}
 								className="px-4 py-2 text-gray-400 hover:text-white transition-colors"

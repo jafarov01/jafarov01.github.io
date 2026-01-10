@@ -551,8 +551,9 @@ export function SkillMastery() {
 			{/* Add/Edit Modal */}
 			{isModalOpen && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-6 pb-4 border-b border-dark-600">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<Target className="w-5 h-5 text-neon-cyan" />
 								{editingSkill ? 'Edit Skill' : 'Add New Skill'}
@@ -565,7 +566,9 @@ export function SkillMastery() {
 							</button>
 						</div>
 
-						<div className="space-y-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-6 pt-4">
+							<div className="space-y-4">
 							{/* Name */}
 							<div>
 								<label className="block text-sm text-gray-400 mb-1">Skill Name *</label>
@@ -699,10 +702,12 @@ export function SkillMastery() {
 										className="w-5 h-5 rounded border-dark-600 bg-dark-800 text-neon-purple focus:ring-neon-purple"
 									/>
 								</label>
+								</div>
 							</div>
 						</div>
 
-						<div className="flex gap-3 mt-6">
+						{/* Fixed Footer */}
+						<div className="flex gap-3 p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button
 								onClick={() => { setIsModalOpen(false); resetForm(); }}
 								className="flex-1 px-4 py-2 border border-dark-600 rounded-lg text-gray-400 hover:text-white hover:border-dark-500 transition-colors"

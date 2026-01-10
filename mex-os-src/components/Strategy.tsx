@@ -771,8 +771,9 @@ export function Strategy() {
 			{/* Campaign Modal */}
 			{isModalOpen && (
 				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
+					<div className="card-cyber p-0 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-6 pb-4 border-b border-dark-600">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<Target className="w-5 h-5 text-neon-yellow" />
 								{editingCampaign ? 'Edit Campaign' : 'Create New Campaign'}
@@ -785,7 +786,9 @@ export function Strategy() {
 							</button>
 						</div>
 
-						<div className="space-y-4">
+						{/* Scrollable Content */}
+						<div className="flex-1 overflow-y-auto p-6 pt-4">
+							<div className="space-y-4">
 							<div>
 								<label className="block text-sm text-gray-400 mb-1">Campaign Name *</label>
 								<input
@@ -902,9 +905,11 @@ export function Strategy() {
 									)}
 								</div>
 							</div>
+							</div>
 						</div>
 
-						<div className="flex justify-end gap-3 mt-6 pt-4 border-t border-dark-600">
+						{/* Fixed Footer */}
+						<div className="flex justify-end gap-3 p-6 pt-4 border-t border-dark-600 bg-dark-800">
 							<button
 								onClick={() => { setIsModalOpen(false); resetCampaignForm(); }}
 								className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
