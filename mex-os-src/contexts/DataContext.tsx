@@ -119,6 +119,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		if (!user) return;
 		const batch = writeBatch(db);
 
+		// Delete all subcollections
 		const collections = ['academics', 'finance', 'transactions', 'bureaucracy', 'skills', 'habitDefinitions', 'lifestyle'];
 
 		for (const colName of collections) {
@@ -126,11 +127,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			snapshot.docs.forEach(doc => batch.delete(doc.ref));
 		}
 
-		batch.delete(doc(db, 'users', user.uid));
+		// DO NOT delete the root user document. This preserves the Profile and isInitialized flag.
+		// We only update the timestamp.
+		batch.update(doc(db, 'users', user.uid), {
+			updatedAt: new Date().toISOString()
+			// isInitialized remains true, preventing auto-seed on refresh
+		});
+
 		await batch.commit();
 
-		// Reset Local State
-		setProfile(null);
+		// Reset Local State - Keep Profile, clear others
+		// setProfile(null); // Keep the current profile!
 		setExams([]);
 		setFinances([]);
 		setTransactions([]);

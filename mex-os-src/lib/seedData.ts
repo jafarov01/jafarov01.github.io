@@ -1,4 +1,4 @@
-import { doc, collection, getDocs, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
 // ============================================================================
@@ -415,30 +415,6 @@ export const bureaucracyData: BureaucracyDoc[] = [
 	}
 ];
 
-// Create initial habit entry with default values based on definitions
-function createInitialHabitEntry(): HabitEntry {
-	const habits: Record<string, number | boolean> = {};
-	const skills: Record<string, string> = {};
-
-	habitDefinitionsData.forEach(def => {
-		if (def.trackingType === 'boolean') {
-			habits[def.id] = false;
-		} else {
-			habits[def.id] = 0;
-		}
-	});
-
-	skillDefinitionsData.forEach(def => {
-		skills[def.id] = def.trackingOptions[0]; // First option (usually "0 mins")
-	});
-
-	return {
-		date: new Date().toISOString().split('T')[0],
-		habits,
-		skills
-	};
-}
-
 // ============================================================================
 // SEED FUNCTION - Only seeds collections that don't exist yet
 // ============================================================================
@@ -452,72 +428,25 @@ export async function seedUserData(userId: string): Promise<boolean> {
 		const userDocSnap = await getDoc(userDocRef);
 
 		// If user is already initialized, DO NOT SEED anything automatically
-		// This respects user deletions (empty collections stay empty)
-		if (userDocSnap.exists() && userDocSnap.data().isInitialized) {
-			console.log('User initialized. Skipping auto-seed.');
+		if (userDocSnap.exists()) {
 			return true;
 		}
 
-		console.log('User not initialized or first login. Starting seed...');
-		let needsSeed = false;
+		console.log('User not initialized. Creating empty profile...');
 
-		// Initialize profile if missing
-		if (!userDocSnap.exists()) {
-			needsSeed = true;
-			batch.set(userDocRef, {
-				profile: profileData,
-				isInitialized: true,
-				createdAt: new Date().toISOString()
-			});
-		} else if (userDocSnap.exists() && !userDocSnap.data().isInitialized) {
-			// Mark as initialized if document exists but flag is missing
-			batch.update(userDocRef, { isInitialized: true });
-			needsSeed = true; // Ensure we commit this update
-		}
+		// JUST create the Profile. NO demo data in subcollections.
+		batch.set(userDocRef, {
+			profile: profileData, // "New User" default profile
+			isInitialized: true,
+			createdAt: new Date().toISOString()
+		});
 
-		// Check each collection and seed only if empty AND user was not initialized
-		const collections = [
-			{ name: 'academics', data: examsData, keyField: 'id' },
-			{ name: 'finance', data: financeData, keyField: 'id' },
-			{ name: 'transactions', data: transactionsData, keyField: 'id' },
-			{ name: 'bureaucracy', data: bureaucracyData, keyField: 'id' },
-			{ name: 'skills', data: skillDefinitionsData, keyField: 'id' },
-			{ name: 'habitDefinitions', data: habitDefinitionsData, keyField: 'id' }
-		];
-
-		for (const col of collections) {
-			const colRef = collection(db, 'users', userId, col.name);
-			const snapshot = await getDocs(colRef);
-
-			if (snapshot.empty) {
-				needsSeed = true;
-				console.log(`Seeding collection: ${col.name}`);
-				for (const item of col.data) {
-					const docRef = doc(db, 'users', userId, col.name, (item as { id: string }).id);
-					batch.set(docRef, item);
-				}
-			}
-		}
-
-		// Check and seed lifestyle (today's habit entry)
-		const lifestyleRef = collection(db, 'users', userId, 'lifestyle');
-		const lifestyleSnapshot = await getDocs(lifestyleRef);
-
-		if (lifestyleSnapshot.empty) {
-			needsSeed = true;
-			const initialHabit = createInitialHabitEntry();
-			const habitRef = doc(db, 'users', userId, 'lifestyle', initialHabit.date);
-			batch.set(habitRef, initialHabit);
-		}
-
-		if (needsSeed) {
-			await batch.commit();
-			console.log('Seeding completed successfully.');
-		}
+		await batch.commit();
+		console.log('Empty profile initialized successfully.');
 
 		return true;
 	} catch (error) {
-		console.error('Error seeding user data:', error);
+		console.error('Error initializing user profile:', error);
 		return false;
 	}
 }
