@@ -1,4 +1,4 @@
-import { doc, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, collection, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
 // ============================================================================
@@ -382,10 +382,9 @@ export async function seedUserData(userId: string): Promise<boolean> {
 
 		// Check and seed profile
 		const userDocRef = doc(db, 'users', userId);
-		const userDoc = await getDocs(collection(db, 'users'));
-		const userExists = userDoc.docs.some(d => d.id === userId);
+		const userDocSnap = await getDoc(userDocRef);
 
-		if (!userExists) {
+		if (!userDocSnap.exists()) {
 			needsSeed = true;
 			batch.set(userDocRef, { profile: profileData });
 		}
