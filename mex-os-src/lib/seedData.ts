@@ -113,12 +113,75 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 		university: "",
 		degree: ""
 	},
-	academics: [],
-	finance: [],
-	transactions: [],
-	bureaucracy: [],
-	skills: [],
-	habitDefinitions: []
+	academics: [
+		{
+			id: "exam_id_placeholder",
+			name: "Exam Name",
+			cfu: 6,
+			status: "planned", // 'study_plan' | 'enrolled' | 'planned' | 'booked' | 'passed' | 'dropped'
+			exam_date: "2026-01-01T09:00:00",
+			strategy_notes: "Study strategy here",
+			is_scholarship_critical: true,
+			category: "Mandatory Core",
+			createdAt: new Date().toISOString()
+		}
+	],
+	finance: [
+		{
+			id: "income_id_placeholder",
+			source: "Scholarship / Job",
+			type: "income", // 'income' | 'expense'
+			amount: 0,
+			status: "pending", // 'received' | 'pending' | 'locked'
+			unlock_condition: "Condition to unlock",
+			expected_date: "2026-01-01"
+		}
+	],
+	transactions: [
+		{
+			id: "tx_id_placeholder",
+			date: "2026-01-01",
+			description: "Transaction description",
+			amount: 0,
+			type: "expense", // 'income' | 'expense'
+			category: "food", // 'salary' | 'freelance' | 'scholarship' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other'
+			recurring: false,
+			notes: "Optional notes"
+		}
+	],
+	bureaucracy: [
+		{
+			id: "doc_id_placeholder",
+			name: "Document Name",
+			type: "other", // 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'other'
+			status: "valid", // 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'unknown'
+			issue_date: "2025-01-01",
+			expiry_date: "2026-01-01",
+			notes: "Document notes",
+			is_critical: false
+		}
+	],
+	skills: [
+		{
+			id: "skill_id_placeholder",
+			name: "Skill Name",
+			icon: "code", // Lucide icon name
+			color: "neon-cyan",
+			targetPerDay: "30 mins",
+			trackingOptions: ["0 mins", "15 mins", "30 mins"],
+			createdAt: new Date().toISOString()
+		}
+	],
+	habitDefinitions: [
+		{
+			id: "habit_id_placeholder",
+			name: "Habit Name",
+			icon: "activity", // Lucide icon name
+			color: "neon-purple",
+			trackingType: "boolean", // 'boolean' | 'hours' | 'count'
+			createdAt: new Date().toISOString()
+		}
+	]
 };
 
 // ============================================================================
