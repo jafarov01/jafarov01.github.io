@@ -10,7 +10,6 @@ export interface Profile {
 	unipd_id: string;
 	cf: string;
 	visa_expiry: string;
-	ranking_position: number;
 	university: string;
 	degree: string;
 }
@@ -109,7 +108,6 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 		unipd_id: "",
 		cf: "",
 		visa_expiry: "",
-		ranking_position: 0,
 		university: "",
 		degree: ""
 	},
@@ -193,7 +191,6 @@ export const profileData: Profile = {
 	unipd_id: "",
 	cf: "",
 	visa_expiry: "",
-	ranking_position: 0,
 	university: "",
 	degree: ""
 };

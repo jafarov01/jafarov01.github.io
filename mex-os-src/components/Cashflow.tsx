@@ -26,20 +26,20 @@ import { ConfirmModal } from './ConfirmModal';
 import { QuickDateSelector } from './QuickDateSelector';
 
 const CATEGORY_COLORS: Record<string, string> = {
-	salary: '#00ff9d',
-	freelance: '#00ccff',
-	scholarship: '#bf00ff',
-	gift: '#ff00ff',
-	refund: '#ffff00',
-	other_income: '#ffffff',
-	rent: '#ff0055',
-	utilities: '#ff5500',
-	food: '#ffaa00',
-	transport: '#00aaff',
-	entertainment: '#aa00ff',
-	health: '#ff00aa',
-	education: '#00ffaa',
-	other_expense: '#aaaaaa'
+	salary: '#00ff88',      // neon-green
+	freelance: '#00ffff',   // neon-cyan
+	scholarship: '#9d00ff', // neon-purple
+	gift: '#ffee00',        // neon-yellow
+	refund: '#ffffff',
+	other_income: '#888888',
+	rent: '#ff3366',        // neon-red
+	utilities: '#ffaa00',   // orange
+	food: '#ffeb3b',        // softer yellow
+	transport: '#00ccff',   // darker cyan
+	entertainment: '#d500f9', // deeper purple
+	health: '#ff0066',      // darker red
+	education: '#00ff88',   // neon-green
+	other_expense: '#666666'
 };
 
 const INCOME_CATEGORIES = [
@@ -304,8 +304,10 @@ export function Cashflow() {
 									))}
 								</Pie>
 								<ReTooltip
-									contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+									contentStyle={{ backgroundColor: '#12121a', border: '1px solid #252532', borderRadius: '8px' }}
+									itemStyle={{ color: '#e0e0e0' }}
 									formatter={(value: any) => `€${Number(value).toFixed(2)}`}
+									wrapperStyle={{ zIndex: 1000 }}
 								/>
 								<Legend />
 							</RePieChart>
@@ -322,8 +324,10 @@ export function Cashflow() {
 								<XAxis dataKey="month" stroke="#666" fontSize={12} />
 								<YAxis stroke="#666" fontSize={12} />
 								<Tooltip
-									contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+									contentStyle={{ backgroundColor: '#12121a', border: '1px solid #252532', borderRadius: '8px' }}
+									itemStyle={{ color: '#e0e0e0' }}
 									cursor={{ fill: '#ffffff10' }}
+									wrapperStyle={{ zIndex: 1000 }}
 								/>
 								<Bar dataKey="income" fill="#00ff9d" radius={[4, 4, 0, 0]} />
 								<Bar dataKey="expense" fill="#ff0055" radius={[4, 4, 0, 0]} />

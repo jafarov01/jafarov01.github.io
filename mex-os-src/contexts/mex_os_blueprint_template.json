@@ -8,10 +8,77 @@
     "university": "",
     "degree": ""
   },
-  "academics": [],
-  "finance": [],
-  "transactions": [],
-  "bureaucracy": [],
-  "skills": [],
-  "habitDefinitions": []
+  "academics": [
+    {
+      "id": "exam_id_placeholder",
+      "name": "Exam Name",
+      "cfu": 6,
+      "status": "planned",
+      "exam_date": "2026-01-01T09:00:00",
+      "strategy_notes": "Study strategy here",
+      "is_scholarship_critical": true,
+      "category": "Mandatory Core",
+      "createdAt": "2026-01-10T02:42:06.730Z"
+    }
+  ],
+  "finance": [
+    {
+      "id": "income_id_placeholder",
+      "source": "Scholarship / Job",
+      "type": "income",
+      "amount": 0,
+      "status": "pending",
+      "unlock_condition": "Condition to unlock",
+      "expected_date": "2026-01-01"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_id_placeholder",
+      "date": "2026-01-01",
+      "description": "Transaction description",
+      "amount": 0,
+      "type": "expense",
+      "category": "food",
+      "recurring": false,
+      "notes": "Optional notes"
+    }
+  ],
+  "bureaucracy": [
+    {
+      "id": "doc_id_placeholder",
+      "name": "Document Name",
+      "type": "other",
+      "status": "valid",
+      "issue_date": "2025-01-01",
+      "expiry_date": "2026-01-01",
+      "notes": "Document notes",
+      "is_critical": false
+    }
+  ],
+  "skills": [
+    {
+      "id": "skill_id_placeholder",
+      "name": "Skill Name",
+      "icon": "code",
+      "color": "neon-cyan",
+      "targetPerDay": "30 mins",
+      "trackingOptions": [
+        "0 mins",
+        "15 mins",
+        "30 mins"
+      ],
+      "createdAt": "2026-01-10T02:42:06.730Z"
+    }
+  ],
+  "habitDefinitions": [
+    {
+      "id": "habit_id_placeholder",
+      "name": "Habit Name",
+      "icon": "activity",
+      "color": "neon-purple",
+      "trackingType": "boolean",
+      "createdAt": "2026-01-10T02:42:06.730Z"
+    }
+  ]
 }
