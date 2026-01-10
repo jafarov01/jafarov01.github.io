@@ -16,11 +16,22 @@ import { useAuth } from './AuthContext';
 import {
 	type Profile, type Exam, type FinanceEntry, type HabitEntry, type Transaction,
 	type BureaucracyDoc, type SkillDefinition, type HabitDefinition,
-	type FullUserData, type Job, type Education, type Campaign,
+	type FullUserData, type Job, type Education, type Campaign, type CampaignRule,
 	profileData,
 	validateImportData
 } from '../lib/seedData';
 import { calculateSkillAnalytics, calculateAllSkillAnalytics, type SkillAnalytics } from '../lib/skillAlgorithm';
+import { differenceInDays, addDays, isPast, format } from 'date-fns';
+
+// Types for Strategy Decision System
+export interface TriggeredRule {
+	campaignId: string;
+	campaignName: string;
+	ruleIndex: number;
+	rule: CampaignRule;
+	linkedExams: Exam[];
+	daysOverdue: number;
+}
 
 interface DataContextType {
 	// Data
@@ -88,6 +99,13 @@ interface DataContextType {
 	updateCampaign: (id: string, data: Partial<Campaign>) => Promise<void>;
 	deleteCampaign: (id: string) => Promise<void>;
 	getActiveCampaign: () => Campaign | null;
+	
+	// v7.0 Strategy Decision System
+	getTriggeredRules: () => TriggeredRule[];
+	executeRuleAction: (campaignId: string, ruleIndex: number, examId?: string, newStatus?: Exam['status']) => Promise<void>;
+	markRuleSafe: (campaignId: string, ruleIndex: number) => Promise<void>;
+	snoozeRule: (campaignId: string, ruleIndex: number, days: number) => Promise<void>;
+	getExamsWithActiveRules: () => Exam[];
 
 	// Derived calculations
 	getPassedCFUs: () => number;
@@ -729,6 +747,128 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		) || campaigns.find(c => c.status === 'active') || null;
 	}, [campaigns]);
 
+	// v7.0 Strategy Decision System - Real deadline detection
+	const getTriggeredRules = useCallback((): TriggeredRule[] => {
+		const now = new Date();
+		const triggered: TriggeredRule[] = [];
+
+		campaigns.forEach(campaign => {
+			if (campaign.status !== 'active') return;
+
+			campaign.rules?.forEach((rule, ruleIndex) => {
+				// Only check pending rules
+				if (rule.status !== 'pending') return;
+
+				// Check if deadline has passed
+				const deadline = new Date(rule.deadline);
+				if (!isPast(deadline)) return;
+
+				const daysOverdue = differenceInDays(now, deadline);
+
+				// Get linked exams for this campaign
+				const linkedExams = exams.filter(e => 
+					campaign.linked_exams?.includes(e.id) && 
+					e.status !== 'passed' && 
+					e.status !== 'dropped'
+				);
+
+				triggered.push({
+					campaignId: campaign.id,
+					campaignName: campaign.name,
+					ruleIndex,
+					rule,
+					linkedExams,
+					daysOverdue
+				});
+			});
+		});
+
+		// Sort by most overdue first
+		return triggered.sort((a, b) => b.daysOverdue - a.daysOverdue);
+	}, [campaigns, exams]);
+
+	const executeRuleAction = async (
+		campaignId: string, 
+		ruleIndex: number, 
+		examId?: string, 
+		newStatus?: Exam['status']
+	) => {
+		if (!user) throw new Error('User not authenticated');
+
+		const campaign = campaigns.find(c => c.id === campaignId);
+		if (!campaign) throw new Error('Campaign not found');
+
+		try {
+			// If we have an exam action, execute it
+			if (examId && newStatus) {
+				await updateExamStatus(examId, newStatus);
+			}
+
+			// Mark the rule as triggered
+			const updatedRules = [...(campaign.rules || [])];
+			updatedRules[ruleIndex] = { ...updatedRules[ruleIndex], status: 'triggered' };
+			await updateCampaign(campaignId, { rules: updatedRules });
+		} catch (error) {
+			console.error('Failed to execute rule action:', error);
+			throw error;
+		}
+	};
+
+	const markRuleSafe = async (campaignId: string, ruleIndex: number) => {
+		if (!user) throw new Error('User not authenticated');
+
+		const campaign = campaigns.find(c => c.id === campaignId);
+		if (!campaign) throw new Error('Campaign not found');
+
+		try {
+			const updatedRules = [...(campaign.rules || [])];
+			updatedRules[ruleIndex] = { ...updatedRules[ruleIndex], status: 'safe' };
+			await updateCampaign(campaignId, { rules: updatedRules });
+		} catch (error) {
+			console.error('Failed to mark rule safe:', error);
+			throw error;
+		}
+	};
+
+	const snoozeRule = async (campaignId: string, ruleIndex: number, days: number) => {
+		if (!user) throw new Error('User not authenticated');
+
+		const campaign = campaigns.find(c => c.id === campaignId);
+		if (!campaign) throw new Error('Campaign not found');
+
+		try {
+			const updatedRules = [...(campaign.rules || [])];
+			const currentDeadline = new Date(updatedRules[ruleIndex].deadline);
+			const newDeadline = addDays(currentDeadline, days);
+			updatedRules[ruleIndex] = { 
+				...updatedRules[ruleIndex], 
+				deadline: format(newDeadline, 'yyyy-MM-dd')
+			};
+			await updateCampaign(campaignId, { rules: updatedRules });
+		} catch (error) {
+			console.error('Failed to snooze rule:', error);
+			throw error;
+		}
+	};
+
+	// Get exams that have active pending rules (for highlighting in Academics)
+	const getExamsWithActiveRules = useCallback((): Exam[] => {
+		const activeCampaign = getActiveCampaign();
+		if (!activeCampaign) return [];
+
+		const examIdsWithPendingRules = new Set<string>();
+
+		activeCampaign.rules?.forEach(rule => {
+			if (rule.status === 'pending') {
+				activeCampaign.linked_exams?.forEach(examId => {
+					examIdsWithPendingRules.add(examId);
+				});
+			}
+		});
+
+		return exams.filter(e => examIdsWithPendingRules.has(e.id));
+	}, [campaigns, exams, getActiveCampaign]);
+
 	// Calculations
 	const getPassedCFUs = useCallback(() => {
 		return exams
@@ -841,6 +981,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			updateCampaign,
 			deleteCampaign,
 			getActiveCampaign,
+			// v7.0 Strategy Decision System
+			getTriggeredRules,
+			executeRuleAction,
+			markRuleSafe,
+			snoozeRule,
+			getExamsWithActiveRules,
 			// Calculations
 			getPassedCFUs,
 			getUnlockedMoney,

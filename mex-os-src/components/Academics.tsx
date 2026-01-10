@@ -14,7 +14,8 @@ import {
 	X,
 	Edit2,
 	Save,
-	Loader2
+	Loader2,
+	Zap
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { differenceInDays, format } from 'date-fns';
@@ -24,11 +25,26 @@ const examStatuses: Exam['status'][] = ['study_plan', 'enrolled', 'planned', 'bo
 const examCategories = ['Mandatory Core', 'Elective', 'Free Choice', 'Seminar', 'Thesis', 'Other'];
 
 export function Academics() {
-	const { exams, updateExamStatus, updateExam, addExam, deleteExam, getPassedCFUs, profile } = useData();
+	const { 
+		exams, 
+		updateExamStatus, 
+		updateExam, 
+		addExam, 
+		deleteExam, 
+		getPassedCFUs, 
+		profile,
+		// v7.0 Strategy Decision System
+		getTriggeredRules,
+		getExamsWithActiveRules
+	} = useData();
 	const { showToast } = useToast();
 	const now = new Date();
 	const passedCFUs = getPassedCFUs();
 	const cfuProgress = (passedCFUs / 20) * 100;
+
+	// v7.0: Get exams with strategic rules
+	const triggeredRules = getTriggeredRules();
+	const examsWithActiveRules = getExamsWithActiveRules();
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingExam, setEditingExam] = useState<Exam | null>(null);
@@ -310,7 +326,9 @@ export function Academics() {
 							const examDate = exam.exam_date ? new Date(exam.exam_date) : null;
 							const daysLeft = examDate ? differenceInDays(examDate, now) : null;
 							const isPassed = exam.status === 'passed';
-							const isKillSwitch = exam.strategy_notes.includes('KILL SWITCH');
+							// v7.0: Use rule-based detection instead of text matching
+							const hasActiveRule = examsWithActiveRules.some(e => e.id === exam.id);
+							const isOverdue = triggeredRules.some(tr => tr.linkedExams.some(e => e.id === exam.id));
 							const isPast = examDate && examDate < now && !isPassed;
 
 							return (
@@ -318,11 +336,13 @@ export function Academics() {
 									key={exam.id}
 									className={`p-4 rounded-lg border transition-all group relative ${isPassed
 										? 'bg-neon-green/5 border-neon-green/30'
-										: isKillSwitch
+										: isOverdue
 											? 'bg-neon-red/5 border-neon-red/30'
-											: isPast
-												? 'bg-dark-700/50 border-dark-600 opacity-50'
-												: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
+											: hasActiveRule
+												? 'bg-neon-yellow/5 border-neon-yellow/30'
+												: isPast
+													? 'bg-dark-700/50 border-dark-600 opacity-50'
+													: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
 										}`}
 								>
 									{/* Action buttons */}
@@ -346,8 +366,10 @@ export function Academics() {
 											<div className="flex items-center gap-3 mb-2">
 												{isPassed ? (
 													<CheckCircle2 className="w-6 h-6 text-neon-green" />
-												) : isKillSwitch ? (
+												) : isOverdue ? (
 													<AlertTriangle className="w-6 h-6 text-neon-red animate-pulse" />
+												) : hasActiveRule ? (
+													<Zap className="w-6 h-6 text-neon-yellow" />
 												) : (
 													<BookOpen className="w-6 h-6 text-neon-cyan" />
 												)}
@@ -375,11 +397,26 @@ export function Academics() {
 												)}
 											</div>
 
-											<p className={`mt-3 text-sm ${isKillSwitch ? 'text-neon-red' : 'text-gray-400'
-												}`}>
-												{isKillSwitch && <AlertTriangle className="w-4 h-4 inline mr-1" />}
-												{exam.strategy_notes || 'No notes'}
-											</p>
+											{/* Strategic Rule Indicator */}
+											{isOverdue && !isPassed && (
+												<p className="mt-3 text-sm text-neon-red flex items-center gap-1">
+													<AlertTriangle className="w-4 h-4" />
+													Strategic rule deadline passed - decision required
+												</p>
+											)}
+											{hasActiveRule && !isOverdue && !isPassed && (
+												<p className="mt-3 text-sm text-neon-yellow flex items-center gap-1">
+													<Zap className="w-4 h-4" />
+													Has pending strategic rules
+												</p>
+											)}
+											
+											{/* Strategy Notes */}
+											{exam.strategy_notes && !isOverdue && !hasActiveRule && (
+												<p className="mt-3 text-sm text-gray-400">
+													{exam.strategy_notes}
+												</p>
+											)}
 										</div>
 
 										<div className="text-right flex flex-col items-end gap-3 min-w-[120px]">

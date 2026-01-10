@@ -57,8 +57,6 @@ export function Habits() {
 		updateHabit,
 		skillDefinitions,
 		habitDefinitions,
-		addSkillDefinition,
-		updateSkillDefinition,
 		deleteSkillDefinition,
 		addHabitDefinition,
 		updateHabitDefinition,
@@ -67,7 +65,6 @@ export function Habits() {
 	const { showToast } = useToast();
 
 	const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-	const [showAddSkill, setShowAddSkill] = useState(false);
 	const [showAddHabit, setShowAddHabit] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -76,10 +73,8 @@ export function Habits() {
 	const [deleteId, setDeleteId] = useState<string | null>(null);
 	const [deleteType, setDeleteType] = useState<'habit' | 'skill' | null>(null);
 
-	const [editingSkill, setEditingSkill] = useState<SkillDefinition | null>(null);
 	const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
 
-	const [skillForm, setSkillForm] = useState({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
 	const [habitForm, setHabitForm] = useState<{ name: string; icon: string; color: string; trackingType: 'boolean' | 'hours' | 'count'; target: number; maxValue: number }>({ name: '', icon: 'dumbbell', color: 'neon-green', trackingType: 'boolean', target: 1, maxValue: 1 });
 
 	const todayHabit = useMemo(() => {
@@ -169,55 +164,7 @@ export function Habits() {
 		}
 	};
 
-	// --- Skill Form Handlers ---
-
-	const openAddSkill = () => {
-		setEditingSkill(null);
-		setSkillForm({ name: '', icon: 'code', color: 'neon-yellow', targetPerDay: '30 mins' });
-		setShowAddSkill(true);
-	};
-
-	const openEditSkill = (def: SkillDefinition) => {
-		setEditingSkill(def);
-		setSkillForm({
-			name: def.name,
-			icon: def.icon,
-			color: def.color,
-			targetPerDay: def.targetPerDay
-		});
-		setShowAddSkill(true);
-	};
-
-	const handleSaveSkill = async () => {
-		if (!skillForm.name.trim()) return;
-
-		setIsSaving(true);
-		try {
-			const data = {
-				name: skillForm.name,
-				icon: skillForm.icon,
-				color: skillForm.color,
-				targetPerDay: skillForm.targetPerDay,
-				trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours']
-			};
-
-			if (editingSkill) {
-				await updateSkillDefinition(editingSkill.id, data);
-				showToast('Skill updated', 'success');
-			} else {
-				await addSkillDefinition(data);
-				showToast('Skill added', 'success');
-			}
-
-			setShowAddSkill(false);
-		} catch {
-			showToast('Failed to save skill', 'error');
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	// Delete confirmation handlers
+	// Delete confirmation handlers (habits only - skills managed in SkillMastery)
 	const handleDeleteRequest = (id: string, type: 'habit' | 'skill') => {
 		setDeleteId(id);
 		setDeleteType(type);
@@ -550,95 +497,6 @@ export function Habits() {
 							</div>
 						);
 					})}
-				</div>
-			)}
-
-
-			{/* Add/Edit Skill Modal */}
-			{showAddSkill && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
-						<div className="flex items-center justify-between mb-6">
-							<h3 className="text-xl font-bold text-white">{editingSkill ? 'Edit Skill' : 'Add New Skill'}</h3>
-							<button onClick={() => setShowAddSkill(false)} className="text-gray-500 hover:text-white">
-								<X className="w-6 h-6" />
-							</button>
-						</div>
-
-						<div className="space-y-4">
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Skill Name</label>
-								<input
-									type="text"
-									value={skillForm.name}
-									onChange={e => setSkillForm({ ...skillForm, name: e.target.value })}
-									placeholder="e.g., German, Piano, Drawing"
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
-								/>
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Icon</label>
-								<div className="flex gap-2 flex-wrap">
-									{availableIcons.map(icon => {
-										const Icon = iconMap[icon] || Activity;
-										return (
-											<button
-												key={icon}
-												onClick={() => setSkillForm({ ...skillForm, icon })}
-												className={`p-2 rounded-lg transition-all ${skillForm.icon === icon ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
-											>
-												<Icon className="w-5 h-5" />
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Color</label>
-								<div className="flex gap-2">
-									{availableColors.map(color => {
-										const colors = colorMap[color];
-										return (
-											<button
-												key={color}
-												onClick={() => setSkillForm({ ...skillForm, color })}
-												className={`w-10 h-10 rounded-lg transition-all ${colors.bg} ${skillForm.color === color ? `ring-2 ring-offset-2 ring-offset-dark-800 ${colors.border.replace('border-', 'ring-')}` : ''}`}
-											/>
-										);
-									})}
-								</div>
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-2">Daily Target</label>
-								<select
-									value={skillForm.targetPerDay}
-									onChange={e => setSkillForm({ ...skillForm, targetPerDay: e.target.value })}
-									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
-								>
-									<option value="15 mins">15 mins</option>
-									<option value="30 mins">30 mins</option>
-									<option value="1 hour">1 hour</option>
-									<option value="2 hours">2 hours</option>
-								</select>
-							</div>
-						</div>
-
-						<div className="flex gap-3 mt-6">
-							<button onClick={() => setShowAddSkill(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
-								Cancel
-							</button>
-							<button onClick={handleSaveSkill} disabled={isSaving} className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2 disabled:opacity-50">
-								{isSaving ? (
-									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-								) : (
-									editingSkill ? 'Save Changes' : 'Add Skill'
-								)}
-							</button>
-						</div>
-					</div>
 				</div>
 			)}
 

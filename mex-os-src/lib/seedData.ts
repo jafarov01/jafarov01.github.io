@@ -85,7 +85,7 @@ export interface Job {
 	endDate: string | null;   // null = Present
 	salary_gross_yr?: number; // Private data
 	currency?: string;        // "EUR", "HUF"
-	tech_stack: string[];     // ["C++", "Python", "Docker"]
+	tech_stack: string[];     // Skill names from skills collection (e.g., ["Python", "React"])
 	achievements?: string[];  // Bullet points for CV generation
 	is_current: boolean;
 }
@@ -277,11 +277,11 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			icon: "code", // Lucide icon name
 			color: "neon-cyan",
 			targetPerDay: "30 mins",
-			trackingOptions: ["0 mins", "15 mins", "30 mins"],
-			category: "backend",
-			proficiency_level: 3,
-			years_experience: 2,
-			show_on_cv: true,
+			trackingOptions: ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"],
+			category: "backend", // 'language' | 'frontend' | 'backend' | 'devops' | 'database' | 'tools' | 'soft-skill' | 'other'
+			years_experience: 0, // Prior years of experience before tracking started
+			show_on_cv: true, // Show in Career CV Skills section
+			is_tracked: true, // Show in Protocol for daily practice
 			createdAt: new Date().toISOString()
 		}
 	],
@@ -306,7 +306,7 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				type: "full-time",
 				startDate: "2024-01-01",
 				endDate: null,
-				tech_stack: ["TypeScript", "React"],
+				tech_stack: ["Python", "React"], // Skill names from skills collection
 				achievements: ["Achievement 1", "Achievement 2"],
 				is_current: true
 			}
@@ -323,7 +323,7 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			}
 		]
 	},
-	// v5.0 Strategy data
+	// v5.0 Strategy data - v7.0 enhanced with automatic deadline detection
 	strategy: {
 		campaigns: [
 			{
@@ -331,16 +331,16 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				name: "Campaign Name",
 				startDate: "2026-01-10",
 				endDate: "2026-02-20",
-				status: "planned",
+				status: "active", // 'active' | 'planned' | 'completed' | 'failed'
 				focus_areas: ["Academics", "Career"],
-				linked_exams: [],
-				linked_docs: [],
+				linked_exams: [], // IDs from academics - actions can be executed on these
+				linked_docs: [],  // IDs from bureaucracy - for reference
 				rules: [
 					{
-						condition: "Condition to check",
-						action: "Action to take",
-						deadline: "2026-01-15",
-						status: "pending"
+						condition: "If project topic NOT assigned by deadline", // Describe the IF condition
+						action: "DROP the linked exam", // What to do - DROP/BOOK keywords trigger exam actions
+						deadline: "2026-01-15", // When deadline passes, decision modal appears
+						status: "pending" // 'pending' | 'triggered' | 'safe'
 					}
 				]
 			}
@@ -447,14 +447,25 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 		}
 	}
 
-	// Validate skills
+	// Validate skills (v6.0 Unified Skill Registry)
+	const validSkillCategories = ['language', 'frontend', 'backend', 'devops', 'database', 'tools', 'soft-skill', 'other'];
 	for (const skill of data.skills) {
 		if (!skill.name || typeof skill.name !== 'string') {
 			return { valid: false, error: `Skill missing required 'name' field` };
 		}
-		if (skill.proficiency_level !== undefined && (typeof skill.proficiency_level !== 'number' || skill.proficiency_level < 1 || skill.proficiency_level > 5)) {
-			return { valid: false, error: `Invalid proficiency level for skill: ${skill.name}. Must be 1-5.` };
+		if (skill.category && !validSkillCategories.includes(skill.category)) {
+			return { valid: false, error: `Invalid category '${skill.category}' for skill: ${skill.name}. Valid values: ${validSkillCategories.join(', ')}` };
 		}
+		if (skill.years_experience !== undefined && (typeof skill.years_experience !== 'number' || skill.years_experience < 0)) {
+			return { valid: false, error: `Invalid years_experience for skill: ${skill.name}. Must be a non-negative number.` };
+		}
+		if (skill.is_tracked !== undefined && typeof skill.is_tracked !== 'boolean') {
+			return { valid: false, error: `Invalid is_tracked for skill: ${skill.name}. Must be a boolean.` };
+		}
+		if (skill.show_on_cv !== undefined && typeof skill.show_on_cv !== 'boolean') {
+			return { valid: false, error: `Invalid show_on_cv for skill: ${skill.name}. Must be a boolean.` };
+		}
+		// Deprecated: proficiency_level is now calculated, but accept it for backwards compatibility
 	}
 
 	// Validate habit definitions
@@ -504,12 +515,15 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	}
 
 	// v5.0 Strategy validation (optional but must be valid if present)
+	// v7.0: Enhanced with rule validation for automatic deadline detection
 	if (data.strategy) {
 		if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
 		if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
 
 		// Validate campaigns
 		const validCampaignStatuses = ['active', 'planned', 'completed', 'failed'];
+		const validRuleStatuses = ['pending', 'triggered', 'safe'];
+		
 		for (const campaign of (data.strategy.campaigns || [])) {
 			if (!campaign.name || typeof campaign.name !== 'string') {
 				return { valid: false, error: `Campaign missing required 'name' field` };
@@ -522,6 +536,33 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 			}
 			if (campaign.endDate && isNaN(Date.parse(campaign.endDate))) {
 				return { valid: false, error: `Invalid end date for campaign: ${campaign.name}` };
+			}
+			
+			// v7.0: Validate campaign rules
+			if (campaign.rules && Array.isArray(campaign.rules)) {
+				for (let i = 0; i < campaign.rules.length; i++) {
+					const rule = campaign.rules[i];
+					if (!rule.condition || typeof rule.condition !== 'string') {
+						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'condition' field` };
+					}
+					if (!rule.action || typeof rule.action !== 'string') {
+						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'action' field` };
+					}
+					if (!rule.deadline || isNaN(Date.parse(rule.deadline))) {
+						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' has invalid or missing deadline. Format: YYYY-MM-DD` };
+					}
+					if (rule.status && !validRuleStatuses.includes(rule.status)) {
+						return { valid: false, error: `Invalid rule status '${rule.status}' in campaign '${campaign.name}'. Valid values: ${validRuleStatuses.join(', ')}` };
+					}
+				}
+			}
+			
+			// Validate linked_exams are strings (IDs)
+			if (campaign.linked_exams && !Array.isArray(campaign.linked_exams)) {
+				return { valid: false, error: `linked_exams must be an array in campaign: ${campaign.name}` };
+			}
+			if (campaign.linked_docs && !Array.isArray(campaign.linked_docs)) {
+				return { valid: false, error: `linked_docs must be an array in campaign: ${campaign.name}` };
 			}
 		}
 	}

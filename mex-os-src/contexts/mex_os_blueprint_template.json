@@ -4,7 +4,6 @@
     "unipd_id": "",
     "cf": "",
     "visa_expiry": "",
-    "ranking_position": 0,
     "university": "",
     "degree": ""
   },
@@ -18,7 +17,21 @@
       "strategy_notes": "Study strategy here",
       "is_scholarship_critical": true,
       "category": "Mandatory Core",
-      "createdAt": "2026-01-10T02:42:06.730Z"
+      "components": [
+        {
+          "name": "Written",
+          "weight_pct": 70,
+          "is_completed": false,
+          "deadline": "2026-01-01"
+        },
+        {
+          "name": "Project",
+          "weight_pct": 30,
+          "is_completed": false,
+          "deadline": "2026-01-15"
+        }
+      ],
+      "createdAt": "2026-01-10T00:00:00.000Z"
     }
   ],
   "finance": [
@@ -63,16 +76,12 @@
       "icon": "code",
       "color": "neon-cyan",
       "targetPerDay": "30 mins",
-      "trackingOptions": [
-        "0 mins",
-        "15 mins",
-        "30 mins"
-      ],
-      "category": "Technical",
-      "proficiency_level": "intermediate",
-      "years_experience": 1,
+      "trackingOptions": ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"],
+      "category": "backend",
+      "years_experience": 0,
       "show_on_cv": true,
-      "createdAt": "2026-01-10T02:42:06.730Z"
+      "is_tracked": true,
+      "createdAt": "2026-01-10T00:00:00.000Z"
     }
   ],
   "habitDefinitions": [
@@ -82,7 +91,9 @@
       "icon": "activity",
       "color": "neon-purple",
       "trackingType": "boolean",
-      "createdAt": "2026-01-10T02:42:06.730Z"
+      "target": 1,
+      "maxValue": 1,
+      "createdAt": "2026-01-10T00:00:00.000Z"
     }
   ],
   "career": {
@@ -91,31 +102,27 @@
         "id": "job_id_placeholder",
         "company": "Company Name",
         "role": "Job Title",
-        "type": "full-time",
         "location": "City, Country",
-        "start_date": "2025-01-01",
-        "end_date": null,
-        "is_current": true,
-        "salary": 50000,
+        "type": "full-time",
+        "startDate": "2025-01-01",
+        "endDate": null,
+        "salary_gross_yr": 50000,
         "currency": "EUR",
-        "tech_stack": ["Technology 1", "Technology 2"],
+        "tech_stack": ["Python", "React"],
         "achievements": ["Achievement 1", "Achievement 2"],
-        "createdAt": "2026-01-10T02:42:06.730Z"
+        "is_current": true
       }
     ],
     "education": [
       {
         "id": "edu_id_placeholder",
         "institution": "University Name",
-        "degree": "Degree Type",
-        "field": "Field of Study",
-        "status": "in-progress",
-        "start_date": "2024-09-01",
-        "end_date": "2026-07-01",
-        "gpa": "110/110",
-        "scholarship": "Scholarship Name (optional)",
-        "thesis_title": "Thesis Title (optional)",
-        "createdAt": "2026-01-10T02:42:06.730Z"
+        "degree": "Degree Program",
+        "status": "enrolled",
+        "startDate": "2024-10-01",
+        "endDate": "2026-08-30",
+        "scholarship_name": "Scholarship Name (optional)",
+        "thesis_title": "Thesis Title (optional)"
       }
     ]
   },
@@ -124,24 +131,35 @@
       {
         "id": "campaign_id_placeholder",
         "name": "Campaign Name",
-        "description": "Campaign description and objectives",
-        "status": "planned",
-        "start_date": "2025-01-01",
-        "end_date": "2025-06-30",
-        "linked_exams": [],
-        "linked_documents": [],
+        "startDate": "2026-01-10",
+        "endDate": "2026-02-20",
+        "status": "active",
+        "focus_areas": ["Academics", "Career"],
+        "linked_exams": ["exam_id_placeholder"],
+        "linked_docs": [],
         "rules": [
           {
-            "id": "rule_id_placeholder",
-            "if_condition": "Condition description (e.g., 'scholarship ranking drops below 50')",
-            "then_action": "Action to take (e.g., 'Focus on exam X immediately')",
-            "status": "pending",
-            "triggered_at": null,
-            "createdAt": "2026-01-10T02:42:06.730Z"
+            "condition": "If project topic NOT assigned by deadline",
+            "action": "DROP the linked exam",
+            "deadline": "2026-01-15",
+            "status": "pending"
           }
-        ],
-        "createdAt": "2026-01-10T02:42:06.730Z"
+        ]
       }
     ]
+  },
+  "_strategy_rules_documentation": {
+    "how_it_works": "Rules are checked automatically. When deadline passes and status is 'pending', system prompts for decision.",
+    "statuses": {
+      "pending": "Waiting for deadline - will trigger decision modal when deadline passes",
+      "triggered": "Action was executed (e.g., exam was dropped)",
+      "safe": "Condition was met - no action needed"
+    },
+    "supported_actions": [
+      "DROP [exam_name] - Changes linked exam status to 'dropped'",
+      "BOOK [exam_name] - Changes linked exam status to 'booked'",
+      "Any text - Manual action, just marks rule as triggered"
+    ],
+    "linked_exams": "IDs of exams from academics array. When rule triggers, you can execute actions on these exams."
   }
 }

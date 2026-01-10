@@ -19,10 +19,12 @@ import {
 	ChevronUp,
 	Zap,
 	Flag,
-	ArrowRight
+	ArrowRight,
+	Bell
 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, isPast } from 'date-fns';
 import { type Campaign, type CampaignStatus, type CampaignRule, type RuleStatus } from '../lib/seedData';
+import { StrategyDecisionModal, type TriggeredRule, type RuleAction } from './StrategyDecisionModal';
 
 const campaignStatuses: CampaignStatus[] = ['planned', 'active', 'completed', 'failed'];
 const ruleStatuses: RuleStatus[] = ['pending', 'triggered', 'safe'];
@@ -32,7 +34,12 @@ export function Strategy() {
 		campaigns, exams, bureaucracy,
 		addCampaign, updateCampaign, deleteCampaign,
 		getActiveCampaign,
-		profile
+		profile,
+		// v7.0 Strategy Decision System
+		getTriggeredRules,
+		executeRuleAction,
+		markRuleSafe,
+		snoozeRule
 	} = useData();
 	const { showToast } = useToast();
 
@@ -41,6 +48,7 @@ export function Strategy() {
 	const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
 	const [showRuleModal, setShowRuleModal] = useState(false);
 	const [editingRule, setEditingRule] = useState<{ campaignId: string; ruleIndex: number } | null>(null);
+	const [showDecisionModal, setShowDecisionModal] = useState(false);
 
 	const [campaignForm, setCampaignForm] = useState({
 		name: '',
@@ -61,6 +69,58 @@ export function Strategy() {
 
 	const activeCampaign = getActiveCampaign();
 	const now = new Date();
+
+	// v7.0: Get triggered rules
+	const triggeredRules = getTriggeredRules();
+
+	// Decision modal handlers
+	const handleExecuteAction = async (rule: TriggeredRule, action: RuleAction) => {
+		try {
+			await executeRuleAction(
+				rule.campaignId,
+				rule.ruleIndex,
+				action.examId,
+				action.newStatus
+			);
+			showToast(
+				action.type === 'drop_exam' 
+					? 'Exam dropped successfully' 
+					: action.type === 'change_status'
+						? 'Exam status updated'
+						: 'Rule marked as triggered',
+				'success'
+			);
+		} catch {
+			showToast('Failed to execute action', 'error');
+		}
+	};
+
+	const handleMarkSafe = async (rule: TriggeredRule) => {
+		try {
+			await markRuleSafe(rule.campaignId, rule.ruleIndex);
+			showToast('Rule marked as safe', 'success');
+		} catch {
+			showToast('Failed to update rule', 'error');
+		}
+	};
+
+	const handleSnooze = async (rule: TriggeredRule, days: number) => {
+		try {
+			await snoozeRule(rule.campaignId, rule.ruleIndex, days);
+			showToast(`Deadline extended by ${days} day${days > 1 ? 's' : ''}`, 'success');
+		} catch {
+			showToast('Failed to snooze rule', 'error');
+		}
+	};
+
+	// Check if a rule's deadline has passed
+	const isRuleOverdue = (rule: CampaignRule) => {
+		return rule.status === 'pending' && isPast(new Date(rule.deadline));
+	};
+
+	const getDaysOverdue = (deadline: string) => {
+		return differenceInDays(now, new Date(deadline));
+	};
 
 	const resetCampaignForm = () => {
 		setCampaignForm({
@@ -261,9 +321,45 @@ export function Strategy() {
 	const totalCampaigns = campaigns.length;
 	const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
 	const pendingRules = activeCampaign?.rules?.filter(r => r.status === 'pending').length || 0;
+	const overdueRules = triggeredRules.length;
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
+			{/* URGENT: Overdue Rules Alert */}
+			{overdueRules > 0 && (
+				<div className="card-cyber p-4 border-neon-red/50 bg-neon-red/5">
+					<div className="flex items-start gap-3">
+						<AlertTriangle className="w-6 h-6 text-neon-red animate-pulse flex-shrink-0 mt-0.5" />
+						<div className="flex-1 min-w-0">
+							<h4 className="font-semibold text-neon-red">
+								{overdueRules} Strategic Decision{overdueRules > 1 ? 's' : ''} OVERDUE
+							</h4>
+							<p className="text-sm text-gray-400 mb-2">
+								Rule deadline{overdueRules > 1 ? 's have' : ' has'} passed - action required
+							</p>
+							<div className="space-y-1">
+								{triggeredRules.slice(0, 3).map((triggered, idx) => (
+									<div key={idx} className="flex items-center gap-2 text-sm">
+										<span className="w-1.5 h-1.5 bg-neon-red rounded-full flex-shrink-0 animate-pulse" />
+										<span className="text-gray-400 truncate">IF {triggered.rule.condition}</span>
+										<ArrowRight className="w-3 h-3 text-gray-600 flex-shrink-0" />
+										<span className="text-white truncate">{triggered.rule.action}</span>
+										<span className="text-neon-red text-xs">({triggered.daysOverdue}d overdue)</span>
+									</div>
+								))}
+							</div>
+						</div>
+						<button
+							onClick={() => setShowDecisionModal(true)}
+							className="btn-cyber px-4 py-2 text-sm flex-shrink-0 bg-neon-red/20 border-neon-red/50 hover:bg-neon-red/30 flex items-center gap-2"
+						>
+							<Bell className="w-4 h-4" />
+							Decide Now
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
@@ -310,15 +406,20 @@ export function Strategy() {
 					)}
 				</div>
 
-				<div className="card-cyber p-4">
+				<div className={`card-cyber p-4 ${overdueRules > 0 ? 'border-neon-red/30' : ''}`}>
 					<div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
-						<AlertTriangle className="w-4 h-4 text-neon-yellow" />
-						PENDING RULES
+						<AlertTriangle className={`w-4 h-4 ${overdueRules > 0 ? 'text-neon-red animate-pulse' : 'text-neon-yellow'}`} />
+						{overdueRules > 0 ? 'OVERDUE RULES' : 'PENDING RULES'}
 					</div>
-					<div className={`text-2xl font-bold ${pendingRules > 0 ? 'text-neon-yellow' : 'text-gray-500'}`}>
-						{pendingRules}
+					<div className={`text-2xl font-bold ${
+						overdueRules > 0 ? 'text-neon-red' : 
+						pendingRules > 0 ? 'text-neon-yellow' : 'text-gray-500'
+					}`}>
+						{overdueRules > 0 ? overdueRules : pendingRules}
 					</div>
-					<div className="text-xs text-gray-500">decisions awaiting</div>
+					<div className="text-xs text-gray-500">
+						{overdueRules > 0 ? 'action required' : 'decisions awaiting'}
+					</div>
 				</div>
 
 				<div className="card-cyber p-4">
@@ -384,36 +485,64 @@ export function Strategy() {
 					{/* Quick Rules Overview */}
 					{activeCampaign.rules && activeCampaign.rules.length > 0 && (
 						<div className="border-t border-dark-600 pt-4">
-							<h4 className="text-sm text-gray-400 mb-2 flex items-center gap-2">
-								<AlertTriangle className="w-4 h-4" />
-								Strategic Rules ({activeCampaign.rules.filter(r => r.status === 'pending').length} pending)
-							</h4>
+							<div className="flex items-center justify-between mb-2">
+								<h4 className="text-sm text-gray-400 flex items-center gap-2">
+									<AlertTriangle className="w-4 h-4" />
+									Strategic Rules ({activeCampaign.rules.filter(r => r.status === 'pending').length} pending
+									{overdueRules > 0 && <span className="text-neon-red">, {overdueRules} overdue</span>})
+								</h4>
+								{overdueRules > 0 && (
+									<button
+										onClick={() => setShowDecisionModal(true)}
+										className="text-xs text-neon-red hover:text-white transition-colors flex items-center gap-1"
+									>
+										<Bell className="w-3 h-3" />
+										Decide Now
+									</button>
+								)}
+							</div>
 							<div className="space-y-2">
-								{activeCampaign.rules.slice(0, 3).map((rule, idx) => (
-									<div
-										key={idx}
-										className={`flex items-center justify-between p-2 rounded bg-dark-700 border ${rule.status === 'triggered' ? 'border-neon-red/30' :
+								{activeCampaign.rules.slice(0, 3).map((rule, idx) => {
+									const overdue = isRuleOverdue(rule);
+									return (
+										<div
+											key={idx}
+											className={`flex items-center justify-between p-2 rounded bg-dark-700 border ${
+												overdue ? 'border-neon-red/50 bg-neon-red/5' :
+												rule.status === 'triggered' ? 'border-neon-red/30' :
 												rule.status === 'safe' ? 'border-neon-green/30' : 'border-dark-600'
 											}`}
-									>
-										<div className="flex items-center gap-2 text-sm">
-											<span className={`w-2 h-2 rounded-full ${rule.status === 'pending' ? 'bg-neon-yellow animate-pulse' :
+										>
+											<div className="flex items-center gap-2 text-sm">
+												<span className={`w-2 h-2 rounded-full ${
+													overdue ? 'bg-neon-red animate-pulse' :
+													rule.status === 'pending' ? 'bg-neon-yellow animate-pulse' :
 													rule.status === 'triggered' ? 'bg-neon-red' : 'bg-neon-green'
 												}`} />
-											<span className="text-gray-400">{rule.condition}</span>
-											<ArrowRight className="w-3 h-3 text-gray-600" />
-											<span className="text-white">{rule.action}</span>
+												<span className="text-gray-400">{rule.condition}</span>
+												<ArrowRight className="w-3 h-3 text-gray-600" />
+												<span className="text-white">{rule.action}</span>
+											</div>
+											<div className="flex items-center gap-2">
+												{overdue ? (
+													<span className="text-xs text-neon-red">
+														{getDaysOverdue(rule.deadline)}d overdue
+													</span>
+												) : (
+													<span className="text-xs text-gray-500">
+														{format(new Date(rule.deadline), 'MMM d')}
+													</span>
+												)}
+												<span className={`px-2 py-0.5 text-xs rounded border ${
+													overdue ? 'bg-neon-red/20 text-neon-red border-neon-red/30' :
+													getRuleStatusColor(rule.status)
+												}`}>
+													{overdue ? 'OVERDUE' : rule.status}
+												</span>
+											</div>
 										</div>
-										<div className="flex items-center gap-2">
-											<span className="text-xs text-gray-500">
-												{format(new Date(rule.deadline), 'MMM d')}
-											</span>
-											<span className={`px-2 py-0.5 text-xs rounded border ${getRuleStatusColor(rule.status)}`}>
-												{rule.status}
-											</span>
-										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 						</div>
 					)}
@@ -879,6 +1008,16 @@ export function Strategy() {
 					</div>
 				</div>
 			)}
+
+			{/* Strategy Decision Modal */}
+			<StrategyDecisionModal
+				isOpen={showDecisionModal}
+				triggeredRules={triggeredRules}
+				onExecuteAction={handleExecuteAction}
+				onMarkSafe={handleMarkSafe}
+				onSnooze={handleSnooze}
+				onDismiss={() => setShowDecisionModal(false)}
+			/>
 		</div>
 	);
 }

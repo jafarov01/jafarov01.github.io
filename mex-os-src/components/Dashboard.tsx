@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { differenceInDays, differenceInHours, format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { StrategyDecisionModal, type TriggeredRule, type RuleAction } from './StrategyDecisionModal';
 
 export function Dashboard() {
 	const {
@@ -39,9 +40,77 @@ export function Dashboard() {
 		// v5.0 additions
 		jobs,
 		getActiveCampaign,
-		updateHabit
+		updateHabit,
+		// v7.0 Strategy Decision System
+		getTriggeredRules,
+		executeRuleAction,
+		markRuleSafe,
+		snoozeRule,
+		getExamsWithActiveRules
 	} = useData();
 	const { showToast } = useToast();
+
+	// Strategy Decision Modal state
+	const [showDecisionModal, setShowDecisionModal] = useState(false);
+	const triggeredRules = getTriggeredRules();
+	const examsWithActiveRules = getExamsWithActiveRules();
+
+	// Auto-show decision modal when there are triggered rules (once per session)
+	useEffect(() => {
+		const dismissedKey = `strategy_dismissed_${format(new Date(), 'yyyy-MM-dd')}`;
+		const wasDismissed = sessionStorage.getItem(dismissedKey);
+		
+		if (triggeredRules.length > 0 && !wasDismissed) {
+			// Small delay to let the page render first
+			const timer = setTimeout(() => setShowDecisionModal(true), 500);
+			return () => clearTimeout(timer);
+		}
+	}, [triggeredRules.length]);
+
+	const handleExecuteAction = async (rule: TriggeredRule, action: RuleAction) => {
+		try {
+			await executeRuleAction(
+				rule.campaignId,
+				rule.ruleIndex,
+				action.examId,
+				action.newStatus
+			);
+			showToast(
+				action.type === 'drop_exam' 
+					? 'Exam dropped successfully' 
+					: action.type === 'change_status'
+						? 'Exam status updated'
+						: 'Rule marked as triggered',
+				'success'
+			);
+		} catch {
+			showToast('Failed to execute action', 'error');
+		}
+	};
+
+	const handleMarkSafe = async (rule: TriggeredRule) => {
+		try {
+			await markRuleSafe(rule.campaignId, rule.ruleIndex);
+			showToast('Rule marked as safe', 'success');
+		} catch {
+			showToast('Failed to update rule', 'error');
+		}
+	};
+
+	const handleSnooze = async (rule: TriggeredRule, days: number) => {
+		try {
+			await snoozeRule(rule.campaignId, rule.ruleIndex, days);
+			showToast(`Deadline extended by ${days} day${days > 1 ? 's' : ''}`, 'success');
+		} catch {
+			showToast('Failed to snooze rule', 'error');
+		}
+	};
+
+	const handleDismissModal = () => {
+		const dismissedKey = `strategy_dismissed_${format(new Date(), 'yyyy-MM-dd')}`;
+		sessionStorage.setItem(dismissedKey, 'true');
+		setShowDecisionModal(false);
+	};
 
 	const now = new Date();
 	const nextExam = exams.find(e => e.exam_date && new Date(e.exam_date) > now && e.status !== 'passed');
@@ -74,6 +143,9 @@ export function Dashboard() {
 		? differenceInDays(new Date(activeCampaign.endDate), now)
 		: null;
 	const pendingRules = activeCampaign?.rules?.filter(r => r.status === 'pending').length || 0;
+	
+	// v7.0: Count rules that need immediate action (deadline passed)
+	const urgentRules = triggeredRules.length;
 
 	// Current job
 	const currentJob = jobs.find(j => j.is_current);
@@ -176,13 +248,48 @@ export function Dashboard() {
 				</div>
 			)}
 
-			{/* PENDING STRATEGIC DECISIONS - Prominent alert */}
-			{pendingRules > 0 && activeCampaign && (
+			{/* URGENT STRATEGIC DECISIONS - Rules with passed deadlines */}
+			{urgentRules > 0 && (
+				<div className="card-cyber p-4 border-neon-red/50 bg-neon-red/5 animate-pulse">
+					<div className="flex items-start gap-3">
+						<AlertTriangle className="w-6 h-6 text-neon-red flex-shrink-0 mt-0.5" />
+						<div className="flex-1 min-w-0">
+							<h4 className="font-semibold text-neon-red">
+								{urgentRules} Strategic Decision{urgentRules > 1 ? 's' : ''} OVERDUE
+							</h4>
+							<p className="text-xs text-gray-500 mb-2">
+								Deadline{urgentRules > 1 ? 's' : ''} passed - action required
+							</p>
+							<div className="space-y-1">
+								{triggeredRules.slice(0, 3).map((triggered, idx) => (
+									<div key={idx} className="flex items-center gap-2 text-sm">
+										<span className="w-1.5 h-1.5 bg-neon-red rounded-full flex-shrink-0 animate-pulse" />
+										<span className="text-gray-400 truncate">IF {triggered.rule.condition}</span>
+										<ArrowRight className="w-3 h-3 text-gray-600 flex-shrink-0" />
+										<span className="text-white truncate">{triggered.rule.action}</span>
+										<span className="text-neon-red text-xs">({triggered.daysOverdue}d overdue)</span>
+									</div>
+								))}
+							</div>
+						</div>
+						<button
+							onClick={() => setShowDecisionModal(true)}
+							className="btn-cyber px-4 py-2 text-sm flex-shrink-0 bg-neon-red/20 border-neon-red/50 hover:bg-neon-red/30"
+						>
+							<AlertTriangle className="w-4 h-4 inline mr-1" />
+							Decide Now
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* PENDING STRATEGIC DECISIONS - Future deadlines */}
+			{pendingRules > 0 && urgentRules === 0 && activeCampaign && (
 				<div className="card-cyber p-4 border-neon-yellow/30 bg-neon-yellow/5">
 					<div className="flex items-start gap-3">
-						<AlertTriangle className="w-5 h-5 text-neon-yellow flex-shrink-0 mt-0.5" />
+						<Clock className="w-5 h-5 text-neon-yellow flex-shrink-0 mt-0.5" />
 						<div className="flex-1 min-w-0">
-							<h4 className="font-semibold text-neon-yellow">{pendingRules} Strategic Decision{pendingRules > 1 ? 's' : ''} Pending</h4>
+							<h4 className="font-semibold text-neon-yellow">{pendingRules} Strategic Rule{pendingRules > 1 ? 's' : ''} Pending</h4>
 							<p className="text-xs text-gray-500 mb-2">Campaign: {activeCampaign.name}</p>
 							<div className="space-y-1">
 								{activeCampaign.rules?.filter(r => r.status === 'pending').slice(0, 3).map((rule, idx) => (
@@ -191,12 +298,15 @@ export function Dashboard() {
 										<span className="text-gray-400 truncate">IF {rule.condition}</span>
 										<ArrowRight className="w-3 h-3 text-gray-600 flex-shrink-0" />
 										<span className="text-white truncate">{rule.action}</span>
+										<span className="text-gray-500 text-xs">
+											(by {format(new Date(rule.deadline), 'MMM d')})
+										</span>
 									</div>
 								))}
 							</div>
 						</div>
 						<Link to="/strategy" className="btn-cyber px-3 py-1.5 text-sm flex-shrink-0">
-							Decide
+							View Rules
 						</Link>
 					</div>
 				</div>
@@ -428,22 +538,29 @@ export function Dashboard() {
 								const examDate = exam.exam_date ? new Date(exam.exam_date) : null;
 								const daysLeft = examDate ? differenceInDays(examDate, now) : null;
 								const isPassed = exam.status === 'passed';
-								const isKillSwitch = exam.strategy_notes.includes('KILL SWITCH');
+								// v7.0: Use rule-based detection instead of text matching
+								const hasActiveRule = examsWithActiveRules.some(e => e.id === exam.id);
+								const isOverdue = triggeredRules.some(tr => tr.linkedExams.some(e => e.id === exam.id));
 
 								return (
 									<div
 										key={exam.id}
 										className={`p-3 rounded-lg border transition-all ${isPassed
 											? 'bg-neon-green/5 border-neon-green/20'
-											: isKillSwitch
-												? 'bg-neon-red/5 border-neon-red/30 animate-pulse'
-												: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
+											: isOverdue
+												? 'bg-neon-red/5 border-neon-red/30'
+												: hasActiveRule
+													? 'bg-neon-yellow/5 border-neon-yellow/30'
+													: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
 											}`}
 									>
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												{isKillSwitch && !isPassed && (
-													<AlertTriangle className="w-5 h-5 text-neon-red" />
+												{isOverdue && !isPassed && (
+													<AlertTriangle className="w-5 h-5 text-neon-red animate-pulse" />
+												)}
+												{hasActiveRule && !isOverdue && !isPassed && (
+													<Clock className="w-5 h-5 text-neon-yellow" />
 												)}
 												<div>
 													<span className={`font-medium ${isPassed ? 'text-neon-green line-through' : 'text-white'
@@ -472,10 +589,16 @@ export function Dashboard() {
 												</span>
 											</div>
 										</div>
-										{isKillSwitch && !isPassed && (
+										{isOverdue && !isPassed && (
 											<div className="mt-2 text-xs text-neon-red flex items-center gap-1">
 												<AlertTriangle className="w-3 h-3" />
-												{exam.strategy_notes}
+												Strategic rule deadline passed - decision required
+											</div>
+										)}
+										{hasActiveRule && !isOverdue && !isPassed && (
+											<div className="mt-2 text-xs text-neon-yellow flex items-center gap-1">
+												<Clock className="w-3 h-3" />
+												Has pending strategic rules
 											</div>
 										)}
 									</div>
@@ -631,6 +754,16 @@ export function Dashboard() {
 					</div>
 				</div>
 			)}
+
+			{/* Strategy Decision Modal */}
+			<StrategyDecisionModal
+				isOpen={showDecisionModal}
+				triggeredRules={triggeredRules}
+				onExecuteAction={handleExecuteAction}
+				onMarkSafe={handleMarkSafe}
+				onSnooze={handleSnooze}
+				onDismiss={handleDismissModal}
+			/>
 		</div>
 	);
 }
