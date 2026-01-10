@@ -16,7 +16,7 @@ import { useAuth } from './AuthContext';
 import {
 	type Profile, type Exam, type FinanceEntry, type HabitEntry, type Transaction,
 	type BureaucracyDoc, type SkillDefinition, type HabitDefinition,
-	type FullUserData,
+	type FullUserData, type Job, type Education, type Campaign,
 	profileData,
 	validateImportData
 } from '../lib/seedData';
@@ -31,6 +31,10 @@ interface DataContextType {
 	bureaucracy: BureaucracyDoc[];
 	skillDefinitions: SkillDefinition[];
 	habitDefinitions: HabitDefinition[];
+	// v5.0 additions
+	jobs: Job[];
+	education: Education[];
+	campaigns: Campaign[];
 	loading: boolean;
 
 	// Profile
@@ -70,6 +74,20 @@ interface DataContextType {
 	addBureaucracy: (doc: Omit<BureaucracyDoc, 'id'>) => Promise<void>;
 	deleteBureaucracy: (id: string) => Promise<void>;
 
+	// v5.0 Career
+	addJob: (job: Omit<Job, 'id'>) => Promise<void>;
+	updateJob: (id: string, data: Partial<Job>) => Promise<void>;
+	deleteJob: (id: string) => Promise<void>;
+	addEducation: (edu: Omit<Education, 'id'>) => Promise<void>;
+	updateEducation: (id: string, data: Partial<Education>) => Promise<void>;
+	deleteEducation: (id: string) => Promise<void>;
+
+	// v5.0 Strategy
+	addCampaign: (campaign: Omit<Campaign, 'id'>) => Promise<void>;
+	updateCampaign: (id: string, data: Partial<Campaign>) => Promise<void>;
+	deleteCampaign: (id: string) => Promise<void>;
+	getActiveCampaign: () => Campaign | null;
+
 	// Derived calculations
 	getPassedCFUs: () => number;
 	getUnlockedMoney: () => number;
@@ -99,6 +117,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 	const [skillDefinitions, setSkillDefinitions] = useState<SkillDefinition[]>([]);
 	const [habitDefinitions, setHabitDefinitions] = useState<HabitDefinition[]>([]);
+	// v5.0 additions
+	const [jobs, setJobs] = useState<Job[]>([]);
+	const [education, setEducation] = useState<Education[]>([]);
+	const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	// --- DATA MANAGEMENT ---
@@ -112,7 +134,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			transactions,
 			bureaucracy,
 			skills: skillDefinitions,
-			habitDefinitions: habitDefinitions
+			habitDefinitions: habitDefinitions,
+			// v5.0 additions
+			career: {
+				jobs,
+				education
+			},
+			strategy: {
+				campaigns
+			}
 		};
 	};
 
@@ -120,8 +150,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		if (!user) return;
 		const batch = writeBatch(db);
 
-		// Delete all subcollections
-		const collections = ['academics', 'finance', 'transactions', 'bureaucracy', 'skills', 'habitDefinitions', 'lifestyle'];
+		// Delete all subcollections - v5.0: includes jobs, education, campaigns
+		const collections = ['academics', 'finance', 'transactions', 'bureaucracy', 'skills', 'habitDefinitions', 'lifestyle', 'jobs', 'education', 'campaigns'];
 
 		for (const colName of collections) {
 			const snapshot = await getDocs(collection(db, 'users', user.uid, colName));
@@ -146,6 +176,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		setSkillDefinitions([]);
 		setHabitDefinitions([]);
 		setHabits([]);
+		// v5.0
+		setJobs([]);
+		setEducation([]);
+		setCampaigns([]);
 	};
 
 	// (Empty - removal)
@@ -179,7 +213,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			{ name: 'transactions', data: data.transactions },
 			{ name: 'bureaucracy', data: data.bureaucracy },
 			{ name: 'skills', data: data.skills },
-			{ name: 'habitDefinitions', data: data.habitDefinitions }
+			{ name: 'habitDefinitions', data: data.habitDefinitions },
+			// v5.0 Career & Strategy
+			{ name: 'jobs', data: data.career?.jobs },
+			{ name: 'education', data: data.career?.education },
+			{ name: 'campaigns', data: data.strategy?.campaigns }
 		];
 
 		importCollections.forEach(col => {
@@ -206,13 +244,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setBureaucracy([]);
 			setSkillDefinitions([]);
 			setHabitDefinitions([]);
+			// v5.0
+			setJobs([]);
+			setEducation([]);
+			setCampaigns([]);
 			setLoading(false);
 			return;
 		}
 
 		setLoading(true);
 		let loadedCount = 0;
-		const totalCollections = 8; // profile + 7 cols
+		const totalCollections = 11; // profile + 7 cols + 3 v5.0 cols
 
 		const checkLoaded = () => {
 			loadedCount++;
@@ -300,6 +342,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			checkLoaded();
 		});
 
+		// 9. Jobs (v5.0 Career)
+		const jobsRef = collection(db, 'users', user.uid, 'jobs');
+		const unsubJobs = onSnapshot(jobsRef, (snapshot) => {
+			const list: Job[] = [];
+			snapshot.forEach((doc) => list.push({ ...doc.data(), id: doc.id } as Job));
+			setJobs(list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+			checkLoaded();
+		});
+
+		// 10. Education (v5.0 Career)
+		const educationRef = collection(db, 'users', user.uid, 'education');
+		const unsubEducation = onSnapshot(educationRef, (snapshot) => {
+			const list: Education[] = [];
+			snapshot.forEach((doc) => list.push({ ...doc.data(), id: doc.id } as Education));
+			setEducation(list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+			checkLoaded();
+		});
+
+		// 11. Campaigns (v5.0 Strategy)
+		const campaignsRef = collection(db, 'users', user.uid, 'campaigns');
+		const unsubCampaigns = onSnapshot(campaignsRef, (snapshot) => {
+			const list: Campaign[] = [];
+			snapshot.forEach((doc) => list.push({ ...doc.data(), id: doc.id } as Campaign));
+			setCampaigns(list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+			checkLoaded();
+		});
+
 		return () => {
 			unsubProfile();
 			unsubAcademics();
@@ -309,6 +378,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			unsubSkills();
 			unsubHabitDefs();
 			unsubLifestyle();
+			// v5.0
+			unsubJobs();
+			unsubEducation();
+			unsubCampaigns();
 		};
 	}, [user]);
 
@@ -446,6 +519,62 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		await deleteDoc(doc(db, 'users', user.uid, 'bureaucracy', id));
 	};
 
+	// v5.0 Career Operations
+	const addJob = async (job: Omit<Job, 'id'>) => {
+		if (!user) return;
+		await addDoc(collection(db, 'users', user.uid, 'jobs'), { ...job, createdAt: new Date().toISOString() });
+	};
+
+	const updateJob = async (id: string, data: Partial<Job>) => {
+		if (!user) return;
+		await updateDoc(doc(db, 'users', user.uid, 'jobs', id), data);
+	};
+
+	const deleteJob = async (id: string) => {
+		if (!user) return;
+		await deleteDoc(doc(db, 'users', user.uid, 'jobs', id));
+	};
+
+	const addEducation = async (edu: Omit<Education, 'id'>) => {
+		if (!user) return;
+		await addDoc(collection(db, 'users', user.uid, 'education'), { ...edu, createdAt: new Date().toISOString() });
+	};
+
+	const updateEducation = async (id: string, data: Partial<Education>) => {
+		if (!user) return;
+		await updateDoc(doc(db, 'users', user.uid, 'education', id), data);
+	};
+
+	const deleteEducation = async (id: string) => {
+		if (!user) return;
+		await deleteDoc(doc(db, 'users', user.uid, 'education', id));
+	};
+
+	// v5.0 Strategy Operations
+	const addCampaign = async (campaign: Omit<Campaign, 'id'>) => {
+		if (!user) return;
+		await addDoc(collection(db, 'users', user.uid, 'campaigns'), { ...campaign, createdAt: new Date().toISOString() });
+	};
+
+	const updateCampaign = async (id: string, data: Partial<Campaign>) => {
+		if (!user) return;
+		await updateDoc(doc(db, 'users', user.uid, 'campaigns', id), data);
+	};
+
+	const deleteCampaign = async (id: string) => {
+		if (!user) return;
+		await deleteDoc(doc(db, 'users', user.uid, 'campaigns', id));
+	};
+
+	const getActiveCampaign = useCallback((): Campaign | null => {
+		const now = new Date();
+		return campaigns.find(c =>
+			c.status === 'active' &&
+			new Date(c.startDate) <= now &&
+			new Date(c.endDate) >= now
+		) || campaigns.find(c => c.status === 'active') || null;
+	}, [campaigns]);
+
 	// Calculations
 	const getPassedCFUs = useCallback(() => {
 		return exams
@@ -484,11 +613,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	}, [transactions]);
 
 	const getGlobalStatus = useCallback((): 'green' | 'yellow' | 'red' => {
-		// Simplified status logic
+		// Simplified status logic - includes v5.0 campaign rules
 		const hasCritical = bureaucracy.some(d => d.is_critical && (d.status === 'expired' || d.status === 'unknown'));
 		if (hasCritical) return 'red';
+
+		// Check for triggered campaign rules
+		const activeCampaign = campaigns.find(c => c.status === 'active');
+		if (activeCampaign) {
+			const hasTriggeredRule = activeCampaign.rules?.some(r => r.status === 'triggered');
+			if (hasTriggeredRule) return 'yellow';
+		}
+
 		return 'green';
-	}, [bureaucracy]);
+	}, [bureaucracy, campaigns]);
 
 
 	return (
@@ -501,6 +638,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			bureaucracy,
 			skillDefinitions,
 			habitDefinitions,
+			// v5.0
+			jobs,
+			education,
+			campaigns,
 			loading,
 			updateProfile,
 			updateExamStatus,
@@ -523,6 +664,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			updateBureaucracy,
 			addBureaucracy,
 			deleteBureaucracy,
+			// v5.0 Career
+			addJob,
+			updateJob,
+			deleteJob,
+			addEducation,
+			updateEducation,
+			deleteEducation,
+			// v5.0 Strategy
+			addCampaign,
+			updateCampaign,
+			deleteCampaign,
+			getActiveCampaign,
+			// Calculations
 			getPassedCFUs,
 			getUnlockedMoney,
 			getLockedMoney,

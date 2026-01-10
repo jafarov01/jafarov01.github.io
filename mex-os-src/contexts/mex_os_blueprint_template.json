@@ -68,6 +68,10 @@
         "15 mins",
         "30 mins"
       ],
+      "category": "Technical",
+      "proficiency_level": "intermediate",
+      "years_experience": 1,
+      "show_on_cv": true,
       "createdAt": "2026-01-10T02:42:06.730Z"
     }
   ],
@@ -80,5 +84,64 @@
       "trackingType": "boolean",
       "createdAt": "2026-01-10T02:42:06.730Z"
     }
-  ]
+  ],
+  "career": {
+    "jobs": [
+      {
+        "id": "job_id_placeholder",
+        "company": "Company Name",
+        "role": "Job Title",
+        "type": "full-time",
+        "location": "City, Country",
+        "start_date": "2025-01-01",
+        "end_date": null,
+        "is_current": true,
+        "salary": 50000,
+        "currency": "EUR",
+        "tech_stack": ["Technology 1", "Technology 2"],
+        "achievements": ["Achievement 1", "Achievement 2"],
+        "createdAt": "2026-01-10T02:42:06.730Z"
+      }
+    ],
+    "education": [
+      {
+        "id": "edu_id_placeholder",
+        "institution": "University Name",
+        "degree": "Degree Type",
+        "field": "Field of Study",
+        "status": "in-progress",
+        "start_date": "2024-09-01",
+        "end_date": "2026-07-01",
+        "gpa": "110/110",
+        "scholarship": "Scholarship Name (optional)",
+        "thesis_title": "Thesis Title (optional)",
+        "createdAt": "2026-01-10T02:42:06.730Z"
+      }
+    ]
+  },
+  "strategy": {
+    "campaigns": [
+      {
+        "id": "campaign_id_placeholder",
+        "name": "Campaign Name",
+        "description": "Campaign description and objectives",
+        "status": "planned",
+        "start_date": "2025-01-01",
+        "end_date": "2025-06-30",
+        "linked_exams": [],
+        "linked_documents": [],
+        "rules": [
+          {
+            "id": "rule_id_placeholder",
+            "if_condition": "Condition description (e.g., 'scholarship ranking drops below 50')",
+            "then_action": "Action to take (e.g., 'Focus on exam X immediately')",
+            "status": "pending",
+            "triggered_at": null,
+            "createdAt": "2026-01-10T02:42:06.730Z"
+          }
+        ],
+        "createdAt": "2026-01-10T02:42:06.730Z"
+      }
+    ]
+  }
 }

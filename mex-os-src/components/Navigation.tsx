@@ -3,7 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import {
 	Terminal, LogOut, User, BookOpen, Wallet, Activity,
-	GraduationCap, Shield, DollarSign, ChevronDown, Settings
+	GraduationCap, Shield, DollarSign, ChevronDown, Settings,
+	Briefcase, Target
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -101,6 +102,16 @@ export function Navigation() {
 						<NavLink to="/habits" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 							<Activity className="w-4 h-4" />Protocol
 						</NavLink>
+
+						{/* Career */}
+						<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+							<Briefcase className="w-4 h-4" />Career
+						</NavLink>
+
+						{/* Strategy */}
+						<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+							<Target className="w-4 h-4" />Strategy
+						</NavLink>
 					</div>
 
 					{/* User Menu */}
@@ -141,6 +152,12 @@ export function Navigation() {
 					</NavLink>
 					<NavLink to="/habits" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 						<Activity className="w-4 h-4" />
+					</NavLink>
+					<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+						<Briefcase className="w-4 h-4" />
+					</NavLink>
+					<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+						<Target className="w-4 h-4" />
 					</NavLink>
 				</div>
 			</div>

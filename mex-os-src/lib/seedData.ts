@@ -15,6 +15,7 @@ export interface Profile {
 }
 
 // Dynamic skill definition - users can add/remove/edit skills
+// v5.0: Enhanced for CV generation (Level + Proficiency)
 export interface SkillDefinition {
 	id: string;
 	name: string;           // "Python", "Italian", "German", etc.
@@ -22,6 +23,11 @@ export interface SkillDefinition {
 	color: string;          // Neon color: "neon-yellow", "neon-purple", "neon-cyan"
 	targetPerDay: string;   // "30 mins", "1 hour", "2 hours"
 	trackingOptions: string[]; // ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"]
+	// v5.0 additions
+	category?: 'language' | 'frontend' | 'backend' | 'devops' | 'soft-skill' | 'other';
+	proficiency_level?: 1 | 2 | 3 | 4 | 5; // 1=Novice, 5=Expert
+	years_experience?: number;
+	show_on_cv?: boolean;   // Toggle visibility for Career page
 	createdAt: string;
 }
 
@@ -37,6 +43,14 @@ export interface HabitDefinition {
 	createdAt: string;
 }
 
+// Exam component (v5.0) - for project tracking within a course
+export interface ExamComponent {
+	name: string;           // "Oral", "Written", "Project"
+	weight_pct: number;     // 50%
+	is_completed: boolean;
+	deadline?: string;
+}
+
 // Exam with full state machine support
 export interface Exam {
 	id: string;
@@ -47,7 +61,80 @@ export interface Exam {
 	strategy_notes: string;
 	is_scholarship_critical: boolean;
 	category: string;
+	// v5.0 additions
+	components?: ExamComponent[];  // Project tracking within a course
 	createdAt: string;
+}
+
+// ============================================================================
+// v5.0 CAREER TYPES - CV/Resume data
+// ============================================================================
+
+export type JobType = 'full-time' | 'contract' | 'freelance' | 'internship';
+
+export interface Job {
+	id: string;
+	company: string;          // e.g. "Huxelerate", "Ericsson"
+	role: string;             // e.g. "Software Engineer"
+	location: string;         // e.g. "Milan, Italy (Remote)"
+	type: JobType;
+	startDate: string;        // ISO "2025-07-01"
+	endDate: string | null;   // null = Present
+	salary_gross_yr?: number; // Private data
+	currency?: string;        // "EUR", "HUF"
+	tech_stack: string[];     // ["C++", "Python", "Docker"]
+	achievements?: string[];  // Bullet points for CV generation
+	is_current: boolean;
+}
+
+export type EducationStatus = 'enrolled' | 'graduated' | 'paused';
+
+export interface Education {
+	id: string;
+	institution: string;      // e.g. "University of Padova"
+	degree: string;           // e.g. "MSc Computer Science"
+	status: EducationStatus;
+	startDate: string;
+	endDate: string | null;
+	scholarship_name?: string; // e.g. "Regional Scholarship"
+	thesis_title?: string;
+}
+
+export interface Career {
+	jobs: Job[];
+	education: Education[];
+}
+
+// ============================================================================
+// v5.0 STRATEGY TYPES - Campaign management
+// ============================================================================
+
+export type CampaignStatus = 'active' | 'planned' | 'completed' | 'failed';
+export type RuleStatus = 'pending' | 'triggered' | 'safe';
+
+export interface CampaignRule {
+	condition: string;      // "If Project not assigned by Jan 15"
+	action: string;         // "Drop Web Info Mgmt"
+	deadline: string;       // "2026-01-15"
+	status: RuleStatus;
+}
+
+export interface Campaign {
+	id: string;
+	name: string;             // e.g. "Winter Campaign 2026"
+	startDate: string;
+	endDate: string;
+	status: CampaignStatus;
+	focus_areas?: string[];   // ["Academics", "Visa"]
+	// The "Kill List" Logic
+	linked_exams: string[];   // IDs from 'academics' collection
+	linked_docs: string[];    // IDs from 'bureaucracy' collection
+	// Strategic Rules (Text based for now)
+	rules: CampaignRule[];
+}
+
+export interface Strategy {
+	campaigns: Campaign[];
 }
 
 // Scholarship/Funding entries
@@ -92,6 +179,10 @@ export interface HabitEntry {
 	skills: Record<string, string>;            // { [skillId]: "30 mins" }
 }
 
+// ============================================================================
+// v5.0 FULL USER DATA - Includes Career and Strategy
+// ============================================================================
+
 export interface FullUserData {
 	profile: Profile;
 	academics: Exam[];
@@ -100,6 +191,9 @@ export interface FullUserData {
 	bureaucracy: BureaucracyDoc[];
 	skills: SkillDefinition[];
 	habitDefinitions: HabitDefinition[];
+	// v5.0 additions
+	career?: Career;
+	strategy?: Strategy;
 }
 
 export const BLUEPRINT_TEMPLATE: FullUserData = {
@@ -121,6 +215,20 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			strategy_notes: "Study strategy here",
 			is_scholarship_critical: true,
 			category: "Mandatory Core",
+			components: [
+				{
+					name: "Written",
+					weight_pct: 70,
+					is_completed: false,
+					deadline: "2026-01-01"
+				},
+				{
+					name: "Project",
+					weight_pct: 30,
+					is_completed: false,
+					deadline: "2026-01-15"
+				}
+			],
 			createdAt: new Date().toISOString()
 		}
 	],
@@ -167,6 +275,10 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			color: "neon-cyan",
 			targetPerDay: "30 mins",
 			trackingOptions: ["0 mins", "15 mins", "30 mins"],
+			category: "backend",
+			proficiency_level: 3,
+			years_experience: 2,
+			show_on_cv: true,
 			createdAt: new Date().toISOString()
 		}
 	],
@@ -179,7 +291,58 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			trackingType: "boolean", // 'boolean' | 'hours' | 'count'
 			createdAt: new Date().toISOString()
 		}
-	]
+	],
+	// v5.0 Career data
+	career: {
+		jobs: [
+			{
+				id: "job_placeholder",
+				company: "Company Name",
+				role: "Role Title",
+				location: "City, Country",
+				type: "full-time",
+				startDate: "2024-01-01",
+				endDate: null,
+				tech_stack: ["TypeScript", "React"],
+				achievements: ["Achievement 1", "Achievement 2"],
+				is_current: true
+			}
+		],
+		education: [
+			{
+				id: "edu_placeholder",
+				institution: "University Name",
+				degree: "Degree Program",
+				status: "enrolled",
+				startDate: "2024-10-01",
+				endDate: "2026-08-30",
+				scholarship_name: "Scholarship Name (optional)"
+			}
+		]
+	},
+	// v5.0 Strategy data
+	strategy: {
+		campaigns: [
+			{
+				id: "campaign_placeholder",
+				name: "Campaign Name",
+				startDate: "2026-01-10",
+				endDate: "2026-02-20",
+				status: "planned",
+				focus_areas: ["Academics", "Career"],
+				linked_exams: [],
+				linked_docs: [],
+				rules: [
+					{
+						condition: "Condition to check",
+						action: "Action to take",
+						deadline: "2026-01-15",
+						status: "pending"
+					}
+				]
+			}
+		]
+	}
 };
 
 // ============================================================================
@@ -198,6 +361,8 @@ export const profileData: Profile = {
 // ============================================================================
 // VALIDATION LOGIC
 // ============================================================================
+// VALIDATION LOGIC - v5.0 with Career and Strategy support
+// ============================================================================
 
 export function validateImportData(data: any): { valid: boolean; error?: string } {
 	if (!data || typeof data !== 'object') return { valid: false, error: 'Invalid JSON format' };
@@ -215,6 +380,19 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	if (!Array.isArray(data.bureaucracy)) return { valid: false, error: 'Bureaucracy must be an array' };
 	if (!Array.isArray(data.skills)) return { valid: false, error: 'Skills must be an array' };
 	if (!Array.isArray(data.habitDefinitions)) return { valid: false, error: 'HabitDefinitions must be an array' };
+
+	// v5.0 Career validation (optional but must be valid if present)
+	if (data.career) {
+		if (typeof data.career !== 'object') return { valid: false, error: 'Career must be an object' };
+		if (data.career.jobs && !Array.isArray(data.career.jobs)) return { valid: false, error: 'Career jobs must be an array' };
+		if (data.career.education && !Array.isArray(data.career.education)) return { valid: false, error: 'Career education must be an array' };
+	}
+
+	// v5.0 Strategy validation (optional but must be valid if present)
+	if (data.strategy) {
+		if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
+		if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
+	}
 
 	return { valid: true };
 }

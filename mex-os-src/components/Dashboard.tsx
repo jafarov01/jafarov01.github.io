@@ -11,7 +11,10 @@ import {
 	Lock,
 	Unlock,
 	ChevronRight,
-	FileText
+	FileText,
+	Briefcase,
+	Flag,
+	ArrowRight
 } from 'lucide-react';
 import { differenceInDays, differenceInHours, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -28,7 +31,10 @@ export function Dashboard() {
 		habits,
 		skillDefinitions,
 		habitDefinitions,
-		bureaucracy
+		bureaucracy,
+		// v5.0 additions
+		jobs,
+		getActiveCampaign
 	} = useData();
 
 	const now = new Date();
@@ -55,6 +61,16 @@ export function Dashboard() {
 
 	// Check for critical items
 	const criticalBureaucracy = bureaucracy.filter(b => b.is_critical && (b.status === 'unknown' || b.status === 'expired'));
+
+	// v5.0: Active Campaign
+	const activeCampaign = getActiveCampaign();
+	const campaignDaysRemaining = activeCampaign
+		? differenceInDays(new Date(activeCampaign.endDate), now)
+		: null;
+	const pendingRules = activeCampaign?.rules?.filter(r => r.status === 'pending').length || 0;
+
+	// Current job
+	const currentJob = jobs.find(j => j.is_current);
 
 
 	return (
@@ -185,6 +201,141 @@ export function Dashboard() {
 					</div>
 					<div className="text-xs text-gray-500 mt-1">Awaiting Verification</div>
 				</div>
+			</div>
+
+			{/* v5.0: Active Campaign Widget + Career Status */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				{/* Active Campaign Card */}
+				{activeCampaign ? (
+					<div className="card-cyber p-5 border-neon-green/30 hover:neon-border-green transition-all">
+						<div className="flex items-center justify-between mb-3">
+							<div className="flex items-center gap-2 text-neon-green text-sm">
+								<Flag className="w-4 h-4" />
+								ACTIVE CAMPAIGN
+							</div>
+							<Link
+								to="/strategy"
+								className="text-xs text-gray-400 hover:text-neon-green transition-colors flex items-center gap-1"
+							>
+								Manage <ChevronRight className="w-3 h-3" />
+							</Link>
+						</div>
+						<h3 className="text-xl font-bold text-white mb-2">{activeCampaign.name}</h3>
+						<div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+							<span className="flex items-center gap-1">
+								<Calendar className="w-4 h-4" />
+								{format(new Date(activeCampaign.startDate), 'MMM d')} — {format(new Date(activeCampaign.endDate), 'MMM d')}
+							</span>
+							<span className={`flex items-center gap-1 ${campaignDaysRemaining && campaignDaysRemaining <= 7 ? 'text-neon-red' : ''}`}>
+								<Clock className="w-4 h-4" />
+								{campaignDaysRemaining}d remaining
+							</span>
+						</div>
+
+						{/* Progress bar */}
+						<div className="h-1.5 bg-dark-700 rounded-full overflow-hidden mb-3">
+							<div
+								className="h-full bg-neon-green rounded-full transition-all duration-500"
+								style={{
+									width: `${Math.min(100, Math.max(0,
+										((differenceInDays(now, new Date(activeCampaign.startDate))) /
+										(differenceInDays(new Date(activeCampaign.endDate), new Date(activeCampaign.startDate)))) * 100
+									))}%`
+								}}
+							/>
+						</div>
+
+						{/* Quick Stats */}
+						<div className="flex items-center gap-4 text-sm">
+							<span className="text-neon-cyan">
+								<BookOpen className="w-4 h-4 inline mr-1" />
+								{activeCampaign.linked_exams?.length || 0} exams
+							</span>
+							{pendingRules > 0 && (
+								<span className="text-neon-yellow flex items-center gap-1">
+									<AlertTriangle className="w-4 h-4" />
+									{pendingRules} pending decision{pendingRules > 1 ? 's' : ''}
+								</span>
+							)}
+						</div>
+
+						{/* Pending Rules Preview */}
+						{activeCampaign.rules && activeCampaign.rules.filter(r => r.status === 'pending').slice(0, 2).map((rule, idx) => (
+							<div key={idx} className="mt-2 p-2 bg-dark-700 rounded text-sm flex items-center gap-2">
+								<span className="w-2 h-2 bg-neon-yellow rounded-full animate-pulse" />
+								<span className="text-gray-400 truncate">{rule.condition}</span>
+								<ArrowRight className="w-3 h-3 text-gray-600 flex-shrink-0" />
+								<span className="text-white truncate">{rule.action}</span>
+							</div>
+						))}
+					</div>
+				) : (
+					<div className="card-cyber p-5 border-dashed border-dark-500">
+						<div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
+							<Flag className="w-4 h-4" />
+							NO ACTIVE CAMPAIGN
+						</div>
+						<p className="text-gray-500 text-sm mb-3">
+							Create a strategic campaign to track your goals and deadlines.
+						</p>
+						<Link to="/strategy" className="btn-cyber px-4 py-2 text-sm inline-flex items-center gap-2">
+							<Target className="w-4 h-4" />
+							Create Campaign
+						</Link>
+					</div>
+				)}
+
+				{/* Current Position Card */}
+				{currentJob ? (
+					<div className="card-cyber p-5 border-neon-purple/30 hover:border-neon-purple/50 transition-all">
+						<div className="flex items-center justify-between mb-3">
+							<div className="flex items-center gap-2 text-neon-purple text-sm">
+								<Briefcase className="w-4 h-4" />
+								CURRENT POSITION
+							</div>
+							<Link
+								to="/career"
+								className="text-xs text-gray-400 hover:text-neon-purple transition-colors flex items-center gap-1"
+							>
+								Career Hub <ChevronRight className="w-3 h-3" />
+							</Link>
+						</div>
+						<h3 className="text-xl font-bold text-white">{currentJob.role}</h3>
+						<p className="text-gray-400 mb-2">{currentJob.company} • {currentJob.location}</p>
+						<div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+							<Calendar className="w-4 h-4" />
+							Since {format(new Date(currentJob.startDate), 'MMM yyyy')}
+						</div>
+
+						{/* Tech Stack Preview */}
+						<div className="flex flex-wrap gap-1.5">
+							{currentJob.tech_stack.slice(0, 5).map(tech => (
+								<span key={tech} className="px-2 py-0.5 bg-dark-600 text-neon-cyan text-xs rounded">
+									{tech}
+								</span>
+							))}
+							{currentJob.tech_stack.length > 5 && (
+								<span className="px-2 py-0.5 bg-dark-600 text-gray-500 text-xs rounded">
+									+{currentJob.tech_stack.length - 5} more
+								</span>
+							)}
+						</div>
+					</div>
+				) : (
+					<div className="card-cyber p-5 border-dashed border-dark-500">
+						<div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
+							<Briefcase className="w-4 h-4" />
+							NO CURRENT POSITION
+						</div>
+						<p className="text-gray-500 text-sm mb-3">
+							Track your career history and professional timeline.
+						</p>
+						<Link to="/career" className="btn-cyber px-4 py-2 text-sm inline-flex items-center gap-2">
+							<Briefcase className="w-4 h-4" />
+							Add Position
+						</Link>
+					</div>
+				)}
 			</div>
 
 			{/* Exam overview and Quick actions */}
