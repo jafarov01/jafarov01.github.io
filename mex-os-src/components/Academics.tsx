@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	GraduationCap,
 	Calendar,
@@ -8,13 +9,14 @@ import {
 	Clock,
 	Target,
 	BookOpen,
-	Zap,
 	Plus,
 	Trash2,
 	X,
 	Edit2,
-	Save
+	Save,
+	Loader2
 } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 import { differenceInDays, format } from 'date-fns';
 import { type Exam } from '../lib/seedData';
 
@@ -23,12 +25,19 @@ const examCategories = ['Mandatory Core', 'Elective', 'Free Choice', 'Seminar', 
 
 export function Academics() {
 	const { exams, updateExamStatus, updateExam, addExam, deleteExam, getPassedCFUs, profile } = useData();
+	const { showToast } = useToast();
 	const now = new Date();
 	const passedCFUs = getPassedCFUs();
 	const cfuProgress = (passedCFUs / 20) * 100;
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingExam, setEditingExam] = useState<Exam | null>(null);
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Delete confirmation state
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [deleteId, setDeleteId] = useState<string | null>(null);
+
 	const [formData, setFormData] = useState({
 		name: '',
 		cfu: 6,
@@ -39,8 +48,35 @@ export function Academics() {
 		category: 'Mandatory Core'
 	});
 
+	// Tab filter state
+	const [activeTab, setActiveTab] = useState<'active' | 'passed' | 'all'>('active');
+
+	// Filtered exams based on tab
+	const { activeExams, passedExams, filteredExams } = useMemo(() => {
+		const active = exams.filter(e => e.status !== 'passed' && e.status !== 'dropped');
+		const passed = exams.filter(e => e.status === 'passed');
+		
+		let filtered: typeof exams;
+		switch (activeTab) {
+			case 'active':
+				filtered = active;
+				break;
+			case 'passed':
+				filtered = passed;
+				break;
+			default:
+				filtered = exams;
+		}
+		
+		return { activeExams: active, passedExams: passed, filteredExams: filtered };
+	}, [exams, activeTab]);
+
 	const handleStatusChange = async (examId: string, newStatus: Exam['status']) => {
-		await updateExamStatus(examId, newStatus);
+		try {
+			await updateExamStatus(examId, newStatus);
+		} catch {
+			showToast('Failed to update status', 'error');
+		}
 	};
 
 	const resetForm = () => {
@@ -78,24 +114,53 @@ export function Academics() {
 	const handleSave = async () => {
 		if (!formData.name.trim()) return;
 
-		const examData = {
-			name: formData.name,
-			cfu: formData.cfu,
-			status: formData.status,
-			exam_date: formData.exam_date || null,
-			strategy_notes: formData.strategy_notes,
-			is_scholarship_critical: formData.is_scholarship_critical,
-			category: formData.category
-		};
+		setIsSaving(true);
+		try {
+			const examData = {
+				name: formData.name,
+				cfu: formData.cfu,
+				status: formData.status,
+				exam_date: formData.exam_date || null,
+				strategy_notes: formData.strategy_notes,
+				is_scholarship_critical: formData.is_scholarship_critical,
+				category: formData.category
+			};
 
-		if (editingExam) {
-			await updateExam(editingExam.id, examData);
-		} else {
-			await addExam(examData);
+			if (editingExam) {
+				await updateExam(editingExam.id, examData);
+				showToast('Exam updated', 'success');
+			} else {
+				await addExam(examData);
+				showToast('Exam added', 'success');
+			}
+
+			setIsModalOpen(false);
+			resetForm();
+		} catch {
+			showToast('Failed to save exam. Please try again.', 'error');
+		} finally {
+			setIsSaving(false);
 		}
+	};
 
-		setIsModalOpen(false);
-		resetForm();
+	// Delete confirmation handlers
+	const handleDeleteRequest = (id: string) => {
+		setDeleteId(id);
+		setConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (deleteId) {
+			try {
+				await deleteExam(deleteId);
+				showToast('Exam deleted', 'success');
+				setConfirmOpen(false);
+				setDeleteId(null);
+			} catch {
+				showToast('Failed to delete exam', 'error');
+				setConfirmOpen(false);
+			}
+		}
 	};
 
 	const getStatusColor = (status: Exam['status']) => {
@@ -130,22 +195,23 @@ export function Academics() {
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="page-header">
 				<div>
-					<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-						<GraduationCap className="w-8 h-8 text-neon-cyan" />
+					<h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+						<GraduationCap className="w-6 h-6 sm:w-8 sm:h-8 text-neon-cyan flex-shrink-0" />
 						Academic Radar
 					</h1>
-					<p className="text-gray-500 mt-1">
+					<p className="text-gray-500 mt-1 text-sm sm:text-base">
 						{profile?.name || 'Student'} • Track your academic progress
 					</p>
 				</div>
 				<button
 					onClick={openAddModal}
-					className="btn-cyber px-4 py-2 flex items-center gap-2"
+					className="btn-cyber px-3 sm:px-4 py-2 flex items-center gap-2"
 				>
 					<Plus className="w-4 h-4" />
-					Add Exam
+					<span className="hidden sm:inline">Add Exam</span>
+					<span className="sm:hidden">Add</span>
 				</button>
 			</div>
 
@@ -180,31 +246,67 @@ export function Academics() {
 
 			{/* Exam List */}
 			<div className="card-cyber p-6">
-				<div className="flex items-center justify-between mb-6">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 					<h2 className="text-lg font-semibold text-white flex items-center gap-2">
 						<BookOpen className="w-5 h-5 text-neon-cyan" />
 						{dateRange ? `Exams (${dateRange})` : 'All Exams'}
 					</h2>
-					<div className="flex items-center gap-2 text-sm text-gray-400">
-						<Zap className="w-4 h-4" />
-						Click status to update
+					
+					{/* Tab Filter */}
+					<div className="flex bg-dark-700 rounded-lg p-1 border border-dark-600">
+						<button
+							onClick={() => setActiveTab('active')}
+							className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+								activeTab === 'active'
+									? 'bg-neon-cyan/20 text-neon-cyan'
+									: 'text-gray-500 hover:text-gray-300'
+							}`}
+						>
+							Active ({activeExams.length})
+						</button>
+						<button
+							onClick={() => setActiveTab('passed')}
+							className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+								activeTab === 'passed'
+									? 'bg-neon-green/20 text-neon-green'
+									: 'text-gray-500 hover:text-gray-300'
+							}`}
+						>
+							Passed ({passedExams.length})
+						</button>
+						<button
+							onClick={() => setActiveTab('all')}
+							className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+								activeTab === 'all'
+									? 'bg-dark-600 text-white'
+									: 'text-gray-500 hover:text-gray-300'
+							}`}
+						>
+							All ({exams.length})
+						</button>
 					</div>
 				</div>
 
-				{exams.length === 0 ? (
+				{filteredExams.length === 0 ? (
 					<div className="text-center py-12">
 						<BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-						<p className="text-gray-500">No exams tracked yet.</p>
-						<button
-							onClick={openAddModal}
-							className="mt-4 btn-cyber px-4 py-2"
-						>
-							Add Your First Exam
-						</button>
+						<p className="text-gray-500">
+							{activeTab === 'active' ? 'No active exams.' : 
+							 activeTab === 'passed' ? 'No passed exams yet.' : 
+							 'No exams tracked yet.'}
+						</p>
+						{exams.length === 0 && (
+							<button
+								onClick={openAddModal}
+								className="mt-4 btn-cyber px-4 py-2"
+							>
+								Add Your First Exam
+							</button>
+						)}
 					</div>
 				) : (
 					<div className="space-y-4">
-						{exams.map(exam => {
+						{filteredExams.map(exam => {
 							const examDate = exam.exam_date ? new Date(exam.exam_date) : null;
 							const daysLeft = examDate ? differenceInDays(examDate, now) : null;
 							const isPassed = exam.status === 'passed';
@@ -232,7 +334,7 @@ export function Academics() {
 											<Edit2 className="w-4 h-4" />
 										</button>
 										<button
-											onClick={() => deleteExam(exam.id)}
+											onClick={() => handleDeleteRequest(exam.id)}
 											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -299,19 +401,21 @@ export function Academics() {
 											)}
 
 											{/* Status selector */}
-											<div className="flex flex-wrap gap-2 justify-end max-w-xs mt-auto">
+											{/* Status selector - responsive grid */}
+											<div className="status-selector">
 												{examStatuses.map(status => (
 													<button
 														key={status}
 														onClick={() => handleStatusChange(exam.id, status)}
-														className={`px-3 py-1.5 rounded text-xs uppercase font-medium border transition-all ${exam.status === status
+														className={`status-btn border transition-all ${exam.status === status
 															? getStatusColor(status)
 															: 'bg-dark-700 text-gray-500 border-dark-600 hover:border-gray-500'
 															}`}
 													>
-														{status === 'passed' && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
-														{status === 'booked' && <Clock className="w-3 h-3 inline mr-1" />}
-														{getStatusLabel(status)}
+														{status === 'passed' && <CheckCircle2 className="w-3 h-3" />}
+														{status === 'booked' && <Clock className="w-3 h-3" />}
+														<span className="hidden xs:inline">{getStatusLabel(status)}</span>
+														<span className="xs:hidden">{status.slice(0, 4)}</span>
 													</button>
 												))}
 											</div>
@@ -349,8 +453,8 @@ export function Academics() {
 
 			{/* Add/Edit Exam Modal */}
 			{isModalOpen && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-					<div className="card-cyber p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
+					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-lg max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-xl font-bold text-white">
 								{editingExam ? 'Edit Exam' : 'Add New Exam'}
@@ -456,15 +560,30 @@ export function Academics() {
 							</button>
 							<button
 								onClick={handleSave}
-								className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2"
+								disabled={isSaving}
+								className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2 disabled:opacity-50"
 							>
-								{editingExam ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-								{editingExam ? 'Save Changes' : 'Add Exam'}
+								{isSaving ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									<>{editingExam ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+										{editingExam ? 'Save Changes' : 'Add Exam'}</>
+								)}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
+
+			<ConfirmModal
+				isOpen={confirmOpen}
+				title="Delete Exam"
+				message="Are you sure you want to delete this exam? This action cannot be undone."
+				confirmText="Delete"
+				isDangerous={true}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmOpen(false)}
+			/>
 		</div>
 	);
 }

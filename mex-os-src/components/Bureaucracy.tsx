@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	Shield, AlertTriangle, CheckCircle2, Clock,
 	FileWarning, Calendar, AlertOctagon, Info,
-	Plus, X, Trash2, Edit2, Save
+	Plus, X, Trash2, Edit2, Save, Loader2
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { type BureaucracyDoc } from '../lib/seedData';
+import { ConfirmModal } from './ConfirmModal';
 
 const STATUS_CONFIG = {
 	valid: { color: 'text-neon-green', bg: 'bg-neon-green/10', border: 'border-neon-green/30', icon: CheckCircle2, label: 'VALID' },
@@ -26,8 +28,58 @@ const DOC_TYPES = [
 
 export function Bureaucracy() {
 	const { bureaucracy, profile, updateBureaucracy, addBureaucracy, deleteBureaucracy } = useData();
+	const { showToast } = useToast();
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 	const [editingDoc, setEditingDoc] = useState<BureaucracyDoc | null>(null);
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Delete confirmation state
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [deleteId, setDeleteId] = useState<string | null>(null);
+
+	// Expiry alert modal state
+	const [showExpiryAlert, setShowExpiryAlert] = useState(false);
+
+	// Documents expiring within 30 days (critical alerts)
+	const expiringDocs = useMemo(() => {
+		return bureaucracy.filter(doc => {
+			if (!doc.expiry_date) return false;
+			const daysLeft = differenceInDays(new Date(doc.expiry_date), new Date());
+			return daysLeft >= 0 && daysLeft <= 30;
+		}).sort((a, b) => {
+			const daysA = differenceInDays(new Date(a.expiry_date!), new Date());
+			const daysB = differenceInDays(new Date(b.expiry_date!), new Date());
+			return daysA - daysB; // Sort by urgency (soonest first)
+		});
+	}, [bureaucracy]);
+
+	// Expired documents (already past expiry)
+	const expiredDocs = useMemo(() => {
+		return bureaucracy.filter(doc => {
+			if (!doc.expiry_date) return false;
+			const daysLeft = differenceInDays(new Date(doc.expiry_date), new Date());
+			return daysLeft < 0;
+		});
+	}, [bureaucracy]);
+
+	// Show alert modal on page load if there are expiring/expired docs
+	useEffect(() => {
+		const hasUrgentDocs = expiringDocs.length > 0 || expiredDocs.length > 0;
+		const dismissedKey = 'mex_bureaucracy_alert_dismissed';
+		const lastDismissed = localStorage.getItem(dismissedKey);
+		const today = format(new Date(), 'yyyy-MM-dd');
+		
+		// Show alert if not dismissed today and there are urgent docs
+		if (hasUrgentDocs && lastDismissed !== today) {
+			setShowExpiryAlert(true);
+		}
+	}, [expiringDocs.length, expiredDocs.length]);
+
+	const dismissExpiryAlert = () => {
+		const dismissedKey = 'mex_bureaucracy_alert_dismissed';
+		localStorage.setItem(dismissedKey, format(new Date(), 'yyyy-MM-dd'));
+		setShowExpiryAlert(false);
+	};
 
 	// Form State
 	const [formData, setFormData] = useState<Partial<BureaucracyDoc>>({
@@ -49,7 +101,11 @@ export function Bureaucracy() {
 	};
 
 	const handleStatusChange = async (docId: string, newStatus: string) => {
-		await updateBureaucracy(docId, { status: newStatus as any });
+		try {
+			await updateBureaucracy(docId, { status: newStatus as any });
+		} catch {
+			showToast('Failed to update status', 'error');
+		}
 	};
 
 	const resetForm = () => {
@@ -67,22 +123,41 @@ export function Bureaucracy() {
 
 	const handleSave = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setIsSaving(true);
 		try {
 			if (editingDoc) {
 				await updateBureaucracy(editingDoc.id, formData);
+				showToast('Document updated', 'success');
 			} else {
 				await addBureaucracy(formData as Omit<BureaucracyDoc, 'id'>);
+				showToast('Document added', 'success');
 			}
 			setIsAddModalOpen(false);
 			resetForm();
-		} catch (error) {
-			console.error('Error saving document:', error);
+		} catch {
+			showToast('Failed to save document', 'error');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
-	const handleDelete = async (id: string) => {
-		if (confirm('Are you sure you want to delete this document?')) {
-			await deleteBureaucracy(id);
+	// Delete confirmation handlers
+	const handleDeleteRequest = (id: string) => {
+		setDeleteId(id);
+		setConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (deleteId) {
+			try {
+				await deleteBureaucracy(deleteId);
+				showToast('Document deleted', 'success');
+				setConfirmOpen(false);
+				setDeleteId(null);
+			} catch {
+				showToast('Failed to delete document', 'error');
+				setConfirmOpen(false);
+			}
 		}
 	};
 
@@ -169,7 +244,7 @@ export function Bureaucracy() {
 													{config.label}
 												</span>
 												<button
-													onClick={() => handleDelete(doc.id)}
+													onClick={() => handleDeleteRequest(doc.id)}
 													className="text-gray-600 hover:text-neon-red transition-colors p-1"
 													title="Delete document"
 												>
@@ -224,7 +299,7 @@ export function Bureaucracy() {
 									<div className="flex items-center gap-2">
 										<span className={`px-2 py-1 rounded text-xs ${config.bg} ${config.color}`}>{config.label}</span>
 										<button
-											onClick={() => handleDelete(doc.id)}
+											onClick={() => handleDeleteRequest(doc.id)}
 											className="text-gray-600 hover:text-neon-red transition-colors p-1 opacity-0 group-hover:opacity-100"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -378,16 +453,115 @@ export function Bureaucracy() {
 								</button>
 								<button
 									type="submit"
-									className="btn-cyber flex items-center gap-2"
+									disabled={isSaving}
+									className="btn-cyber flex items-center gap-2 disabled:opacity-50"
 								>
-									<Save className="w-4 h-4" /> Save Document
+									{isSaving ? (
+										<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+									) : (
+										<><Save className="w-4 h-4" /> Save Document</>
+									)}
 								</button>
 							</div>
 						</form>
 					</div>
 				</div>
 			)}
+
+			{/* Expiry Alert Modal */}
+			{showExpiryAlert && (expiringDocs.length > 0 || expiredDocs.length > 0) && (
+				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+					<div className="card-cyber p-6 max-w-lg w-full border-neon-red/50 bg-dark-800">
+						<div className="flex items-start gap-4 mb-6">
+							<div className="p-3 rounded-full bg-neon-red/20">
+								<AlertTriangle className="w-8 h-8 text-neon-red animate-pulse" />
+							</div>
+							<div>
+								<h2 className="text-xl font-bold text-neon-red">⚠️ Document Alert</h2>
+								<p className="text-gray-400 mt-1">Critical documents require your attention</p>
+							</div>
+						</div>
+
+						{/* Expired Documents */}
+						{expiredDocs.length > 0 && (
+							<div className="mb-4">
+								<h3 className="text-sm font-semibold text-neon-red mb-2 flex items-center gap-2">
+									<AlertOctagon className="w-4 h-4" />
+									EXPIRED ({expiredDocs.length})
+								</h3>
+								<div className="space-y-2">
+									{expiredDocs.map(doc => {
+										const daysAgo = Math.abs(differenceInDays(new Date(doc.expiry_date!), new Date()));
+										return (
+											<div key={doc.id} className="p-3 rounded-lg bg-neon-red/10 border border-neon-red/30">
+												<div className="flex justify-between items-center">
+													<span className="font-medium text-white">{doc.name}</span>
+													<span className="text-neon-red text-sm font-bold">Expired {daysAgo}d ago</span>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						)}
+
+						{/* Expiring Soon Documents */}
+						{expiringDocs.length > 0 && (
+							<div className="mb-4">
+								<h3 className="text-sm font-semibold text-neon-yellow mb-2 flex items-center gap-2">
+									<Clock className="w-4 h-4" />
+									EXPIRING WITHIN 30 DAYS ({expiringDocs.length})
+								</h3>
+								<div className="space-y-2">
+									{expiringDocs.map(doc => {
+										const daysLeft = differenceInDays(new Date(doc.expiry_date!), new Date());
+										const urgencyColor = daysLeft <= 7 ? 'text-neon-red' : daysLeft <= 14 ? 'text-neon-yellow' : 'text-neon-cyan';
+										return (
+											<div key={doc.id} className="p-3 rounded-lg bg-neon-yellow/10 border border-neon-yellow/30">
+												<div className="flex justify-between items-center">
+													<span className="font-medium text-white">{doc.name}</span>
+													<span className={`${urgencyColor} text-sm font-bold`}>
+														{daysLeft === 0 ? 'Expires TODAY!' : `${daysLeft}d left`}
+													</span>
+												</div>
+												<div className="text-xs text-gray-500 mt-1">
+													Expires: {format(new Date(doc.expiry_date!), 'MMM d, yyyy')}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						)}
+
+						<div className="flex justify-end gap-3 mt-6 pt-4 border-t border-dark-600">
+							<button
+								onClick={dismissExpiryAlert}
+								className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+							>
+								Dismiss for today
+							</button>
+							<button
+								onClick={() => setShowExpiryAlert(false)}
+								className="btn-cyber px-4 py-2 flex items-center gap-2"
+							>
+								<CheckCircle2 className="w-4 h-4" />
+								I'll handle it
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			<ConfirmModal
+				isOpen={confirmOpen}
+				title="Delete Document"
+				message="Are you sure you want to delete this document? This action cannot be undone."
+				confirmText="Delete"
+				isDangerous={true}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmOpen(false)}
+			/>
 		</div>
 	);
 }
-

@@ -1,6 +1,8 @@
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { ToastContainer } from './components/Toast';
 import { Login } from './components/Login';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
@@ -33,12 +35,15 @@ function ProtectedRoute() {
 	}
 
 	return (
-		<DataProvider>
-			<div className="min-h-screen bg-dark-900">
-				<Navigation />
-				<Outlet />
-			</div>
-		</DataProvider>
+		<ToastProvider>
+			<DataProvider>
+				<div className="min-h-screen bg-dark-900">
+					<Navigation />
+					<Outlet />
+				</div>
+				<ToastContainer />
+			</DataProvider>
+		</ToastProvider>
 	);
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	Target,
 	Calendar,
@@ -33,6 +34,7 @@ export function Strategy() {
 		getActiveCampaign,
 		profile
 	} = useData();
+	const { showToast } = useToast();
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
@@ -100,25 +102,31 @@ export function Strategy() {
 	const handleSaveCampaign = async () => {
 		if (!campaignForm.name.trim()) return;
 
-		const campaignData: Omit<Campaign, 'id'> = {
-			name: campaignForm.name,
-			startDate: campaignForm.startDate,
-			endDate: campaignForm.endDate,
-			status: campaignForm.status,
-			focus_areas: campaignForm.focus_areas.split(',').map(s => s.trim()).filter(Boolean),
-			linked_exams: campaignForm.linked_exams,
-			linked_docs: campaignForm.linked_docs,
-			rules: editingCampaign?.rules || []
-		};
+		try {
+			const campaignData: Omit<Campaign, 'id'> = {
+				name: campaignForm.name,
+				startDate: campaignForm.startDate,
+				endDate: campaignForm.endDate,
+				status: campaignForm.status,
+				focus_areas: campaignForm.focus_areas.split(',').map(s => s.trim()).filter(Boolean),
+				linked_exams: campaignForm.linked_exams,
+				linked_docs: campaignForm.linked_docs,
+				rules: editingCampaign?.rules || []
+			};
 
-		if (editingCampaign) {
-			await updateCampaign(editingCampaign.id, campaignData);
-		} else {
-			await addCampaign(campaignData);
+			if (editingCampaign) {
+				await updateCampaign(editingCampaign.id, campaignData);
+				showToast('Campaign updated', 'success');
+			} else {
+				await addCampaign(campaignData);
+				showToast('Campaign created', 'success');
+			}
+
+			setIsModalOpen(false);
+			resetCampaignForm();
+		} catch {
+			showToast('Failed to save campaign', 'error');
 		}
-
-		setIsModalOpen(false);
-		resetCampaignForm();
 	};
 
 	const handleAddRule = (campaignId: string) => {
@@ -144,43 +152,57 @@ export function Strategy() {
 		const campaign = campaigns.find(c => c.id === editingRule.campaignId);
 		if (!campaign) return;
 
-		const newRule: CampaignRule = {
-			condition: ruleForm.condition,
-			action: ruleForm.action,
-			deadline: ruleForm.deadline,
-			status: ruleForm.status
-		};
+		try {
+			const newRule: CampaignRule = {
+				condition: ruleForm.condition,
+				action: ruleForm.action,
+				deadline: ruleForm.deadline,
+				status: ruleForm.status
+			};
 
-		let updatedRules: CampaignRule[];
-		if (editingRule.ruleIndex === -1) {
-			// Adding new rule
-			updatedRules = [...(campaign.rules || []), newRule];
-		} else {
-			// Editing existing rule
-			updatedRules = [...(campaign.rules || [])];
-			updatedRules[editingRule.ruleIndex] = newRule;
+			let updatedRules: CampaignRule[];
+			if (editingRule.ruleIndex === -1) {
+				// Adding new rule
+				updatedRules = [...(campaign.rules || []), newRule];
+			} else {
+				// Editing existing rule
+				updatedRules = [...(campaign.rules || [])];
+				updatedRules[editingRule.ruleIndex] = newRule;
+			}
+
+			await updateCampaign(campaign.id, { rules: updatedRules });
+			showToast(editingRule.ruleIndex === -1 ? 'Rule added' : 'Rule updated', 'success');
+			setShowRuleModal(false);
+			resetRuleForm();
+		} catch {
+			showToast('Failed to save rule', 'error');
 		}
-
-		await updateCampaign(campaign.id, { rules: updatedRules });
-		setShowRuleModal(false);
-		resetRuleForm();
 	};
 
 	const handleDeleteRule = async (campaignId: string, ruleIndex: number) => {
 		const campaign = campaigns.find(c => c.id === campaignId);
 		if (!campaign) return;
 
-		const updatedRules = (campaign.rules || []).filter((_, i) => i !== ruleIndex);
-		await updateCampaign(campaignId, { rules: updatedRules });
+		try {
+			const updatedRules = (campaign.rules || []).filter((_, i) => i !== ruleIndex);
+			await updateCampaign(campaignId, { rules: updatedRules });
+			showToast('Rule deleted', 'success');
+		} catch {
+			showToast('Failed to delete rule', 'error');
+		}
 	};
 
 	const handleUpdateRuleStatus = async (campaignId: string, ruleIndex: number, status: RuleStatus) => {
 		const campaign = campaigns.find(c => c.id === campaignId);
 		if (!campaign) return;
 
-		const updatedRules = [...(campaign.rules || [])];
-		updatedRules[ruleIndex] = { ...updatedRules[ruleIndex], status };
-		await updateCampaign(campaignId, { rules: updatedRules });
+		try {
+			const updatedRules = [...(campaign.rules || [])];
+			updatedRules[ruleIndex] = { ...updatedRules[ruleIndex], status };
+			await updateCampaign(campaignId, { rules: updatedRules });
+		} catch {
+			showToast('Failed to update rule status', 'error');
+		}
 	};
 
 	const toggleLinkedExam = (examId: string) => {
@@ -370,16 +392,14 @@ export function Strategy() {
 								{activeCampaign.rules.slice(0, 3).map((rule, idx) => (
 									<div
 										key={idx}
-										className={`flex items-center justify-between p-2 rounded bg-dark-700 border ${
-											rule.status === 'triggered' ? 'border-neon-red/30' :
-											rule.status === 'safe' ? 'border-neon-green/30' : 'border-dark-600'
-										}`}
+										className={`flex items-center justify-between p-2 rounded bg-dark-700 border ${rule.status === 'triggered' ? 'border-neon-red/30' :
+												rule.status === 'safe' ? 'border-neon-green/30' : 'border-dark-600'
+											}`}
 									>
 										<div className="flex items-center gap-2 text-sm">
-											<span className={`w-2 h-2 rounded-full ${
-												rule.status === 'pending' ? 'bg-neon-yellow animate-pulse' :
-												rule.status === 'triggered' ? 'bg-neon-red' : 'bg-neon-green'
-											}`} />
+											<span className={`w-2 h-2 rounded-full ${rule.status === 'pending' ? 'bg-neon-yellow animate-pulse' :
+													rule.status === 'triggered' ? 'bg-neon-red' : 'bg-neon-green'
+												}`} />
 											<span className="text-gray-400">{rule.condition}</span>
 											<ArrowRight className="w-3 h-3 text-gray-600" />
 											<span className="text-white">{rule.action}</span>
@@ -423,9 +443,8 @@ export function Strategy() {
 						{campaigns.map(campaign => (
 							<div
 								key={campaign.id}
-								className={`card-cyber p-5 transition-all ${
-									campaign.status === 'active' ? 'border-neon-green/20' : ''
-								}`}
+								className={`card-cyber p-5 transition-all ${campaign.status === 'active' ? 'border-neon-green/20' : ''
+									}`}
 							>
 								<div className="flex items-start justify-between">
 									<div className="flex-1">
@@ -510,11 +529,10 @@ export function Strategy() {
 														return (
 															<span
 																key={examId}
-																className={`px-3 py-1 text-sm rounded border ${
-																	exam?.status === 'passed'
+																className={`px-3 py-1 text-sm rounded border ${exam?.status === 'passed'
 																		? 'bg-neon-green/10 text-neon-green border-neon-green/30'
 																		: 'bg-dark-600 text-gray-300 border-dark-500'
-																}`}
+																	}`}
 															>
 																{getExamName(examId)}
 																{exam?.status === 'passed' && <CheckCircle2 className="w-3 h-3 inline ml-1" />}
@@ -565,10 +583,9 @@ export function Strategy() {
 													{campaign.rules.map((rule, idx) => (
 														<div
 															key={idx}
-															className={`p-3 rounded-lg bg-dark-700 border ${
-																rule.status === 'triggered' ? 'border-neon-red/30' :
-																rule.status === 'safe' ? 'border-neon-green/30' : 'border-dark-600'
-															}`}
+															className={`p-3 rounded-lg bg-dark-700 border ${rule.status === 'triggered' ? 'border-neon-red/30' :
+																	rule.status === 'safe' ? 'border-neon-green/30' : 'border-dark-600'
+																}`}
 														>
 															<div className="flex items-start justify-between">
 																<div className="flex-1">
@@ -746,10 +763,9 @@ export function Strategy() {
 													className="w-4 h-4 accent-neon-purple"
 												/>
 												<span className="text-sm text-gray-300">{doc.name}</span>
-												<span className={`text-xs ${
-													doc.status === 'valid' ? 'text-neon-green' :
-													doc.status === 'expired' ? 'text-neon-red' : 'text-gray-500'
-												}`}>
+												<span className={`text-xs ${doc.status === 'valid' ? 'text-neon-green' :
+														doc.status === 'expired' ? 'text-neon-red' : 'text-gray-500'
+													}`}>
 													({doc.status})
 												</span>
 											</label>

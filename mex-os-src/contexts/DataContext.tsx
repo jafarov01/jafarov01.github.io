@@ -387,183 +387,332 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 	// Operations
 	const updateProfile = async (data: Partial<Profile>) => {
-		if (!user) return;
-		const userDocRef = doc(db, 'users', user.uid);
-		await updateDoc(userDocRef, { profile: { ...profile, ...data } });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			const userDocRef = doc(db, 'users', user.uid);
+			await updateDoc(userDocRef, { profile: { ...profile, ...data } });
+		} catch (error) {
+			console.error('Failed to update profile:', error);
+			throw error;
+		}
 	};
 
 	const updateExamStatus = async (examId: string, status: Exam['status']) => {
-		if (!user) return;
-		const examRef = doc(db, 'users', user.uid, 'academics', examId);
-		await updateDoc(examRef, { status });
-		// Scholarship unlock logic handled manually/separately to save complexity here
+		if (!user) throw new Error('User not authenticated');
+		try {
+			const examRef = doc(db, 'users', user.uid, 'academics', examId);
+			await updateDoc(examRef, { status });
+		} catch (error) {
+			console.error('Failed to update exam status:', error);
+			throw error;
+		}
 	};
 
 	const updateExam = async (examId: string, data: Partial<Exam>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'academics', examId), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'academics', examId), data);
+		} catch (error) {
+			console.error('Failed to update exam:', error);
+			throw error;
+		}
 	};
 
 	const addExam = async (exam: Omit<Exam, 'id' | 'createdAt'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'academics'), { ...exam, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'academics'), { ...exam, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add exam:', error);
+			throw error;
+		}
 	};
 
 	const deleteExam = async (examId: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'academics', examId));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'academics', examId));
+		} catch (error) {
+			console.error('Failed to delete exam:', error);
+			throw error;
+		}
 	};
 
 	const updateHabit = async (date: string, habitData: Partial<HabitEntry>) => {
-		if (!user) return;
-		const habitRef = doc(db, 'users', user.uid, 'lifestyle', date);
-		const habitDoc = await getDoc(habitRef);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			const habitRef = doc(db, 'users', user.uid, 'lifestyle', date);
+			const habitDoc = await getDoc(habitRef);
 
-		if (habitDoc.exists()) {
-			const existing = habitDoc.data() as HabitEntry;
-			await updateDoc(habitRef, {
-				habits: { ...existing.habits, ...(habitData.habits || {}) },
-				skills: { ...existing.skills, ...(habitData.skills || {}) }
-			});
-		} else {
-			const defaultHabits: Record<string, number | boolean> = {};
-			const defaultSkills: Record<string, string> = {};
+			if (habitDoc.exists()) {
+				const existing = habitDoc.data() as HabitEntry;
+				await updateDoc(habitRef, {
+					habits: { ...existing.habits, ...(habitData.habits || {}) },
+					skills: { ...existing.skills, ...(habitData.skills || {}) }
+				});
+			} else {
+				const defaultHabits: Record<string, number | boolean> = {};
+				const defaultSkills: Record<string, string> = {};
 
-			habitDefinitions.forEach(def => {
-				defaultHabits[def.id] = def.trackingType === 'boolean' ? false : 0;
-			});
-			skillDefinitions.forEach(def => {
-				defaultSkills[def.id] = def.trackingOptions[0];
-			});
+				habitDefinitions.forEach(def => {
+					defaultHabits[def.id] = def.trackingType === 'boolean' ? false : 0;
+				});
+				skillDefinitions.forEach(def => {
+					defaultSkills[def.id] = def.trackingOptions[0];
+				});
 
-			await setDoc(habitRef, {
-				date,
-				habits: { ...defaultHabits, ...(habitData.habits || {}) },
-				skills: { ...defaultSkills, ...(habitData.skills || {}) }
-			});
+				await setDoc(habitRef, {
+					date,
+					habits: { ...defaultHabits, ...(habitData.habits || {}) },
+					skills: { ...defaultSkills, ...(habitData.skills || {}) }
+				});
+			}
+		} catch (error) {
+			console.error('Failed to update habit:', error);
+			throw error;
 		}
 	};
 
 	const addHabitDefinition = async (def: Omit<HabitDefinition, 'id' | 'createdAt'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'habitDefinitions'), { ...def, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'habitDefinitions'), { ...def, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add habit definition:', error);
+			throw error;
+		}
 	};
 
 	const updateHabitDefinition = async (id: string, data: Partial<HabitDefinition>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'habitDefinitions', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'habitDefinitions', id), data);
+		} catch (error) {
+			console.error('Failed to update habit definition:', error);
+			throw error;
+		}
 	};
 
 	const deleteHabitDefinition = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'habitDefinitions', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'habitDefinitions', id));
+		} catch (error) {
+			console.error('Failed to delete habit definition:', error);
+			throw error;
+		}
 	};
 
 	const addSkillDefinition = async (def: Omit<SkillDefinition, 'id' | 'createdAt'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'skills'), { ...def, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'skills'), { ...def, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add skill definition:', error);
+			throw error;
+		}
 	};
 
 	const updateSkillDefinition = async (id: string, data: Partial<SkillDefinition>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'skills', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'skills', id), data);
+		} catch (error) {
+			console.error('Failed to update skill definition:', error);
+			throw error;
+		}
 	};
 
 	const deleteSkillDefinition = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'skills', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'skills', id));
+		} catch (error) {
+			console.error('Failed to delete skill definition:', error);
+			throw error;
+		}
 	};
 
 	const updateFinance = async (id: string, data: Partial<FinanceEntry>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'finance', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'finance', id), data);
+		} catch (error) {
+			console.error('Failed to update finance entry:', error);
+			throw error;
+		}
 	};
 
 	const addFinance = async (entry: Omit<FinanceEntry, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'finance'), entry);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'finance'), entry);
+		} catch (error) {
+			console.error('Failed to add finance entry:', error);
+			throw error;
+		}
 	};
 
 	const deleteFinance = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'finance', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'finance', id));
+		} catch (error) {
+			console.error('Failed to delete finance entry:', error);
+			throw error;
+		}
 	};
 
 	const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'transactions'), tx);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'transactions'), tx);
+		} catch (error) {
+			console.error('Failed to add transaction:', error);
+			throw error;
+		}
 	};
 
 	const updateTransaction = async (id: string, data: Partial<Transaction>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'transactions', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'transactions', id), data);
+		} catch (error) {
+			console.error('Failed to update transaction:', error);
+			throw error;
+		}
 	};
 
 	const deleteTransaction = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'transactions', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'transactions', id));
+		} catch (error) {
+			console.error('Failed to delete transaction:', error);
+			throw error;
+		}
 	};
 
 	const updateBureaucracy = async (docId: string, data: Partial<BureaucracyDoc>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'bureaucracy', docId), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'bureaucracy', docId), data);
+		} catch (error) {
+			console.error('Failed to update bureaucracy document:', error);
+			throw error;
+		}
 	};
 
 	const addBureaucracy = async (docData: Omit<BureaucracyDoc, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'bureaucracy'), docData);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'bureaucracy'), docData);
+		} catch (error) {
+			console.error('Failed to add bureaucracy document:', error);
+			throw error;
+		}
 	};
 
 	const deleteBureaucracy = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'bureaucracy', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'bureaucracy', id));
+		} catch (error) {
+			console.error('Failed to delete bureaucracy document:', error);
+			throw error;
+		}
 	};
 
 	// v5.0 Career Operations
 	const addJob = async (job: Omit<Job, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'jobs'), { ...job, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'jobs'), { ...job, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add job:', error);
+			throw error;
+		}
 	};
 
 	const updateJob = async (id: string, data: Partial<Job>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'jobs', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'jobs', id), data);
+		} catch (error) {
+			console.error('Failed to update job:', error);
+			throw error;
+		}
 	};
 
 	const deleteJob = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'jobs', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'jobs', id));
+		} catch (error) {
+			console.error('Failed to delete job:', error);
+			throw error;
+		}
 	};
 
 	const addEducation = async (edu: Omit<Education, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'education'), { ...edu, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'education'), { ...edu, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add education:', error);
+			throw error;
+		}
 	};
 
 	const updateEducation = async (id: string, data: Partial<Education>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'education', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'education', id), data);
+		} catch (error) {
+			console.error('Failed to update education:', error);
+			throw error;
+		}
 	};
 
 	const deleteEducation = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'education', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'education', id));
+		} catch (error) {
+			console.error('Failed to delete education:', error);
+			throw error;
+		}
 	};
 
 	// v5.0 Strategy Operations
 	const addCampaign = async (campaign: Omit<Campaign, 'id'>) => {
-		if (!user) return;
-		await addDoc(collection(db, 'users', user.uid, 'campaigns'), { ...campaign, createdAt: new Date().toISOString() });
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await addDoc(collection(db, 'users', user.uid, 'campaigns'), { ...campaign, createdAt: new Date().toISOString() });
+		} catch (error) {
+			console.error('Failed to add campaign:', error);
+			throw error;
+		}
 	};
 
 	const updateCampaign = async (id: string, data: Partial<Campaign>) => {
-		if (!user) return;
-		await updateDoc(doc(db, 'users', user.uid, 'campaigns', id), data);
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await updateDoc(doc(db, 'users', user.uid, 'campaigns', id), data);
+		} catch (error) {
+			console.error('Failed to update campaign:', error);
+			throw error;
+		}
 	};
 
 	const deleteCampaign = async (id: string) => {
-		if (!user) return;
-		await deleteDoc(doc(db, 'users', user.uid, 'campaigns', id));
+		if (!user) throw new Error('User not authenticated');
+		try {
+			await deleteDoc(doc(db, 'users', user.uid, 'campaigns', id));
+		} catch (error) {
+			console.error('Failed to delete campaign:', error);
+			throw error;
+		}
 	};
 
 	const getActiveCampaign = useCallback((): Campaign | null => {

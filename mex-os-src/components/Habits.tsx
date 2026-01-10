@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	Activity,
 	CheckCircle2,
@@ -24,11 +25,13 @@ import {
 	Coffee,
 	Pencil,
 	ChevronLeft,
-	ChevronRight
+	ChevronRight,
+	Loader2
 } from 'lucide-react';
 import { format, subDays, eachDayOfInterval, addDays, isFuture } from 'date-fns';
 import { type SkillDefinition, type HabitDefinition } from '../lib/seedData';
 import { QuickDateSelector } from './QuickDateSelector';
+import { ConfirmModal } from './ConfirmModal';
 
 // Icon mapping for dynamic rendering
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -61,10 +64,17 @@ export function Habits() {
 		updateHabitDefinition,
 		deleteHabitDefinition
 	} = useData();
+	const { showToast } = useToast();
 
 	const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 	const [showAddSkill, setShowAddSkill] = useState(false);
 	const [showAddHabit, setShowAddHabit] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Delete confirmation state
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [deleteId, setDeleteId] = useState<string | null>(null);
+	const [deleteType, setDeleteType] = useState<'habit' | 'skill' | null>(null);
 
 	const [editingSkill, setEditingSkill] = useState<SkillDefinition | null>(null);
 	const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
@@ -93,11 +103,19 @@ export function Habits() {
 	const last30Days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
 
 	const handleHabitToggle = async (habitId: string, value: boolean | number) => {
-		await updateHabit(selectedDate, { habits: { [habitId]: value } });
+		try {
+			await updateHabit(selectedDate, { habits: { [habitId]: value } });
+		} catch {
+			showToast('Failed to save', 'error');
+		}
 	};
 
 	const handleSkillChange = async (skillId: string, value: string) => {
-		await updateHabit(selectedDate, { skills: { [skillId]: value } });
+		try {
+			await updateHabit(selectedDate, { skills: { [skillId]: value } });
+		} catch {
+			showToast('Failed to save', 'error');
+		}
 	};
 
 	// --- Habit Form Handlers ---
@@ -124,22 +142,31 @@ export function Habits() {
 	const handleSaveHabit = async () => {
 		if (!habitForm.name.trim()) return;
 
-		const data = {
-			name: habitForm.name,
-			icon: habitForm.icon,
-			color: habitForm.color,
-			trackingType: habitForm.trackingType,
-			target: habitForm.trackingType !== 'boolean' ? habitForm.target : undefined,
-			maxValue: habitForm.trackingType !== 'boolean' ? habitForm.maxValue : undefined
-		};
+		setIsSaving(true);
+		try {
+			const data = {
+				name: habitForm.name,
+				icon: habitForm.icon,
+				color: habitForm.color,
+				trackingType: habitForm.trackingType,
+				target: habitForm.trackingType !== 'boolean' ? habitForm.target : undefined,
+				maxValue: habitForm.trackingType !== 'boolean' ? habitForm.maxValue : undefined
+			};
 
-		if (editingHabit) {
-			await updateHabitDefinition(editingHabit.id, data);
-		} else {
-			await addHabitDefinition(data);
+			if (editingHabit) {
+				await updateHabitDefinition(editingHabit.id, data);
+				showToast('Habit updated', 'success');
+			} else {
+				await addHabitDefinition(data);
+				showToast('Habit added', 'success');
+			}
+
+			setShowAddHabit(false);
+		} catch {
+			showToast('Failed to save habit', 'error');
+		} finally {
+			setIsSaving(false);
 		}
-
-		setShowAddHabit(false);
 	};
 
 	// --- Skill Form Handlers ---
@@ -164,32 +191,56 @@ export function Habits() {
 	const handleSaveSkill = async () => {
 		if (!skillForm.name.trim()) return;
 
-		const data = {
-			name: skillForm.name,
-			icon: skillForm.icon,
-			color: skillForm.color,
-			targetPerDay: skillForm.targetPerDay,
-			trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours']
-		};
+		setIsSaving(true);
+		try {
+			const data = {
+				name: skillForm.name,
+				icon: skillForm.icon,
+				color: skillForm.color,
+				targetPerDay: skillForm.targetPerDay,
+				trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours']
+			};
 
-		if (editingSkill) {
-			await updateSkillDefinition(editingSkill.id, data);
-		} else {
-			await addSkillDefinition(data);
+			if (editingSkill) {
+				await updateSkillDefinition(editingSkill.id, data);
+				showToast('Skill updated', 'success');
+			} else {
+				await addSkillDefinition(data);
+				showToast('Skill added', 'success');
+			}
+
+			setShowAddSkill(false);
+		} catch {
+			showToast('Failed to save skill', 'error');
+		} finally {
+			setIsSaving(false);
 		}
-
-		setShowAddSkill(false);
 	};
 
-	const handleDeleteHabit = async (id: string) => {
-		if (confirm('Delete this habit? History will be preserved but the tracker will be removed.')) {
-			await deleteHabitDefinition(id);
-		}
+	// Delete confirmation handlers
+	const handleDeleteRequest = (id: string, type: 'habit' | 'skill') => {
+		setDeleteId(id);
+		setDeleteType(type);
+		setConfirmOpen(true);
 	};
 
-	const handleDeleteSkill = async (id: string) => {
-		if (confirm('Delete this skill? History will be preserved but the tracker will be removed.')) {
-			await deleteSkillDefinition(id);
+	const confirmDelete = async () => {
+		if (deleteId && deleteType) {
+			try {
+				if (deleteType === 'habit') {
+					await deleteHabitDefinition(deleteId);
+					showToast('Habit deleted', 'success');
+				} else {
+					await deleteSkillDefinition(deleteId);
+					showToast('Skill deleted', 'success');
+				}
+				setConfirmOpen(false);
+				setDeleteId(null);
+				setDeleteType(null);
+			} catch {
+				showToast(`Failed to delete ${deleteType}`, 'error');
+				setConfirmOpen(false);
+			}
 		}
 	};
 
@@ -323,7 +374,7 @@ export function Habits() {
 											<Edit2 className="w-4 h-4" />
 										</button>
 										<button
-											onClick={() => handleDeleteHabit(def.id)}
+											onClick={() => handleDeleteRequest(def.id, 'habit')}
 											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -351,12 +402,12 @@ export function Habits() {
 									</div>
 
 									{def.trackingType !== 'boolean' && (
-										<div className="flex gap-1">
+										<div className="value-selector">
 											{Array.from({ length: (def.maxValue || 8) + 1 }, (_, i) => i).map(v => (
 												<button
 													key={v}
 													onClick={() => handleHabitToggle(def.id, v)}
-													className={`flex-1 py-1.5 rounded text-xs transition-all ${value === v ? `${colors.bg} ${colors.text} ${colors.border} border` : 'bg-dark-600 text-gray-400 hover:bg-dark-500'}`}
+													className={`rounded text-xs transition-all ${value === v ? `${colors.bg} ${colors.text} ${colors.border} border` : 'bg-dark-600 text-gray-400 hover:bg-dark-500'}`}
 												>
 													{v}
 												</button>
@@ -402,7 +453,7 @@ export function Habits() {
 											<Edit2 className="w-4 h-4" />
 										</button>
 										<button
-											onClick={() => handleDeleteSkill(def.id)}
+											onClick={() => handleDeleteRequest(def.id, 'skill')}
 											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -445,7 +496,7 @@ export function Habits() {
 								<IconComponent name={def.icon} className={`w-5 h-5 ${colors.text}`} />
 								{def.name} (30 days)
 							</h2>
-							<div className="grid grid-cols-10 gap-1">
+							<div className="heatmap-grid">
 								{last30Days.map(day => {
 									const dateStr = format(day, 'yyyy-MM-dd');
 									const habit = habits.find(h => h.date === dateStr);
@@ -465,10 +516,11 @@ export function Habits() {
 									}
 
 									return (
-										<div
+										<button
 											key={dateStr}
-											className={`w-6 h-6 rounded ${colorClass}`}
-											title={`${format(day, 'MMM d')}: ${def.trackingType === 'boolean' ? (value ? 'Done' : 'Missed') : `${value || 0}${def.trackingType === 'hours' ? 'h' : ''}`}`}
+											onClick={() => setSelectedDate(dateStr)}
+											className={`heatmap-cell ${colorClass} cursor-pointer hover:ring-2 hover:ring-white/30 transition-all`}
+											title={`${format(day, 'MMM d')}: ${def.trackingType === 'boolean' ? (value ? 'Done' : 'Missed') : `${value || 0}${def.trackingType === 'hours' ? 'h' : ''}`} — Click to edit`}
 										/>
 									);
 								})}
@@ -489,14 +541,16 @@ export function Habits() {
 									<IconComponent name={def.icon} className={`w-5 h-5 ${colors.text}`} />
 									{def.name} Practice (30 days)
 								</h2>
-								<div className="grid grid-cols-10 gap-1">
+								<div className="heatmap-grid">
 									{last30Days.map(day => {
 										const dateStr = format(day, 'yyyy-MM-dd');
+										const skillValue = habits.find(h => h.date === dateStr)?.skills[def.id] || '0 mins';
 										return (
-											<div
+											<button
 												key={dateStr}
-												className={`w-6 h-6 rounded ${getSkillHeatmapColor(dateStr, def)}`}
-												title={`${format(day, 'MMM d')}: ${habits.find(h => h.date === dateStr)?.skills[def.id] || '0 mins'}`}
+												onClick={() => setSelectedDate(dateStr)}
+												className={`heatmap-cell ${getSkillHeatmapColor(dateStr, def)} cursor-pointer hover:ring-2 hover:ring-white/30 transition-all`}
+												title={`${format(day, 'MMM d')}: ${skillValue} — Click to edit`}
 											/>
 										);
 									})}
@@ -515,8 +569,8 @@ export function Habits() {
 
 			{/* Add/Edit Skill Modal */}
 			{showAddSkill && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-md">
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-xl font-bold text-white">{editingSkill ? 'Edit Skill' : 'Add New Skill'}</h3>
 							<button onClick={() => setShowAddSkill(false)} className="text-gray-500 hover:text-white">
@@ -589,8 +643,12 @@ export function Habits() {
 							<button onClick={() => setShowAddSkill(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
 								Cancel
 							</button>
-							<button onClick={handleSaveSkill} className="flex-1 btn-cyber py-2">
-								{editingSkill ? 'Save Changes' : 'Add Skill'}
+							<button onClick={handleSaveSkill} disabled={isSaving} className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2 disabled:opacity-50">
+								{isSaving ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									editingSkill ? 'Save Changes' : 'Add Skill'
+								)}
 							</button>
 						</div>
 					</div>
@@ -599,8 +657,8 @@ export function Habits() {
 
 			{/* Add/Edit Habit Modal */}
 			{showAddHabit && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-md">
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-xl font-bold text-white">{editingHabit ? 'Edit Habit' : 'Add New Habit'}</h3>
 							<button onClick={() => setShowAddHabit(false)} className="text-gray-500 hover:text-white">
@@ -701,13 +759,27 @@ export function Habits() {
 							<button onClick={() => setShowAddHabit(false)} className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600">
 								Cancel
 							</button>
-							<button onClick={handleSaveHabit} className="flex-1 btn-cyber py-2">
-								{editingHabit ? 'Save Changes' : 'Add Habit'}
+							<button onClick={handleSaveHabit} disabled={isSaving} className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2 disabled:opacity-50">
+								{isSaving ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									editingHabit ? 'Save Changes' : 'Add Habit'
+								)}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
+
+			<ConfirmModal
+				isOpen={confirmOpen}
+				title={deleteType === 'habit' ? 'Delete Habit' : 'Delete Skill'}
+				message={`Delete this ${deleteType}? History will be preserved but the tracker will be removed.`}
+				confirmText="Delete"
+				isDangerous={true}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmOpen(false)}
+			/>
 		</div>
 	);
 }

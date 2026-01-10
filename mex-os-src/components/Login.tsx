@@ -144,7 +144,7 @@ export function Login() {
 				</form>
 
 				{/* System status footer */}
-				<div className="mt-6 text-center text-xs text-gray-600">
+				<div className="mt-6 text-center text-xs text-gray-400">
 					<div className="flex items-center justify-center gap-4">
 						<span className="flex items-center gap-1">
 							<span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />

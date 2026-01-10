@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database } from 'lucide-react';
 import { type Profile, BLUEPRINT_TEMPLATE } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
 
 export function ProfileSettings() {
 	const { profile, updateProfile, exportData, importData, hardResetData } = useData();
+	const { showToast } = useToast();
 	const [formData, setFormData] = useState<Partial<Profile>>({});
 	const [isSaving, setIsSaving] = useState(false);
-	const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 	const [showResetConfirm, setShowResetConfirm] = useState(false);
 	const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -25,17 +26,15 @@ export function ProfileSettings() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSaving(true);
-		setMessage(null);
 
 		try {
 			await updateProfile(formData);
-			setMessage({ type: 'success', text: 'Profile updated successfully!' });
+			showToast('Profile updated', 'success');
 		} catch (error) {
 			console.error('Error updating profile:', error);
-			setMessage({ type: 'error', text: 'Failed to update profile.' });
+			showToast('Failed to update profile', 'error');
 		} finally {
 			setIsSaving(false);
-			setTimeout(() => setMessage(null), 3000);
 		}
 	};
 
@@ -51,10 +50,10 @@ export function ProfileSettings() {
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
-			setMessage({ type: 'success', text: 'Data exported successfully!' });
+			showToast('Data exported successfully', 'success');
 		} catch (error) {
 			console.error('Export failed', error);
-			setMessage({ type: 'error', text: 'Export failed.' });
+			showToast('Export failed', 'error');
 		}
 	};
 
@@ -81,11 +80,11 @@ export function ProfileSettings() {
 				if (!json.profile) throw new Error("Invalid format: missing profile");
 
 				await importData(json);
-				setMessage({ type: 'success', text: 'Data imported successfully!' });
+				showToast('Data imported successfully', 'success');
 				setImportFile(null);
 			} catch (error) {
 				console.error('Import failed', error);
-				setMessage({ type: 'error', text: 'Import failed. Check file format.' });
+				showToast('Import failed. Check file format.', 'error');
 			}
 		};
 		reader.readAsText(importFile);
@@ -95,11 +94,10 @@ export function ProfileSettings() {
 		try {
 			await hardResetData();
 			setShowResetConfirm(false);
-			setMessage({ type: 'success', text: 'All data wiped successfully.' });
-			// Optionally redirect or force refresh
+			showToast('All data wiped successfully', 'success');
 		} catch (error) {
 			console.error('Reset failed', error);
-			setMessage({ type: 'error', text: 'Failed to reset data.' });
+			showToast('Failed to reset data', 'error');
 		}
 	};
 
@@ -116,15 +114,6 @@ export function ProfileSettings() {
 			</div>
 
 			<form onSubmit={handleSubmit} className="card-cyber p-8 space-y-6">
-				{message && (
-					<div className={`p-4 rounded-lg border ${message.type === 'success'
-						? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
-						: 'bg-neon-red/10 border-neon-red/30 text-neon-red'
-						}`}>
-						{message.text}
-					</div>
-				)}
-
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					{/* Personal Info */}
 					<div className="space-y-4">

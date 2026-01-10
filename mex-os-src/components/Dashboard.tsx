@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	Clock,
 	Target,
@@ -14,7 +16,9 @@ import {
 	FileText,
 	Briefcase,
 	Flag,
-	ArrowRight
+	ArrowRight,
+	CheckCircle2,
+	Circle
 } from 'lucide-react';
 import { differenceInDays, differenceInHours, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -34,8 +38,10 @@ export function Dashboard() {
 		bureaucracy,
 		// v5.0 additions
 		jobs,
-		getActiveCampaign
+		getActiveCampaign,
+		updateHabit
 	} = useData();
+	const { showToast } = useToast();
 
 	const now = new Date();
 	const nextExam = exams.find(e => e.exam_date && new Date(e.exam_date) > now && e.status !== 'passed');
@@ -72,22 +78,52 @@ export function Dashboard() {
 	// Current job
 	const currentJob = jobs.find(j => j.is_current);
 
+	// Inline habit/skill handlers
+	const handleQuickHabitToggle = async (habitId: string, value: boolean | number) => {
+		try {
+			await updateHabit(format(now, 'yyyy-MM-dd'), { habits: { [habitId]: value } });
+			showToast('Habit logged', 'success');
+		} catch {
+			showToast('Failed to save', 'error');
+		}
+	};
+
+	const handleQuickSkillChange = async (skillId: string, value: string) => {
+		try {
+			await updateHabit(format(now, 'yyyy-MM-dd'), { skills: { [skillId]: value } });
+			showToast('Skill logged', 'success');
+		} catch {
+			showToast('Failed to save', 'error');
+		}
+	};
+
+	const completedCount = useMemo(() => {
+		let count = 0;
+		habitDefinitions.forEach(def => {
+			const val = todayHabit?.habits[def.id];
+			if (def.trackingType === 'boolean' ? Boolean(val) : (val as number) >= (def.target || 1)) count++;
+		});
+		skillDefinitions.forEach(def => {
+			if ((todayHabit?.skills[def.id] || '0 mins') !== '0 mins') count++;
+		});
+		return count;
+	}, [todayHabit, habitDefinitions, skillDefinitions]);
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
 			{/* Header with global status */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-						<Zap className={`w-8 h-8 ${status === 'green' ? 'text-neon-green' :
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+				<div className="min-w-0 flex-1">
+					<h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+						<Zap className={`w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 ${status === 'green' ? 'text-neon-green' :
 							status === 'yellow' ? 'text-neon-yellow' : 'text-neon-red'
 							}`} />
-						{profile?.name ? `${profile.name}'s Cockpit` : 'Survival Cockpit'}
+						<span className="truncate">{profile?.name ? `${profile.name}'s Cockpit` : 'Survival Cockpit'}</span>
 					</h1>
-					<p className="text-gray-500 mt-1">{format(now, 'EEEE, MMM d, yyyy')}</p>
+					<p className="text-gray-400 mt-1 text-sm sm:text-base">{format(now, 'EEEE, MMM d, yyyy')}</p>
 				</div>
 				<div className={`
-          px-4 py-2 rounded-lg border text-sm font-medium
+          px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border text-xs sm:text-sm font-medium flex-shrink-0
           ${status === 'green' ? 'bg-neon-green/10 border-neon-green/30 text-neon-green' : ''}
           ${status === 'yellow' ? 'bg-neon-yellow/10 border-neon-yellow/30 text-neon-yellow' : ''}
           ${status === 'red' ? 'bg-neon-red/10 border-neon-red/30 text-neon-red animate-pulse' : ''}
@@ -100,106 +136,135 @@ export function Dashboard() {
 
 			{/* Main countdown card */}
 			{nextExam && daysUntilNextExam !== null && (
-				<div className={`card-cyber p-6 ${daysUntilNextExam <= 7 ? 'border-neon-red neon-border-red' :
+				<div className={`card-cyber p-4 sm:p-6 ${daysUntilNextExam <= 7 ? 'border-neon-red neon-border-red' :
 					daysUntilNextExam <= 14 ? 'border-neon-yellow neon-border-yellow' :
 						'border-neon-green neon-border-green'
 					}`}>
-					<div className="flex items-start justify-between">
-						<div>
-							<div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
-								<Clock className="w-4 h-4" />
+					<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+						<div className="flex-1 min-w-0">
+							<div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm mb-2">
+								<Clock className="w-4 h-4 flex-shrink-0" />
 								NEXT ENGAGEMENT
 							</div>
-							<h2 className="text-2xl font-bold text-white">{nextExam.name}</h2>
-							<p className="text-gray-500 mt-1">{nextExam.strategy_notes}</p>
-							<div className="flex items-center gap-4 mt-4">
-								<span className="text-sm text-gray-400">
-									<Calendar className="w-4 h-4 inline mr-1" />
-									{nextExam.exam_date ? format(new Date(nextExam.exam_date), 'EEEE, MMM d @ HH:mm') : 'Date TBD'}
+							<h2 className="text-xl sm:text-2xl font-bold text-white truncate">{nextExam.name}</h2>
+							<p className="text-gray-500 mt-1 text-sm line-clamp-2">{nextExam.strategy_notes}</p>
+							<div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4">
+								<span className="text-xs sm:text-sm text-gray-400 flex items-center gap-1">
+									<Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+									<span className="truncate">{nextExam.exam_date ? format(new Date(nextExam.exam_date), 'MMM d @ HH:mm') : 'TBD'}</span>
 								</span>
-								<span className="px-2 py-1 rounded text-xs bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">
+								<span className="px-2 py-0.5 rounded text-xs bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">
 									{nextExam.cfu} CFU
 								</span>
-								<span className={`px-2 py-1 rounded text-xs uppercase ${nextExam.status === 'booked' ? 'bg-neon-green/10 text-neon-green border border-neon-green/30' :
+								<span className={`px-2 py-0.5 rounded text-xs uppercase ${nextExam.status === 'booked' ? 'bg-neon-green/10 text-neon-green border border-neon-green/30' :
 									'bg-neon-yellow/10 text-neon-yellow border border-neon-yellow/30'
 									}`}>
 									{nextExam.status}
 								</span>
 							</div>
 						</div>
-						<div className="text-right">
-							<div className={`text-6xl font-bold ${daysUntilNextExam <= 7 ? 'text-neon-red neon-text-red' :
+						<div className="text-left sm:text-right flex sm:flex-col items-baseline sm:items-end gap-2 sm:gap-0">
+							<div className={`text-4xl sm:text-6xl font-bold ${daysUntilNextExam <= 7 ? 'text-neon-red neon-text-red' :
 								daysUntilNextExam <= 14 ? 'text-neon-yellow neon-text-yellow' :
 									'text-neon-green neon-text-green'
 								}`}>
 								{daysUntilNextExam}
 							</div>
-							<div className="text-gray-400">days</div>
-							<div className="text-gray-500 text-sm mt-1">+{hoursUntilNextExam}h</div>
+							<div className="text-gray-400 text-sm sm:text-base">days <span className="text-gray-500 text-xs sm:text-sm">+{hoursUntilNextExam}h</span></div>
 						</div>
 					</div>
 				</div>
 			)}
 
-			{/* Stats grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				{/* CFU Progress */}
-				<div className="card-cyber p-4">
-					<div className="flex items-center justify-between mb-3">
-						<div className="flex items-center gap-2 text-gray-400 text-sm">
-							<Target className="w-4 h-4" />
-							SCHOLARSHIP TARGET
+			{/* PENDING STRATEGIC DECISIONS - Prominent alert */}
+			{pendingRules > 0 && activeCampaign && (
+				<div className="card-cyber p-4 border-neon-yellow/30 bg-neon-yellow/5">
+					<div className="flex items-start gap-3">
+						<AlertTriangle className="w-5 h-5 text-neon-yellow flex-shrink-0 mt-0.5" />
+						<div className="flex-1 min-w-0">
+							<h4 className="font-semibold text-neon-yellow">{pendingRules} Strategic Decision{pendingRules > 1 ? 's' : ''} Pending</h4>
+							<p className="text-xs text-gray-500 mb-2">Campaign: {activeCampaign.name}</p>
+							<div className="space-y-1">
+								{activeCampaign.rules?.filter(r => r.status === 'pending').slice(0, 3).map((rule, idx) => (
+									<div key={idx} className="flex items-center gap-2 text-sm">
+										<span className="w-1.5 h-1.5 bg-neon-yellow rounded-full flex-shrink-0" />
+										<span className="text-gray-400 truncate">IF {rule.condition}</span>
+										<ArrowRight className="w-3 h-3 text-gray-600 flex-shrink-0" />
+										<span className="text-white truncate">{rule.action}</span>
+									</div>
+								))}
+							</div>
 						</div>
-						<span className="text-xs text-gray-500">{passedCFUs}/20 CFU</span>
+						<Link to="/strategy" className="btn-cyber px-3 py-1.5 text-sm flex-shrink-0">
+							Decide
+						</Link>
 					</div>
-					<div className="h-3 bg-dark-700 rounded-full overflow-hidden">
+				</div>
+			)}
+
+			{/* Stats grid */}
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+				{/* CFU Progress */}
+				<div className="card-cyber p-3 sm:p-4">
+					<div className="flex items-center justify-between mb-2 sm:mb-3">
+						<div className="flex items-center gap-1 sm:gap-2 text-gray-400 text-xs sm:text-sm">
+							<Target className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+							<span className="hidden sm:inline">SCHOLARSHIP TARGET</span>
+							<span className="sm:hidden">TARGET</span>
+						</div>
+						<span className="text-xs text-gray-500">{passedCFUs}/20</span>
+					</div>
+					<div className="h-2 sm:h-3 bg-dark-700 rounded-full overflow-hidden">
 						<div
 							className="h-full progress-bar-cyber rounded-full transition-all duration-500"
 							style={{ width: `${cfuProgress}%` }}
 						/>
 					</div>
 					<div className="mt-2 text-right">
-						<span className={`text-2xl font-bold ${passedCFUs >= 20 ? 'text-neon-green' : 'text-white'
+						<span className={`text-sm sm:text-lg font-bold ${passedCFUs >= 20 ? 'text-neon-green' : 'text-white'
 							}`}>
-							{passedCFUs >= 20 ? 'UNLOCKED' : `${20 - passedCFUs} CFU needed`}
+							{passedCFUs >= 20 ? 'UNLOCKED' : `${20 - passedCFUs} needed`}
 						</span>
 					</div>
 				</div>
 
 				{/* Available Cash */}
-				<div className="card-cyber p-4">
-					<div className="flex items-center gap-2 text-gray-400 text-sm mb-3">
-						<Unlock className="w-4 h-4 text-neon-green" />
-						AVAILABLE FUNDS
+				<div className="card-cyber p-3 sm:p-4">
+					<div className="flex items-center gap-1 sm:gap-2 text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3">
+						<Unlock className="w-3 h-3 sm:w-4 sm:h-4 text-neon-green flex-shrink-0" />
+						<span className="hidden sm:inline">AVAILABLE FUNDS</span>
+						<span className="sm:hidden">AVAILABLE</span>
 					</div>
-					<div className="text-3xl font-bold text-neon-green neon-text-green">
-						€{getUnlockedMoney().toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+					<div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neon-green neon-text-green truncate">
+						€{getUnlockedMoney().toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
 					</div>
-					<div className="text-xs text-gray-500 mt-1">Received & Spendable</div>
+					<div className="text-xs text-gray-500 mt-1 hidden sm:block">Received & Spendable</div>
 				</div>
 
 				{/* Locked Cash */}
-				<div className="card-cyber p-4">
-					<div className="flex items-center gap-2 text-gray-400 text-sm mb-3">
-						<Lock className="w-4 h-4 text-neon-red" />
-						LOCKED FUNDS
+				<div className="card-cyber p-3 sm:p-4">
+					<div className="flex items-center gap-1 sm:gap-2 text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3">
+						<Lock className="w-3 h-3 sm:w-4 sm:h-4 text-neon-red flex-shrink-0" />
+						<span className="hidden sm:inline">LOCKED FUNDS</span>
+						<span className="sm:hidden">LOCKED</span>
 					</div>
-					<div className="text-3xl font-bold text-neon-red">
-						€{getLockedMoney().toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+					<div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neon-red truncate">
+						€{getLockedMoney().toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
 					</div>
-					<div className="text-xs text-gray-500 mt-1">Requires 20 CFUs</div>
+					<div className="text-xs text-gray-500 mt-1 hidden sm:block">Requires 20 CFUs</div>
 				</div>
 
 				{/* Pending Cash */}
-				<div className="card-cyber p-4">
-					<div className="flex items-center gap-2 text-gray-400 text-sm mb-3">
-						<Clock className="w-4 h-4 text-neon-yellow" />
-						PENDING FUNDS
+				<div className="card-cyber p-3 sm:p-4">
+					<div className="flex items-center gap-1 sm:gap-2 text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3">
+						<Clock className="w-3 h-3 sm:w-4 sm:h-4 text-neon-yellow flex-shrink-0" />
+						<span className="hidden sm:inline">PENDING FUNDS</span>
+						<span className="sm:hidden">PENDING</span>
 					</div>
-					<div className="text-3xl font-bold text-neon-yellow">
-						€{getPendingMoney().toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+					<div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neon-yellow truncate">
+						€{getPendingMoney().toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
 					</div>
-					<div className="text-xs text-gray-500 mt-1">Awaiting Verification</div>
+					<div className="text-xs text-gray-500 mt-1 hidden sm:block">Awaiting Verification</div>
 				</div>
 			</div>
 
@@ -239,7 +304,7 @@ export function Dashboard() {
 								style={{
 									width: `${Math.min(100, Math.max(0,
 										((differenceInDays(now, new Date(activeCampaign.startDate))) /
-										(differenceInDays(new Date(activeCampaign.endDate), new Date(activeCampaign.startDate)))) * 100
+											(differenceInDays(new Date(activeCampaign.endDate), new Date(activeCampaign.startDate)))) * 100
 									))}%`
 								}}
 							/>
@@ -453,44 +518,79 @@ export function Dashboard() {
 						</div>
 					</div>
 
-					{/* Today's Protocol Status - Dynamic */}
+					{/* Today's Protocol - ACTIONABLE */}
 					<div className="card-cyber p-6">
-						<h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-							<Activity className="w-5 h-5 text-neon-purple" />
-							Today's Protocol
-						</h3>
+						<div className="flex items-center justify-between mb-4">
+							<h3 className="text-lg font-semibold text-white flex items-center gap-2">
+								<Activity className="w-5 h-5 text-neon-purple" />
+								Today's Protocol
+							</h3>
+							<Link to="/habits" className="text-xs text-neon-cyan hover:text-neon-green flex items-center gap-1">
+								View All <ChevronRight className="w-3 h-3" />
+							</Link>
+						</div>
+
 						<div className="space-y-3">
-							{/* Dynamic Habits */}
-							{habitDefinitions.slice(0, 2).map(def => {
+							{/* Habits - Inline toggles */}
+							{habitDefinitions.map(def => {
 								const value = todayHabit?.habits[def.id];
 								const isComplete = def.trackingType === 'boolean'
 									? Boolean(value)
 									: typeof value === 'number' && value >= (def.target || 1);
 
 								return (
-									<div key={def.id} className="flex items-center justify-between">
-										<span className="text-gray-400">{def.name}</span>
-										<span className={`font-medium ${isComplete ? 'text-neon-green' : 'text-gray-500'}`}>
-											{def.trackingType === 'boolean'
-												? (value ? '✓ DONE' : '✗ PENDING')
-												: `${value || 0}${def.trackingType === 'hours' ? 'h' : ''} / ${def.target || 1}${def.trackingType === 'hours' ? 'h' : ''}`
-											}
-										</span>
+									<div key={def.id} className={`flex items-center justify-between p-2 rounded transition-colors ${isComplete ? 'bg-neon-green/5' : ''}`}>
+										<span className={`text-sm ${isComplete ? 'text-neon-green' : 'text-gray-400'}`}>{def.name}</span>
+										{def.trackingType === 'boolean' ? (
+											<button
+												onClick={() => handleQuickHabitToggle(def.id, !value)}
+												className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${
+													value ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+												}`}
+											>
+												{value ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+											</button>
+										) : (
+											<div className="flex gap-1">
+												{Array.from({ length: (def.maxValue || 3) + 1 }, (_, i) => i).map(v => (
+													<button
+														key={v}
+														onClick={() => handleQuickHabitToggle(def.id, v)}
+														className={`px-2 py-1 text-xs rounded transition-colors ${
+															value === v ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+														}`}
+													>
+														{v}{def.trackingType === 'hours' ? 'h' : ''}
+													</button>
+												))}
+											</div>
+										)}
 									</div>
 								);
 							})}
 
-							{/* Dynamic Skills */}
-							{skillDefinitions.slice(0, 2).map(def => {
+							{/* Skills - Time selection */}
+							{skillDefinitions.map(def => {
 								const value = todayHabit?.skills[def.id] || '0 mins';
 								const isComplete = value !== '0 mins';
+								const options = def.trackingOptions || ['0 mins', '15 mins', '30 mins', '60 mins'];
 
 								return (
-									<div key={def.id} className="flex items-center justify-between">
-										<span className="text-gray-400">{def.name}</span>
-										<span className={`font-medium ${isComplete ? 'text-neon-green' : 'text-gray-500'}`}>
-											{value}
-										</span>
+									<div key={def.id} className={`flex items-center justify-between p-2 rounded transition-colors ${isComplete ? 'bg-neon-cyan/5' : ''}`}>
+										<span className={`text-sm ${isComplete ? 'text-neon-cyan' : 'text-gray-400'}`}>{def.name}</span>
+										<div className="flex gap-1">
+											{options.slice(0, 5).map(opt => (
+												<button
+													key={opt}
+													onClick={() => handleQuickSkillChange(def.id, opt)}
+													className={`px-2 py-1 text-xs rounded transition-colors ${
+														value === opt ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+													}`}
+												>
+													{opt.replace(' mins', 'm').replace(' min', 'm')}
+												</button>
+											))}
+										</div>
 									</div>
 								);
 							})}
@@ -502,6 +602,13 @@ export function Dashboard() {
 								</p>
 							)}
 						</div>
+
+						{/* Progress indicator */}
+						{(habitDefinitions.length > 0 || skillDefinitions.length > 0) && (
+							<div className="mt-4 pt-3 border-t border-dark-600 text-xs text-gray-500">
+								✓ {completedCount}/{habitDefinitions.length + skillDefinitions.length} logged today
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

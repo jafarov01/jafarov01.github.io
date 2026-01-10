@@ -6,12 +6,30 @@ import {
 	GraduationCap, Shield, DollarSign, ChevronDown, Settings,
 	Briefcase, Target
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export function Navigation() {
 	const { user, signOut } = useAuth();
 	const { profile, getGlobalStatus, bureaucracy } = useData();
 	const [financeOpen, setFinanceOpen] = useState(false);
+	const financeDropdownRef = useRef<HTMLDivElement>(null);
+
+	// Close dropdown on click outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (financeDropdownRef.current && !financeDropdownRef.current.contains(event.target as Node)) {
+				setFinanceOpen(false);
+			}
+		};
+
+		if (financeOpen) {
+			document.addEventListener('mousedown', handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, [financeOpen]);
 
 	const globalStatus = getGlobalStatus();
 
@@ -56,7 +74,7 @@ export function Navigation() {
 						</NavLink>
 
 						{/* Finance Dropdown */}
-						<div className="relative">
+						<div className="relative" ref={financeDropdownRef}>
 							<button
 								onClick={() => setFinanceOpen(!financeOpen)}
 								className={`${baseNavLink} ${inactiveClass}`}
@@ -135,29 +153,36 @@ export function Navigation() {
 
 				{/* Mobile Navigation */}
 				<div className="md:hidden pb-4 flex flex-wrap gap-2">
-					<NavLink to="/academics" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/academics" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Academics">
 						<GraduationCap className="w-4 h-4" />
+						<span className="sr-only">Academics</span>
 					</NavLink>
-					<NavLink to="/cashflow" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/cashflow" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Cashflow">
 						<DollarSign className="w-4 h-4" />
+						<span className="sr-only">Cashflow</span>
 					</NavLink>
-					<NavLink to="/funding" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/funding" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Funding">
 						<BookOpen className="w-4 h-4" />
+						<span className="sr-only">Funding</span>
 					</NavLink>
-					<NavLink to="/bureaucracy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass} relative`}>
+					<NavLink to="/bureaucracy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass} relative`} aria-label="Bureaucracy">
 						<Shield className="w-4 h-4" />
+						<span className="sr-only">Bureaucracy</span>
 						{criticalBureaucracy > 0 && (
-							<span className="absolute -top-1 -right-1 w-3 h-3 bg-neon-red rounded-full animate-pulse" />
+							<span className="absolute -top-1 -right-1 w-3 h-3 bg-neon-red rounded-full animate-pulse" aria-label={`${criticalBureaucracy} alerts`} />
 						)}
 					</NavLink>
-					<NavLink to="/habits" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/habits" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Protocol">
 						<Activity className="w-4 h-4" />
+						<span className="sr-only">Protocol</span>
 					</NavLink>
-					<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Career">
 						<Briefcase className="w-4 h-4" />
+						<span className="sr-only">Career</span>
 					</NavLink>
-					<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Strategy">
 						<Target className="w-4 h-4" />
+						<span className="sr-only">Strategy</span>
 					</NavLink>
 				</div>
 			</div>

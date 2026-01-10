@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	PiggyBank,
 	Lock,
@@ -12,13 +13,16 @@ import {
 	Briefcase,
 	DollarSign,
 	X,
-	Save
+	Save,
+	Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { type FinanceEntry } from '../lib/seedData';
+import { ConfirmModal } from './ConfirmModal';
 
 export function Funding() {
 	const { finances, addFinance, updateFinance, deleteFinance, getPassedCFUs } = useData();
+	const { showToast } = useToast();
 	const passedCFUs = getPassedCFUs();
 	const totalPotential = finances.reduce((sum, f) => sum + f.amount, 0);
 	const unlockedAmount = finances.filter(f => f.status === 'received').reduce((sum, f) => sum + f.amount, 0);
@@ -26,6 +30,12 @@ export function Funding() {
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<FinanceEntry | null>(null);
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Delete confirmation state
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [deleteId, setDeleteId] = useState<string | null>(null);
+
 	const [formData, setFormData] = useState<Omit<FinanceEntry, 'id'>>({
 		source: '',
 		type: 'income',
@@ -62,22 +72,40 @@ export function Funding() {
 		e.preventDefault();
 		if (!formData.source || formData.amount <= 0) return;
 
+		setIsSaving(true);
 		try {
 			if (editingItem) {
 				await updateFinance(editingItem.id, formData);
+				showToast('Funding source updated', 'success');
 			} else {
 				await addFinance(formData);
+				showToast('Funding source added', 'success');
 			}
 			setIsModalOpen(false);
 			resetForm();
-		} catch (error) {
-			console.error('Error saving finance item:', error);
+		} catch {
+			showToast('Failed to save funding source', 'error');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
-	const handleDelete = async (id: string) => {
-		if (confirm('Are you sure you want to delete this funding source?')) {
-			await deleteFinance(id);
+	const handleDeleteRequest = (id: string) => {
+		setDeleteId(id);
+		setConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (deleteId) {
+			try {
+				await deleteFinance(deleteId);
+				showToast('Funding source deleted', 'success');
+				setConfirmOpen(false);
+				setDeleteId(null);
+			} catch {
+				showToast('Failed to delete funding source', 'error');
+				setConfirmOpen(false);
+			}
 		}
 	};
 
@@ -195,7 +223,7 @@ export function Funding() {
 										<Edit2 className="w-4 h-4" />
 									</button>
 									<button
-										onClick={() => handleDelete(entry.id)}
+										onClick={() => handleDeleteRequest(entry.id)}
 										className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-400 hover:text-neon-red transition-colors"
 									>
 										<Trash2 className="w-4 h-4" />
@@ -293,15 +321,30 @@ export function Funding() {
 								</button>
 								<button
 									type="submit"
-									className="btn-cyber flex items-center gap-2"
+									disabled={isSaving}
+									className="btn-cyber flex items-center gap-2 disabled:opacity-50"
 								>
-									<Save className="w-4 h-4" /> Save
+									{isSaving ? (
+										<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+									) : (
+										<><Save className="w-4 h-4" /> Save</>
+									)}
 								</button>
 							</div>
 						</form>
 					</div>
 				</div>
 			)}
+
+			<ConfirmModal
+				isOpen={confirmOpen}
+				title="Delete Funding Source"
+				message="Are you sure you want to delete this funding source? This action cannot be undone."
+				confirmText="Delete"
+				isDangerous={true}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmOpen(false)}
+			/>
 		</div>
 	);
 }

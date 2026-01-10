@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	DollarSign,
 	TrendingUp,
@@ -17,13 +18,15 @@ import {
 	Save,
 	PieChart,
 	Wallet,
-	BarChart3
+	BarChart3,
+	Loader2
 } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, isSameMonth, subMonths, eachMonthOfInterval } from 'date-fns';
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, Bar, XAxis, YAxis, Tooltip, Line, ComposedChart } from 'recharts';
 import { type Transaction } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
 import { QuickDateSelector } from './QuickDateSelector';
+import { QuickAddTransaction } from './QuickAddTransaction';
 
 const CATEGORY_COLORS: Record<string, string> = {
 	salary: '#00ff88',      // neon-green
@@ -64,6 +67,7 @@ const EXPENSE_CATEGORIES = [
 
 export function Cashflow() {
 	const { transactions, addTransaction, deleteTransaction, updateTransaction } = useData();
+	const { showToast } = useToast();
 	const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
 	const [searchTerm, setSearchTerm] = useState('');
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,6 +85,7 @@ export function Cashflow() {
 		category: 'food',
 		recurring: false
 	});
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Derived Data
 	const currentMonth = new Date();
@@ -121,18 +126,24 @@ export function Cashflow() {
 		return data;
 	}, [monthlyTransactions, filter]);
 
-	// History Chart Data
+	// History Chart Data with Net Worth Trend
 	const historyData = useMemo(() => {
 		const end = new Date();
 		const start = subMonths(end, 5);
 		const months = eachMonthOfInterval({ start, end });
 
+		let cumulativeNetWorth = 0;
 		return months.map(month => {
 			const monthTx = transactions.filter(t => isSameMonth(parseISO(t.date), month));
+			const monthIncome = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+			const monthExpense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+			cumulativeNetWorth += (monthIncome - monthExpense);
+			
 			return {
 				month: format(month, 'MMM'),
-				income: monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
-				expense: monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+				income: monthIncome,
+				expense: monthExpense,
+				netWorth: cumulativeNetWorth
 			};
 		});
 	}, [transactions]);
@@ -140,10 +151,28 @@ export function Cashflow() {
 	// Recurring Expenses Projection
 	const recurringExpenses = transactions.filter(t => t.recurring && t.type === 'expense');
 
+	// Duplicate recurring expense to current month
+	const duplicateToCurrentMonth = async (tx: Transaction) => {
+		try {
+			await addTransaction({
+				date: format(new Date(), 'yyyy-MM-dd'),
+				description: tx.description,
+				amount: tx.amount,
+				type: tx.type,
+				category: tx.category,
+				recurring: false // One-time entry for this month
+			});
+			showToast(`€${tx.amount} added for ${format(new Date(), 'MMM')}`, 'success');
+		} catch {
+			showToast('Failed to add', 'error');
+		}
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!formData.description || formData.amount <= 0) return;
 
+		setIsSaving(true);
 		try {
 			if (editingTx) {
 				await updateTransaction(editingTx.id, {
@@ -153,6 +182,7 @@ export function Cashflow() {
 						? (INCOME_CATEGORIES.find(c => c.value === formData.category) ? formData.category : 'other_income')
 						: (EXPENSE_CATEGORIES.find(c => c.value === formData.category) ? formData.category : 'other_expense')) as any
 				});
+				showToast('Transaction updated', 'success');
 			} else {
 				await addTransaction({
 					...formData,
@@ -160,11 +190,14 @@ export function Cashflow() {
 						? (INCOME_CATEGORIES.find(c => c.value === formData.category) ? formData.category : 'other_income')
 						: (EXPENSE_CATEGORIES.find(c => c.value === formData.category) ? formData.category : 'other_expense')) as any
 				});
+				showToast('Transaction added', 'success');
 			}
 			setIsModalOpen(false);
 			resetForm();
-		} catch (error) {
-			console.error('Error saving transaction:', error);
+		} catch {
+			showToast('Failed to save transaction', 'error');
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -193,9 +226,15 @@ export function Cashflow() {
 
 	const confirmDelete = async () => {
 		if (deleteId) {
-			await deleteTransaction(deleteId);
-			setConfirmOpen(false);
-			setDeleteId(null);
+			try {
+				await deleteTransaction(deleteId);
+				showToast('Transaction deleted', 'success');
+				setConfirmOpen(false);
+				setDeleteId(null);
+			} catch {
+				showToast('Failed to delete transaction', 'error');
+				setConfirmOpen(false);
+			}
 		}
 	};
 
@@ -211,24 +250,26 @@ export function Cashflow() {
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="page-header">
 				<div>
-					<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-						<Wallet className="w-8 h-8 text-neon-cyan" />
+					<h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+						<Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-neon-cyan flex-shrink-0" />
 						Cashflow Command
 					</h1>
-					<p className="text-gray-500 mt-1">Track income, expenses, and burn rate</p>
+					<p className="text-gray-500 mt-1 text-sm sm:text-base">Track income, expenses, and burn rate</p>
 				</div>
 				<button
 					onClick={() => { resetForm(); setIsModalOpen(true); }}
 					className="btn-cyber flex items-center gap-2"
 				>
-					<Plus className="w-4 h-4" /> Add Transaction
+					<Plus className="w-4 h-4" />
+					<span className="hidden sm:inline">Advanced Add</span>
+					<span className="sm:hidden">+</span>
 				</button>
 			</div>
 
 			{/* KPI Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 				<div className="card-cyber p-4">
 					<div className="flex items-center gap-2 text-gray-400 mb-2">
 						<DollarSign className="w-4 h-4" /> BALANCE
@@ -262,6 +303,9 @@ export function Cashflow() {
 					</div>
 				</div>
 			</div>
+
+			{/* Quick Add Bar */}
+			<QuickAddTransaction />
 
 			{/* Main Content Grid */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -314,24 +358,27 @@ export function Cashflow() {
 						</ResponsiveContainer>
 					</div>
 
-					{/* 6 Month History */}
+					{/* 6 Month History + Net Worth Trend */}
 					<div className="card-cyber p-6 h-[300px]">
 						<h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
 							<BarChart3 className="w-5 h-5 text-neon-yellow" /> 6 Month Trend
 						</h3>
 						<ResponsiveContainer width="100%" height="100%">
-							<BarChart data={historyData}>
+							<ComposedChart data={historyData}>
 								<XAxis dataKey="month" stroke="#666" fontSize={12} />
-								<YAxis stroke="#666" fontSize={12} />
+								<YAxis yAxisId="left" stroke="#666" fontSize={12} />
+								<YAxis yAxisId="right" orientation="right" stroke="#9d00ff" fontSize={12} />
 								<Tooltip
 									contentStyle={{ backgroundColor: '#12121a', border: '1px solid #252532', borderRadius: '8px' }}
 									itemStyle={{ color: '#e0e0e0' }}
 									cursor={{ fill: '#ffffff10' }}
 									wrapperStyle={{ zIndex: 1000 }}
+									formatter={(value, name) => [`€${Number(value).toFixed(0)}`, name === 'netWorth' ? 'Net Worth' : name === 'income' ? 'Income' : 'Expense']}
 								/>
-								<Bar dataKey="income" fill="#00ff9d" radius={[4, 4, 0, 0]} />
-								<Bar dataKey="expense" fill="#ff0055" radius={[4, 4, 0, 0]} />
-							</BarChart>
+								<Bar yAxisId="left" dataKey="income" fill="#00ff9d" radius={[4, 4, 0, 0]} />
+								<Bar yAxisId="left" dataKey="expense" fill="#ff0055" radius={[4, 4, 0, 0]} />
+								<Line yAxisId="right" type="monotone" dataKey="netWorth" stroke="#9d00ff" strokeWidth={3} dot={{ fill: '#9d00ff', r: 4 }} name="Net Worth" />
+							</ComposedChart>
 						</ResponsiveContainer>
 					</div>
 
@@ -346,7 +393,7 @@ export function Cashflow() {
 								const isSoon = isWithinInterval(nextDate, { start: new Date(), end: addMonths(new Date(), 1) });
 
 								return (
-									<div key={tx.id} className="flex items-center justify-between p-3 rounded bg-dark-700/50 border border-dark-600">
+									<div key={tx.id} className="flex items-center justify-between p-3 rounded bg-dark-700/50 border border-dark-600 group">
 										<div className="flex items-center gap-3">
 											<div className={`p-2 rounded-full bg-dark-600 ${isSoon ? 'text-neon-yellow' : 'text-gray-500'}`}>
 												<Calendar className="w-4 h-4" />
@@ -358,9 +405,17 @@ export function Cashflow() {
 												</div>
 											</div>
 										</div>
-										<div className="text-right">
-											<div className="text-sm font-bold text-white">€{tx.amount}</div>
-											<div className="text-[10px] text-gray-500 uppercase">{tx.category}</div>
+										<div className="flex items-center gap-3">
+											<button
+												onClick={() => duplicateToCurrentMonth(tx)}
+												className="text-xs text-neon-cyan hover:text-neon-green transition-colors opacity-0 group-hover:opacity-100"
+											>
+												+ Add to {format(new Date(), 'MMM')}
+											</button>
+											<div className="text-right">
+												<div className="text-sm font-bold text-white">€{tx.amount}</div>
+												<div className="text-[10px] text-gray-500 uppercase">{tx.category}</div>
+											</div>
 										</div>
 									</div>
 								);
@@ -470,8 +525,8 @@ export function Cashflow() {
 
 			{/* Add/Edit Modal */}
 			{isModalOpen && (
-				<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-					<div className="bg-dark-800 border border-dark-600 rounded-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+				<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+					<div className="bg-dark-800 border border-dark-600 rounded-xl w-full max-w-[calc(100vw-1rem)] sm:max-w-md max-h-[calc(100vh-1rem)] overflow-y-auto">
 						<div className="p-6 border-b border-dark-600 flex justify-between items-center">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								{editingTx ? <Edit2 className="w-5 h-5 text-neon-cyan" /> : <Plus className="w-5 h-5 text-neon-green" />}
@@ -587,9 +642,14 @@ export function Cashflow() {
 								</button>
 								<button
 									type="submit"
-									className="btn-cyber flex items-center gap-2"
+									disabled={isSaving}
+									className="btn-cyber flex items-center gap-2 disabled:opacity-50"
 								>
-									<Save className="w-4 h-4" /> Save Transaction
+									{isSaving ? (
+										<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+									) : (
+										<><Save className="w-4 h-4" /> Save Transaction</>
+									)}
 								</button>
 							</div>
 						</form>

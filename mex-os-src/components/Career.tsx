@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import {
 	Briefcase,
 	GraduationCap,
@@ -17,10 +18,12 @@ import {
 	Clock,
 	ChevronDown,
 	ChevronUp,
-	DollarSign
+	DollarSign,
+	Loader2
 } from 'lucide-react';
 import { format, differenceInMonths } from 'date-fns';
 import { type Job, type Education, type JobType, type EducationStatus } from '../lib/seedData';
+import { ConfirmModal } from './ConfirmModal';
 
 const jobTypes: JobType[] = ['full-time', 'contract', 'freelance', 'internship'];
 const educationStatuses: EducationStatus[] = ['enrolled', 'graduated', 'paused'];
@@ -32,6 +35,7 @@ export function Career() {
 		addEducation, updateEducation, deleteEducation,
 		profile
 	} = useData();
+	const { showToast } = useToast();
 
 	const [activeTab, setActiveTab] = useState<'jobs' | 'education' | 'skills'>('jobs');
 	const [isJobModalOpen, setIsJobModalOpen] = useState(false);
@@ -39,6 +43,13 @@ export function Career() {
 	const [editingJob, setEditingJob] = useState<Job | null>(null);
 	const [editingEdu, setEditingEdu] = useState<Education | null>(null);
 	const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+	const [isSavingJob, setIsSavingJob] = useState(false);
+	const [isSavingEdu, setIsSavingEdu] = useState(false);
+
+	// Delete confirmation state
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [deleteId, setDeleteId] = useState<string | null>(null);
+	const [deleteType, setDeleteType] = useState<'job' | 'education' | null>(null);
 
 	const [jobForm, setJobForm] = useState({
 		company: '',
@@ -129,51 +140,96 @@ export function Career() {
 	const handleSaveJob = async () => {
 		if (!jobForm.company.trim() || !jobForm.role.trim()) return;
 
-		const jobData: Omit<Job, 'id'> = {
-			company: jobForm.company,
-			role: jobForm.role,
-			location: jobForm.location,
-			type: jobForm.type,
-			startDate: jobForm.startDate,
-			endDate: jobForm.is_current ? null : (jobForm.endDate || null),
-			salary_gross_yr: jobForm.salary_gross_yr || undefined,
-			currency: jobForm.currency,
-			tech_stack: jobForm.tech_stack.split(',').map(s => s.trim()).filter(Boolean),
-			achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
-			is_current: jobForm.is_current
-		};
+		setIsSavingJob(true);
+		try {
+			const jobData: Omit<Job, 'id'> = {
+				company: jobForm.company,
+				role: jobForm.role,
+				location: jobForm.location,
+				type: jobForm.type,
+				startDate: jobForm.startDate,
+				endDate: jobForm.is_current ? null : (jobForm.endDate || null),
+				salary_gross_yr: jobForm.salary_gross_yr || undefined,
+				currency: jobForm.currency,
+				tech_stack: jobForm.tech_stack.split(',').map(s => s.trim()).filter(Boolean),
+				achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
+				is_current: jobForm.is_current
+			};
 
-		if (editingJob) {
-			await updateJob(editingJob.id, jobData);
-		} else {
-			await addJob(jobData);
+			if (editingJob) {
+				await updateJob(editingJob.id, jobData);
+				showToast('Position updated', 'success');
+			} else {
+				await addJob(jobData);
+				showToast('Position added', 'success');
+			}
+
+			setIsJobModalOpen(false);
+			resetJobForm();
+		} catch {
+			showToast('Failed to save position. Please try again.', 'error');
+		} finally {
+			setIsSavingJob(false);
 		}
-
-		setIsJobModalOpen(false);
-		resetJobForm();
 	};
 
 	const handleSaveEdu = async () => {
 		if (!eduForm.institution.trim() || !eduForm.degree.trim()) return;
 
-		const eduData: Omit<Education, 'id'> = {
-			institution: eduForm.institution,
-			degree: eduForm.degree,
-			status: eduForm.status,
-			startDate: eduForm.startDate,
-			endDate: eduForm.endDate || null,
-			scholarship_name: eduForm.scholarship_name || undefined,
-			thesis_title: eduForm.thesis_title || undefined
-		};
+		setIsSavingEdu(true);
+		try {
+			const eduData: Omit<Education, 'id'> = {
+				institution: eduForm.institution,
+				degree: eduForm.degree,
+				status: eduForm.status,
+				startDate: eduForm.startDate,
+				endDate: eduForm.endDate || null,
+				scholarship_name: eduForm.scholarship_name || undefined,
+				thesis_title: eduForm.thesis_title || undefined
+			};
 
-		if (editingEdu) {
-			await updateEducation(editingEdu.id, eduData);
-		} else {
-			await addEducation(eduData);
+			if (editingEdu) {
+				await updateEducation(editingEdu.id, eduData);
+				showToast('Education updated', 'success');
+			} else {
+				await addEducation(eduData);
+				showToast('Education added', 'success');
+			}
+
+			setIsEduModalOpen(false);
+			resetEduForm();
+		} catch {
+			showToast('Failed to save education. Please try again.', 'error');
+		} finally {
+			setIsSavingEdu(false);
 		}
+	};
 
-		setIsEduModalOpen(false);
-		resetEduForm();
+	// Delete confirmation handlers
+	const handleDeleteRequest = (id: string, type: 'job' | 'education') => {
+		setDeleteId(id);
+		setDeleteType(type);
+		setConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (deleteId && deleteType) {
+			try {
+				if (deleteType === 'job') {
+					await deleteJob(deleteId);
+					showToast('Position deleted', 'success');
+				} else {
+					await deleteEducation(deleteId);
+					showToast('Education deleted', 'success');
+				}
+				setConfirmOpen(false);
+				setDeleteId(null);
+				setDeleteType(null);
+			} catch {
+				showToast(`Failed to delete ${deleteType}`, 'error');
+				setConfirmOpen(false);
+			}
+		}
 	};
 
 	const calculateDuration = (startDate: string, endDate: string | null) => {
@@ -234,16 +290,16 @@ export function Career() {
 						{profile?.name || 'Your'} Professional Timeline & CV Manager
 					</p>
 				</div>
-				<div className="flex items-center gap-4 text-sm">
-					<div className="card-cyber px-4 py-2">
-						<span className="text-gray-400">Experience:</span>
-						<span className="text-white font-bold ml-2">
+				<div className="hidden sm:flex items-center gap-4 text-sm">
+					<div className="card-cyber px-3 py-1.5 sm:px-4 sm:py-2">
+						<span className="text-gray-400 hidden md:inline">Experience:</span>
+						<span className="text-white font-bold ml-0 md:ml-2">
 							{totalYears > 0 ? `${totalYears}y ` : ''}{totalMonths}m
 						</span>
 					</div>
-					<div className="card-cyber px-4 py-2">
-						<span className="text-gray-400">Technologies:</span>
-						<span className="text-neon-cyan font-bold ml-2">{allTechStack.length}</span>
+					<div className="card-cyber px-3 py-1.5 sm:px-4 sm:py-2">
+						<span className="text-gray-400 hidden md:inline">Technologies:</span>
+						<span className="text-neon-cyan font-bold ml-0 md:ml-2">{allTechStack.length}</span>
 					</div>
 				</div>
 			</div>
@@ -252,33 +308,30 @@ export function Career() {
 			<div className="flex gap-2 border-b border-dark-600 pb-2">
 				<button
 					onClick={() => setActiveTab('jobs')}
-					className={`px-4 py-2 rounded-t-lg transition-all ${
-						activeTab === 'jobs'
-							? 'bg-dark-700 text-neon-green border-b-2 border-neon-green'
-							: 'text-gray-400 hover:text-white'
-					}`}
+					className={`px-4 py-2 rounded-t-lg transition-all ${activeTab === 'jobs'
+						? 'bg-dark-700 text-neon-green border-b-2 border-neon-green'
+						: 'text-gray-400 hover:text-white'
+						}`}
 				>
 					<Briefcase className="w-4 h-4 inline mr-2" />
 					Work History ({jobs.length})
 				</button>
 				<button
 					onClick={() => setActiveTab('education')}
-					className={`px-4 py-2 rounded-t-lg transition-all ${
-						activeTab === 'education'
-							? 'bg-dark-700 text-neon-cyan border-b-2 border-neon-cyan'
-							: 'text-gray-400 hover:text-white'
-					}`}
+					className={`px-4 py-2 rounded-t-lg transition-all ${activeTab === 'education'
+						? 'bg-dark-700 text-neon-cyan border-b-2 border-neon-cyan'
+						: 'text-gray-400 hover:text-white'
+						}`}
 				>
 					<GraduationCap className="w-4 h-4 inline mr-2" />
 					Education ({education.length})
 				</button>
 				<button
 					onClick={() => setActiveTab('skills')}
-					className={`px-4 py-2 rounded-t-lg transition-all ${
-						activeTab === 'skills'
-							? 'bg-dark-700 text-neon-purple border-b-2 border-neon-purple'
-							: 'text-gray-400 hover:text-white'
-					}`}
+					className={`px-4 py-2 rounded-t-lg transition-all ${activeTab === 'skills'
+						? 'bg-dark-700 text-neon-purple border-b-2 border-neon-purple'
+						: 'text-gray-400 hover:text-white'
+						}`}
 				>
 					<Code className="w-4 h-4 inline mr-2" />
 					Tech Stack ({cvSkills.length})
@@ -299,9 +352,9 @@ export function Career() {
 					</div>
 
 					{/* Timeline */}
-					<div className="relative">
+					<div className="timeline-container">
 						{/* Timeline line */}
-						<div className="absolute left-8 top-0 bottom-0 w-0.5 bg-dark-600" />
+						<div className="timeline-line" />
 
 						{jobs.length === 0 ? (
 							<div className="text-center py-12 card-cyber">
@@ -311,13 +364,12 @@ export function Career() {
 						) : (
 							<div className="space-y-6">
 								{jobs.map((job) => (
-									<div key={job.id} className="relative pl-20">
+									<div key={job.id} className="timeline-item">
 										{/* Timeline dot */}
-										<div className={`absolute left-6 w-5 h-5 rounded-full border-2 ${
-											job.is_current
-												? 'bg-neon-green border-neon-green animate-pulse'
-												: 'bg-dark-700 border-dark-500'
-										}`} />
+										<div className={`timeline-dot ${job.is_current
+											? 'bg-neon-green border-neon-green animate-pulse'
+											: 'bg-dark-700 border-dark-500'
+											}`} />
 
 										{/* Card */}
 										<div className="card-cyber p-5 hover:border-neon-purple/30 transition-all">
@@ -405,7 +457,7 @@ export function Career() {
 														<Edit2 className="w-4 h-4" />
 													</button>
 													<button
-														onClick={() => deleteJob(job.id)}
+														onClick={() => handleDeleteRequest(job.id, 'job')}
 														className="p-2 text-gray-400 hover:text-neon-red transition-colors"
 													>
 														<Trash2 className="w-4 h-4" />
@@ -485,7 +537,7 @@ export function Career() {
 												<Edit2 className="w-4 h-4" />
 											</button>
 											<button
-												onClick={() => deleteEducation(edu.id)}
+												onClick={() => handleDeleteRequest(edu.id, 'education')}
 												className="p-2 text-gray-400 hover:text-neon-red transition-colors"
 											>
 												<Trash2 className="w-4 h-4" />
@@ -525,13 +577,12 @@ export function Career() {
 									>
 										<div className="flex items-center justify-between mb-2">
 											<span className="font-medium text-white">{skill.name}</span>
-											<span className={`text-xs px-2 py-0.5 rounded ${
-												skill.category === 'language' ? 'bg-neon-cyan/20 text-neon-cyan' :
+											<span className={`text-xs px-2 py-0.5 rounded ${skill.category === 'language' ? 'bg-neon-cyan/20 text-neon-cyan' :
 												skill.category === 'frontend' ? 'bg-neon-purple/20 text-neon-purple' :
-												skill.category === 'backend' ? 'bg-neon-green/20 text-neon-green' :
-												skill.category === 'devops' ? 'bg-neon-yellow/20 text-neon-yellow' :
-												'bg-dark-600 text-gray-400'
-											}`}>
+													skill.category === 'backend' ? 'bg-neon-green/20 text-neon-green' :
+														skill.category === 'devops' ? 'bg-neon-yellow/20 text-neon-yellow' :
+															'bg-dark-600 text-gray-400'
+												}`}>
 												{skill.category || 'other'}
 											</span>
 										</div>
@@ -543,11 +594,10 @@ export function Career() {
 												{[1, 2, 3, 4, 5].map(level => (
 													<div
 														key={level}
-														className={`w-4 h-2 rounded ${
-															level <= (skill.proficiency_level || 1)
-																? 'bg-neon-green'
-																: 'bg-dark-600'
-														}`}
+														className={`w-4 h-2 rounded ${level <= (skill.proficiency_level || 1)
+															? 'bg-neon-green'
+															: 'bg-dark-600'
+															}`}
 													/>
 												))}
 											</div>
@@ -589,8 +639,8 @@ export function Career() {
 
 			{/* Job Modal */}
 			{isJobModalOpen && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
 						<div className="flex items-center justify-between mb-6">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<Briefcase className="w-5 h-5 text-neon-purple" />
@@ -743,11 +793,15 @@ export function Career() {
 							</button>
 							<button
 								onClick={handleSaveJob}
-								disabled={!jobForm.company.trim() || !jobForm.role.trim()}
+								disabled={!jobForm.company.trim() || !jobForm.role.trim() || isSavingJob}
 								className="btn-cyber px-6 py-2 flex items-center gap-2 disabled:opacity-50"
 							>
-								<Save className="w-4 h-4" />
-								{editingJob ? 'Update' : 'Add'} Position
+								{isSavingJob ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									<><Save className="w-4 h-4" />
+										{editingJob ? 'Update' : 'Add'} Position</>
+								)}
 							</button>
 						</div>
 					</div>
@@ -756,8 +810,8 @@ export function Career() {
 
 			{/* Education Modal */}
 			{isEduModalOpen && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+					<div className="card-cyber p-4 sm:p-6 w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto">
 						<div className="flex items-center justify-between mb-6">
 							<h2 className="text-xl font-bold text-white flex items-center gap-2">
 								<GraduationCap className="w-5 h-5 text-neon-cyan" />
@@ -860,16 +914,30 @@ export function Career() {
 							</button>
 							<button
 								onClick={handleSaveEdu}
-								disabled={!eduForm.institution.trim() || !eduForm.degree.trim()}
+								disabled={!eduForm.institution.trim() || !eduForm.degree.trim() || isSavingEdu}
 								className="btn-cyber px-6 py-2 flex items-center gap-2 disabled:opacity-50"
 							>
-								<Save className="w-4 h-4" />
-								{editingEdu ? 'Update' : 'Add'} Education
+								{isSavingEdu ? (
+									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+								) : (
+									<><Save className="w-4 h-4" />
+										{editingEdu ? 'Update' : 'Add'} Education</>
+								)}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
+
+			<ConfirmModal
+				isOpen={confirmOpen}
+				title={deleteType === 'job' ? 'Delete Position' : 'Delete Education'}
+				message={`Are you sure you want to delete this ${deleteType === 'job' ? 'position' : 'education entry'}? This action cannot be undone.`}
+				confirmText="Delete"
+				isDangerous={true}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmOpen(false)}
+			/>
 		</div>
 	);
 }

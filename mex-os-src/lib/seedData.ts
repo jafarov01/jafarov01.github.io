@@ -381,17 +381,146 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	if (!Array.isArray(data.skills)) return { valid: false, error: 'Skills must be an array' };
 	if (!Array.isArray(data.habitDefinitions)) return { valid: false, error: 'HabitDefinitions must be an array' };
 
+	// ============================================================================
+	// FIELD-LEVEL VALIDATION
+	// ============================================================================
+
+	// Validate academics (exams)
+	const validExamStatuses = ['study_plan', 'enrolled', 'planned', 'booked', 'passed', 'dropped'];
+	for (const exam of data.academics) {
+		if (!exam.name || typeof exam.name !== 'string') {
+			return { valid: false, error: `Exam missing required 'name' field` };
+		}
+		if (typeof exam.cfu !== 'number' || exam.cfu < 0 || exam.cfu > 30) {
+			return { valid: false, error: `Invalid CFU value for exam: ${exam.name}. Must be a number between 0 and 30.` };
+		}
+		if (exam.status && !validExamStatuses.includes(exam.status)) {
+			return { valid: false, error: `Invalid status '${exam.status}' for exam: ${exam.name}. Valid values: ${validExamStatuses.join(', ')}` };
+		}
+		if (exam.exam_date && isNaN(Date.parse(exam.exam_date))) {
+			return { valid: false, error: `Invalid date format for exam: ${exam.name}` };
+		}
+	}
+
+	// Validate transactions
+	const validTxCategories = ['salary', 'freelance', 'scholarship', 'rent', 'utilities', 'food', 'transport', 'entertainment', 'health', 'education', 'other'];
+	const validTxTypes = ['income', 'expense'];
+	for (const tx of data.transactions) {
+		if (!tx.description || typeof tx.description !== 'string') {
+			return { valid: false, error: `Transaction missing required 'description' field` };
+		}
+		if (typeof tx.amount !== 'number' || tx.amount < 0) {
+			return { valid: false, error: `Invalid amount for transaction: ${tx.description}. Must be a non-negative number.` };
+		}
+		if (tx.type && !validTxTypes.includes(tx.type)) {
+			return { valid: false, error: `Invalid type '${tx.type}' for transaction: ${tx.description}. Valid values: ${validTxTypes.join(', ')}` };
+		}
+		if (tx.category && !validTxCategories.includes(tx.category)) {
+			return { valid: false, error: `Invalid category '${tx.category}' for transaction: ${tx.description}. Valid values: ${validTxCategories.join(', ')}` };
+		}
+		if (tx.date && isNaN(Date.parse(tx.date))) {
+			return { valid: false, error: `Invalid date format for transaction: ${tx.description}` };
+		}
+	}
+
+	// Validate bureaucracy documents
+	const validDocTypes = ['visa', 'residence_permit', 'tax', 'insurance', 'university', 'other'];
+	const validDocStatuses = ['valid', 'expiring_soon', 'expired', 'pending', 'unknown'];
+	for (const doc of data.bureaucracy) {
+		if (!doc.name || typeof doc.name !== 'string') {
+			return { valid: false, error: `Bureaucracy document missing required 'name' field` };
+		}
+		if (doc.type && !validDocTypes.includes(doc.type)) {
+			return { valid: false, error: `Invalid type '${doc.type}' for document: ${doc.name}. Valid values: ${validDocTypes.join(', ')}` };
+		}
+		if (doc.status && !validDocStatuses.includes(doc.status)) {
+			return { valid: false, error: `Invalid status '${doc.status}' for document: ${doc.name}. Valid values: ${validDocStatuses.join(', ')}` };
+		}
+		if (doc.expiry_date && isNaN(Date.parse(doc.expiry_date))) {
+			return { valid: false, error: `Invalid expiry date format for document: ${doc.name}` };
+		}
+		if (doc.issue_date && isNaN(Date.parse(doc.issue_date))) {
+			return { valid: false, error: `Invalid issue date format for document: ${doc.name}` };
+		}
+	}
+
+	// Validate skills
+	for (const skill of data.skills) {
+		if (!skill.name || typeof skill.name !== 'string') {
+			return { valid: false, error: `Skill missing required 'name' field` };
+		}
+		if (skill.proficiency_level !== undefined && (typeof skill.proficiency_level !== 'number' || skill.proficiency_level < 1 || skill.proficiency_level > 5)) {
+			return { valid: false, error: `Invalid proficiency level for skill: ${skill.name}. Must be 1-5.` };
+		}
+	}
+
+	// Validate habit definitions
+	const validTrackingTypes = ['boolean', 'hours', 'count'];
+	for (const habit of data.habitDefinitions) {
+		if (!habit.name || typeof habit.name !== 'string') {
+			return { valid: false, error: `Habit definition missing required 'name' field` };
+		}
+		if (habit.trackingType && !validTrackingTypes.includes(habit.trackingType)) {
+			return { valid: false, error: `Invalid tracking type '${habit.trackingType}' for habit: ${habit.name}. Valid values: ${validTrackingTypes.join(', ')}` };
+		}
+	}
+
 	// v5.0 Career validation (optional but must be valid if present)
 	if (data.career) {
 		if (typeof data.career !== 'object') return { valid: false, error: 'Career must be an object' };
 		if (data.career.jobs && !Array.isArray(data.career.jobs)) return { valid: false, error: 'Career jobs must be an array' };
 		if (data.career.education && !Array.isArray(data.career.education)) return { valid: false, error: 'Career education must be an array' };
+
+		// Validate jobs
+		const validJobTypes = ['full-time', 'contract', 'freelance', 'internship'];
+		for (const job of (data.career.jobs || [])) {
+			if (!job.company || typeof job.company !== 'string') {
+				return { valid: false, error: `Job missing required 'company' field` };
+			}
+			if (!job.role || typeof job.role !== 'string') {
+				return { valid: false, error: `Job missing required 'role' field for company: ${job.company}` };
+			}
+			if (job.type && !validJobTypes.includes(job.type)) {
+				return { valid: false, error: `Invalid job type '${job.type}' for: ${job.role} at ${job.company}. Valid values: ${validJobTypes.join(', ')}` };
+			}
+			if (job.startDate && isNaN(Date.parse(job.startDate))) {
+				return { valid: false, error: `Invalid start date for job: ${job.role} at ${job.company}` };
+			}
+		}
+
+		// Validate education
+		const validEduStatuses = ['enrolled', 'graduated', 'paused'];
+		for (const edu of (data.career.education || [])) {
+			if (!edu.institution || typeof edu.institution !== 'string') {
+				return { valid: false, error: `Education entry missing required 'institution' field` };
+			}
+			if (edu.status && !validEduStatuses.includes(edu.status)) {
+				return { valid: false, error: `Invalid education status '${edu.status}' for: ${edu.institution}. Valid values: ${validEduStatuses.join(', ')}` };
+			}
+		}
 	}
 
 	// v5.0 Strategy validation (optional but must be valid if present)
 	if (data.strategy) {
 		if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
 		if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
+
+		// Validate campaigns
+		const validCampaignStatuses = ['active', 'planned', 'completed', 'failed'];
+		for (const campaign of (data.strategy.campaigns || [])) {
+			if (!campaign.name || typeof campaign.name !== 'string') {
+				return { valid: false, error: `Campaign missing required 'name' field` };
+			}
+			if (campaign.status && !validCampaignStatuses.includes(campaign.status)) {
+				return { valid: false, error: `Invalid campaign status '${campaign.status}' for: ${campaign.name}. Valid values: ${validCampaignStatuses.join(', ')}` };
+			}
+			if (campaign.startDate && isNaN(Date.parse(campaign.startDate))) {
+				return { valid: false, error: `Invalid start date for campaign: ${campaign.name}` };
+			}
+			if (campaign.endDate && isNaN(Date.parse(campaign.endDate))) {
+				return { valid: false, error: `Invalid end date for campaign: ${campaign.name}` };
+			}
+		}
 	}
 
 	return { valid: true };
