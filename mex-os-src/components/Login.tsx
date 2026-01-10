@@ -1,14 +1,28 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Terminal, Zap, AlertTriangle } from 'lucide-react';
 
 export function Login() {
-	const { signIn, signUp } = useAuth();
+	const { signIn, signUp, user, loading: authLoading } = useAuth();
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	// Redirect if already logged in
+	if (authLoading) {
+		return (
+			<div className="min-h-screen bg-dark-900 flex items-center justify-center">
+				<div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-full animate-spin" />
+			</div>
+		);
+	}
+
+	if (user) {
+		return <Navigate to="/" replace />;
+	}
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
