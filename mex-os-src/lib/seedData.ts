@@ -93,6 +93,34 @@ export interface HabitEntry {
 	skills: Record<string, string>;            // { [skillId]: "30 mins" }
 }
 
+export interface FullUserData {
+	profile: Profile;
+	academics: Exam[];
+	finance: FinanceEntry[];
+	transactions: Transaction[];
+	bureaucracy: BureaucracyDoc[];
+	skills: SkillDefinition[];
+	habitDefinitions: HabitDefinition[];
+}
+
+export const BLUEPRINT_TEMPLATE: FullUserData = {
+	profile: {
+		name: "",
+		unipd_id: "",
+		cf: "",
+		visa_expiry: "",
+		ranking_position: 0,
+		university: "",
+		degree: ""
+	},
+	academics: [],
+	finance: [],
+	transactions: [],
+	bureaucracy: [],
+	skills: [],
+	habitDefinitions: []
+};
+
 // ============================================================================
 // INITIAL SEED DATA - Only used for first-time setup, never overwrites user data
 // ============================================================================

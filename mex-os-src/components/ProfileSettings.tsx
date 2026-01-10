@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
-import { User, Save, Building2, GraduationCap, CreditCard, Calendar } from 'lucide-react';
-import { type Profile } from '../lib/seedData';
+import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database } from 'lucide-react';
+import { type Profile, BLUEPRINT_TEMPLATE } from '../lib/seedData';
+import { ConfirmModal } from './ConfirmModal';
 
 export function ProfileSettings() {
-	const { profile, updateProfile } = useData();
+	const { profile, updateProfile, exportData, importData, hardResetData } = useData();
 	const [formData, setFormData] = useState<Partial<Profile>>({});
 	const [isSaving, setIsSaving] = useState(false);
 	const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+	const [showResetConfirm, setShowResetConfirm] = useState(false);
+	const [importFile, setImportFile] = useState<File | null>(null);
 
 	useEffect(() => {
 		if (profile) {
@@ -36,6 +39,70 @@ export function ProfileSettings() {
 		}
 	};
 
+	const handleExport = async () => {
+		if (!profile) return;
+		try {
+			const data = await exportData();
+			const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `mex_os_backup_${new Date().toISOString().split('T')[0]}.json`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			setMessage({ type: 'success', text: 'Data exported successfully!' });
+		} catch (error) {
+			console.error('Export failed', error);
+			setMessage({ type: 'error', text: 'Export failed.' });
+		}
+	};
+
+	const handleBlueprintDownload = () => {
+		const blob = new Blob([JSON.stringify(BLUEPRINT_TEMPLATE, null, 2)], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'mex_os_blueprint_template.json';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
+	const handleImport = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!importFile) return;
+
+		const reader = new FileReader();
+		reader.onload = async (event) => {
+			try {
+				const json = JSON.parse(event.target?.result as string);
+				// Basic validation
+				if (!json.profile) throw new Error("Invalid format: missing profile");
+
+				await importData(json);
+				setMessage({ type: 'success', text: 'Data imported successfully!' });
+				setImportFile(null);
+			} catch (error) {
+				console.error('Import failed', error);
+				setMessage({ type: 'error', text: 'Import failed. Check file format.' });
+			}
+		};
+		reader.readAsText(importFile);
+	};
+
+	const handleHardReset = async () => {
+		try {
+			await hardResetData();
+			setShowResetConfirm(false);
+			setMessage({ type: 'success', text: 'All data wiped successfully.' });
+			// Optionally redirect or force refresh
+		} catch (error) {
+			console.error('Reset failed', error);
+			setMessage({ type: 'error', text: 'Failed to reset data.' });
+		}
+	};
+
 	if (!profile) return null;
 
 	return (
@@ -51,8 +118,8 @@ export function ProfileSettings() {
 			<form onSubmit={handleSubmit} className="card-cyber p-8 space-y-6">
 				{message && (
 					<div className={`p-4 rounded-lg border ${message.type === 'success'
-							? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
-							: 'bg-neon-red/10 border-neon-red/30 text-neon-red'
+						? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
+						: 'bg-neon-red/10 border-neon-red/30 text-neon-red'
 						}`}>
 						{message.text}
 					</div>
@@ -160,6 +227,81 @@ export function ProfileSettings() {
 					</button>
 				</div>
 			</form>
+
+			{/* Data Management Section */}
+			<div className="card-cyber p-8 space-y-6 border-t font-mono">
+				<h2 className="text-xl font-bold text-white flex items-center gap-2">
+					<Database className="w-6 h-6 text-neon-yellow" /> Data Sovereignty
+				</h2>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold text-gray-300">Backup & Template</h3>
+						<p className="text-sm text-gray-500">Download your data or a blank template.</p>
+						<div className="flex flex-col gap-3">
+							<button
+								onClick={handleExport}
+								className="btn-cyber w-full flex items-center justify-center gap-2"
+							>
+								<Download className="w-4 h-4" /> Export Current Data
+							</button>
+							<button
+								onClick={handleBlueprintDownload}
+								className="p-2 border border-neon-cyan/50 text-neon-cyan rounded hover:bg-neon-cyan/10 transition-colors w-full flex items-center justify-center gap-2"
+							>
+								<FileJson className="w-4 h-4" /> Download Empty Blueprint
+							</button>
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold text-gray-300">Import Data</h3>
+						<p className="text-sm text-gray-500">Overwrite everything with a backup file.</p>
+						<div className="flex gap-2">
+							<input
+								type="file"
+								accept=".json"
+								onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+								className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-dark-600 file:text-neon-purple hover:file:bg-dark-500"
+							/>
+							<button
+								onClick={handleImport}
+								disabled={!importFile}
+								className="btn-cyber px-4 disabled:opacity-50"
+							>
+								<Upload className="w-4 h-4" />
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div className="pt-6 border-t border-dark-600">
+					<h3 className="text-lg font-bold text-neon-red flex items-center gap-2 mb-2">
+						<AlertTriangle className="w-5 h-5" /> Danger Zone
+					</h3>
+					<div className="flex items-center justify-between p-4 bg-neon-red/5 border border-neon-red/20 rounded-lg">
+						<p className="text-sm text-red-400">
+							Permanently delete all your personal data, transactions, and settings. This cannot be undone.
+						</p>
+						<button
+							onClick={() => setShowResetConfirm(true)}
+							className="px-4 py-2 bg-neon-red/10 border border-neon-red text-neon-red rounded hover:bg-neon-red hover:text-white transition-all whitespace-nowrap font-bold"
+						>
+							Delete All Data
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<ConfirmModal
+				isOpen={showResetConfirm}
+				title="FACTORY RESET"
+				message="CRITICAL WARNING: You are about to wipe your entire digital existence from MEX OS. All profiles, finances, grades, and habits will be permanently destroyed. Are you absolutely sure?"
+				confirmText="DESTROY DATA"
+				isDangerous={true}
+				onConfirm={handleHardReset}
+				onCancel={() => setShowResetConfirm(false)}
+			/>
 		</div>
 	);
 }
