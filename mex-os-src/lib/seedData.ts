@@ -20,6 +20,7 @@ export interface Exam {
 	category: string;
 }
 
+// Scholarship/Funding entries (existing)
 export interface FinanceEntry {
 	id: string;
 	source: string;
@@ -28,6 +29,30 @@ export interface FinanceEntry {
 	status: 'received' | 'pending' | 'locked';
 	unlock_condition: string;
 	expected_date: string;
+}
+
+// NEW: Cashflow transactions
+export interface Transaction {
+	id: string;
+	date: string;
+	description: string;
+	amount: number;
+	type: 'income' | 'expense';
+	category: 'salary' | 'freelance' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'other';
+	recurring: boolean;
+	notes?: string;
+}
+
+// NEW: Bureaucracy documents
+export interface BureaucracyDoc {
+	id: string;
+	name: string;
+	type: 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'other';
+	status: 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'unknown';
+	issue_date?: string;
+	expiry_date?: string;
+	notes: string;
+	is_critical: boolean;
 }
 
 export interface HabitEntry {
@@ -136,6 +161,86 @@ export const financeData: FinanceEntry[] = [
 	}
 ];
 
+// NEW: Sample transactions for cashflow
+export const transactionsData: Transaction[] = [
+	{
+		id: "tx_salary_jan",
+		date: "2026-01-05",
+		description: "Remote Job Salary",
+		amount: 1500,
+		type: "income",
+		category: "salary",
+		recurring: true,
+		notes: "Monthly remote work income"
+	},
+	{
+		id: "tx_rent_jan",
+		date: "2026-01-01",
+		description: "Padova Rent",
+		amount: 450,
+		type: "expense",
+		category: "rent",
+		recurring: true
+	},
+	{
+		id: "tx_groceries_jan",
+		date: "2026-01-08",
+		description: "Weekly Groceries",
+		amount: 85,
+		type: "expense",
+		category: "food",
+		recurring: false
+	},
+	{
+		id: "tx_transport_jan",
+		date: "2026-01-03",
+		description: "Monthly Transport Pass",
+		amount: 35,
+		type: "expense",
+		category: "transport",
+		recurring: true
+	}
+];
+
+// NEW: Bureaucracy documents
+export const bureaucracyData: BureaucracyDoc[] = [
+	{
+		id: "visa_permit",
+		name: "Student Visa / Residence Permit",
+		type: "visa",
+		status: "unknown",
+		notes: "CRITICAL: Expiry date unknown. Must verify immediately.",
+		is_critical: true
+	},
+	{
+		id: "codice_fiscale",
+		name: "Codice Fiscale",
+		type: "tax",
+		status: "valid",
+		issue_date: "2025-09-15",
+		notes: "JFRMHL01S1522530 - Permanent, no expiry",
+		is_critical: false
+	},
+	{
+		id: "uni_enrollment",
+		name: "UniPD Enrollment 2025-2026",
+		type: "university",
+		status: "valid",
+		issue_date: "2025-09-01",
+		expiry_date: "2026-09-30",
+		notes: "MSc Computer Science - Year 1",
+		is_critical: true
+	},
+	{
+		id: "health_insurance",
+		name: "EHIC / Health Coverage",
+		type: "insurance",
+		status: "pending",
+		notes: "Verify Italian health system registration",
+		is_critical: true
+	}
+];
+
 export const initialHabitData: HabitEntry = {
 	date: new Date().toISOString().split('T')[0],
 	habits: {
@@ -153,16 +258,39 @@ export const initialHabitData: HabitEntry = {
 export async function seedUserData(userId: string): Promise<boolean> {
 	try {
 		// Check if data already exists
-		const userDocRef = doc(db, 'users', userId);
 		const academicsRef = collection(db, 'users', userId, 'academics');
 		const academicsSnapshot = await getDocs(academicsRef);
 
 		if (!academicsSnapshot.empty) {
-			console.log('Data already exists, skipping seed');
+			// Check if new collections need seeding
+			const transactionsRef = collection(db, 'users', userId, 'transactions');
+			const transactionsSnapshot = await getDocs(transactionsRef);
+
+			if (transactionsSnapshot.empty) {
+				// Seed only new collections for existing users
+				console.log('Seeding new collections for existing user...');
+				const batch = writeBatch(db);
+
+				for (const tx of transactionsData) {
+					const txRef = doc(db, 'users', userId, 'transactions', tx.id);
+					batch.set(txRef, tx);
+				}
+
+				for (const docEntry of bureaucracyData) {
+					const docRef = doc(db, 'users', userId, 'bureaucracy', docEntry.id);
+					batch.set(docRef, docEntry);
+				}
+
+				await batch.commit();
+				console.log('New collections seeded for existing user');
+			} else {
+				console.log('Data already exists, skipping seed');
+			}
 			return false;
 		}
 
 		const batch = writeBatch(db);
+		const userDocRef = doc(db, 'users', userId);
 
 		// Seed profile
 		batch.set(userDocRef, { profile: profileData });
@@ -173,10 +301,22 @@ export async function seedUserData(userId: string): Promise<boolean> {
 			batch.set(examRef, exam);
 		}
 
-		// Seed finance
+		// Seed scholarship finance
 		for (const entry of financeData) {
 			const financeRef = doc(db, 'users', userId, 'finance', entry.id);
 			batch.set(financeRef, entry);
+		}
+
+		// Seed transactions (NEW)
+		for (const tx of transactionsData) {
+			const txRef = doc(db, 'users', userId, 'transactions', tx.id);
+			batch.set(txRef, tx);
+		}
+
+		// Seed bureaucracy (NEW)
+		for (const docEntry of bureaucracyData) {
+			const docRef = doc(db, 'users', userId, 'bureaucracy', docEntry.id);
+			batch.set(docRef, docEntry);
 		}
 
 		// Seed initial habit entry

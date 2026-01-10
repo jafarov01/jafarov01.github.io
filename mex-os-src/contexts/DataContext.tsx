@@ -5,25 +5,44 @@ import {
 	onSnapshot,
 	updateDoc,
 	setDoc,
-	getDoc
+	getDoc,
+	addDoc,
+	deleteDoc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
-import { type Profile, type Exam, type FinanceEntry, type HabitEntry, profileData } from '../lib/seedData';
+import {
+	type Profile,
+	type Exam,
+	type FinanceEntry,
+	type HabitEntry,
+	type Transaction,
+	type BureaucracyDoc,
+	profileData
+} from '../lib/seedData';
 
 interface DataContextType {
 	profile: Profile | null;
 	exams: Exam[];
 	finances: FinanceEntry[];
 	habits: HabitEntry[];
+	transactions: Transaction[];
+	bureaucracy: BureaucracyDoc[];
 	loading: boolean;
 	updateExamStatus: (examId: string, status: Exam['status']) => Promise<void>;
 	updateHabit: (date: string, habitData: Partial<HabitEntry>) => Promise<void>;
+	addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
+	deleteTransaction: (txId: string) => Promise<void>;
+	updateBureaucracy: (docId: string, data: Partial<BureaucracyDoc>) => Promise<void>;
 	getPassedCFUs: () => number;
 	getUnlockedMoney: () => number;
 	getLockedMoney: () => number;
 	getPendingMoney: () => number;
 	getGlobalStatus: () => 'green' | 'yellow' | 'red';
+	// Cashflow helpers
+	getMonthlyIncome: (year: number, month: number) => number;
+	getMonthlyExpenses: (year: number, month: number) => number;
+	getNetBalance: () => number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,6 +53,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	const [exams, setExams] = useState<Exam[]>([]);
 	const [finances, setFinances] = useState<FinanceEntry[]>([]);
 	const [habits, setHabits] = useState<HabitEntry[]>([]);
+	const [transactions, setTransactions] = useState<Transaction[]>([]);
+	const [bureaucracy, setBureaucracy] = useState<BureaucracyDoc[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -42,11 +63,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setExams([]);
 			setFinances([]);
 			setHabits([]);
+			setTransactions([]);
+			setBureaucracy([]);
 			setLoading(false);
 			return;
 		}
 
 		setLoading(true);
+		let loadedCount = 0;
+		const totalCollections = 6;
+
+		const checkLoaded = () => {
+			loadedCount++;
+			if (loadedCount >= totalCollections) setLoading(false);
+		};
 
 		// Subscribe to profile
 		const userDocRef = doc(db, 'users', user.uid);
@@ -56,6 +86,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			} else {
 				setProfile(profileData);
 			}
+			checkLoaded();
 		});
 
 		// Subscribe to academics
@@ -68,9 +99,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setExams(examList.sort((a, b) =>
 				new Date(a.exam_date).getTime() - new Date(b.exam_date).getTime()
 			));
+			checkLoaded();
 		});
 
-		// Subscribe to finance
+		// Subscribe to finance (scholarship)
 		const financeRef = collection(db, 'users', user.uid, 'finance');
 		const unsubFinance = onSnapshot(financeRef, (snapshot) => {
 			const financeList: FinanceEntry[] = [];
@@ -78,6 +110,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
 				financeList.push({ ...doc.data(), id: doc.id } as FinanceEntry);
 			});
 			setFinances(financeList);
+			checkLoaded();
+		});
+
+		// Subscribe to transactions (NEW)
+		const transactionsRef = collection(db, 'users', user.uid, 'transactions');
+		const unsubTransactions = onSnapshot(transactionsRef, (snapshot) => {
+			const txList: Transaction[] = [];
+			snapshot.forEach((doc) => {
+				txList.push({ ...doc.data(), id: doc.id } as Transaction);
+			});
+			setTransactions(txList.sort((a, b) =>
+				new Date(b.date).getTime() - new Date(a.date).getTime()
+			));
+			checkLoaded();
+		});
+
+		// Subscribe to bureaucracy (NEW)
+		const bureaucracyRef = collection(db, 'users', user.uid, 'bureaucracy');
+		const unsubBureaucracy = onSnapshot(bureaucracyRef, (snapshot) => {
+			const docList: BureaucracyDoc[] = [];
+			snapshot.forEach((doc) => {
+				docList.push({ ...doc.data(), id: doc.id } as BureaucracyDoc);
+			});
+			setBureaucracy(docList.sort((a, b) => {
+				// Critical items first
+				if (a.is_critical && !b.is_critical) return -1;
+				if (!a.is_critical && b.is_critical) return 1;
+				return 0;
+			}));
+			checkLoaded();
 		});
 
 		// Subscribe to lifestyle/habits
@@ -90,13 +152,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setHabits(habitList.sort((a, b) =>
 				new Date(b.date).getTime() - new Date(a.date).getTime()
 			));
-			setLoading(false);
+			checkLoaded();
 		});
 
 		return () => {
 			unsubProfile();
 			unsubAcademics();
 			unsubFinance();
+			unsubTransactions();
+			unsubBureaucracy();
 			unsubLifestyle();
 		};
 	}, [user]);
@@ -106,7 +170,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		const examRef = doc(db, 'users', user.uid, 'academics', examId);
 		await updateDoc(examRef, { status });
 
-		// Calculate CFUs correctly: current passed CFUs excluding this exam, plus this exam's CFUs if now passed
 		const examBeingUpdated = exams.find(e => e.id === examId);
 		const currentPassedCFUs = exams
 			.filter(e => e.status === 'passed' && e.is_scholarship_critical && e.id !== examId)
@@ -115,7 +178,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		const newTotalCFUs = currentPassedCFUs +
 			(status === 'passed' && examBeingUpdated?.is_scholarship_critical ? (examBeingUpdated?.cfu || 0) : 0);
 
-		// Update scholarship unlock if 20 CFUs reached
 		if (newTotalCFUs >= 20) {
 			const meritInstallment = finances.find(f => f.id === 'installment_2_merit');
 			if (meritInstallment && meritInstallment.status === 'locked') {
@@ -151,6 +213,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		}
 	};
 
+	// NEW: Transaction management
+	const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
+		if (!user) return;
+		const txRef = collection(db, 'users', user.uid, 'transactions');
+		await addDoc(txRef, tx);
+	};
+
+	const deleteTransaction = async (txId: string) => {
+		if (!user) return;
+		const txRef = doc(db, 'users', user.uid, 'transactions', txId);
+		await deleteDoc(txRef);
+	};
+
+	// NEW: Bureaucracy management
+	const updateBureaucracy = async (docId: string, data: Partial<BureaucracyDoc>) => {
+		if (!user) return;
+		const docRef = doc(db, 'users', user.uid, 'bureaucracy', docId);
+		await updateDoc(docRef, data);
+	};
+
 	const getPassedCFUs = useCallback(() => {
 		return exams
 			.filter(e => e.status === 'passed' && e.is_scholarship_critical)
@@ -175,9 +257,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			.reduce((sum, f) => sum + f.amount, 0);
 	}, [finances]);
 
+	// NEW: Cashflow calculations
+	const getMonthlyIncome = useCallback((year: number, month: number) => {
+		return transactions
+			.filter(tx => {
+				const txDate = new Date(tx.date);
+				return tx.type === 'income' &&
+					txDate.getFullYear() === year &&
+					txDate.getMonth() === month;
+			})
+			.reduce((sum, tx) => sum + tx.amount, 0);
+	}, [transactions]);
+
+	const getMonthlyExpenses = useCallback((year: number, month: number) => {
+		return transactions
+			.filter(tx => {
+				const txDate = new Date(tx.date);
+				return tx.type === 'expense' &&
+					txDate.getFullYear() === year &&
+					txDate.getMonth() === month;
+			})
+			.reduce((sum, tx) => sum + tx.amount, 0);
+	}, [transactions]);
+
+	const getNetBalance = useCallback(() => {
+		const totalIncome = transactions
+			.filter(tx => tx.type === 'income')
+			.reduce((sum, tx) => sum + tx.amount, 0);
+		const totalExpenses = transactions
+			.filter(tx => tx.type === 'expense')
+			.reduce((sum, tx) => sum + tx.amount, 0);
+		return totalIncome - totalExpenses;
+	}, [transactions]);
+
 	const getGlobalStatus = useCallback((): 'green' | 'yellow' | 'red' => {
 		const now = new Date();
 		const nextExam = exams.find(e => new Date(e.exam_date) > now && e.status !== 'passed');
+
+		// Check bureaucracy for critical warnings
+		const hasCriticalBureaucracy = bureaucracy.some(
+			doc => doc.is_critical && (doc.status === 'expired' || doc.status === 'unknown')
+		);
+
+		if (hasCriticalBureaucracy) return 'red';
 
 		if (!nextExam) return 'green';
 
@@ -185,20 +307,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			(new Date(nextExam.exam_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		);
 
-		const passedCFUs = getPassedCFUs();
-
-		// Red: Less than 7 days to exam or visa warning
 		if (daysUntil <= 7 || profile?.visa_expiry.includes('WARNING')) {
 			return 'red';
 		}
 
-		// Yellow: Less than 14 days or low CFU progress
-		if (daysUntil <= 14 || passedCFUs < 10) {
+		if (daysUntil <= 14) {
 			return 'yellow';
 		}
 
 		return 'green';
-	}, [exams, profile, getPassedCFUs]);
+	}, [exams, profile, bureaucracy]);
 
 	return (
 		<DataContext.Provider value={{
@@ -206,14 +324,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			exams,
 			finances,
 			habits,
+			transactions,
+			bureaucracy,
 			loading,
 			updateExamStatus,
 			updateHabit,
+			addTransaction,
+			deleteTransaction,
+			updateBureaucracy,
 			getPassedCFUs,
 			getUnlockedMoney,
 			getLockedMoney,
 			getPendingMoney,
-			getGlobalStatus
+			getGlobalStatus,
+			getMonthlyIncome,
+			getMonthlyExpenses,
+			getNetBalance
 		}}>
 			{children}
 		</DataContext.Provider>

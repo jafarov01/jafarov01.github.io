@@ -5,7 +5,9 @@ import { Login } from './components/Login';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { Academics } from './components/Academics';
-import { Finance } from './components/Finance';
+import { Scholarship } from './components/Scholarship';
+import { Cashflow } from './components/Cashflow';
+import { Bureaucracy } from './components/Bureaucracy';
 import { Habits } from './components/Habits';
 import './index.css';
 
@@ -46,7 +48,9 @@ function App() {
 					<Route element={<ProtectedRoute />}>
 						<Route path="/" element={<Dashboard />} />
 						<Route path="/academics" element={<Academics />} />
-						<Route path="/finance" element={<Finance />} />
+						<Route path="/scholarship" element={<Scholarship />} />
+						<Route path="/cashflow" element={<Cashflow />} />
+						<Route path="/bureaucracy" element={<Bureaucracy />} />
 						<Route path="/habits" element={<Habits />} />
 					</Route>
 					<Route path="*" element={<Navigate to="/" replace />} />

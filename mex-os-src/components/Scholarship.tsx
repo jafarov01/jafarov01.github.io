@@ -3,7 +3,7 @@ import { Wallet, Lock, Unlock, Clock, TrendingUp, AlertTriangle, CheckCircle2, T
 import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-export function Finance() {
+export function Scholarship() {
 	const { finances, getUnlockedMoney, getLockedMoney, getPendingMoney, getPassedCFUs } = useData();
 	const passedCFUs = getPassedCFUs();
 	const totalPotential = finances.reduce((sum, f) => sum + f.amount, 0);
