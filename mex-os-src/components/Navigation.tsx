@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import {
 	Terminal, LogOut, User, BookOpen, Wallet, Activity,
-	GraduationCap, Shield, DollarSign, ChevronDown
+	GraduationCap, Shield, DollarSign, ChevronDown, Settings
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -107,10 +107,15 @@ export function Navigation() {
 					<div className="flex items-center gap-4">
 						<div className="hidden sm:flex items-center gap-2 text-sm">
 							<User className="w-4 h-4 text-gray-500" />
-							<span className="text-gray-400">{profile?.name || user?.email}</span>
+							<NavLink to="/settings" className="text-gray-400 hover:text-white transition-colors">
+								{profile?.name || user?.email}
+							</NavLink>
 							<span className="text-gray-600">|</span>
 							<span className="text-neon-cyan font-mono text-xs">{profile?.unipd_id}</span>
 						</div>
+						<NavLink to="/settings" className="p-2 rounded-lg text-gray-400 hover:text-neon-purple hover:bg-dark-700 transition-all" title="Settings">
+							<Settings className="w-5 h-5" />
+						</NavLink>
 						<button onClick={signOut} className="p-2 rounded-lg text-gray-400 hover:text-neon-red hover:bg-dark-700 transition-all" title="Logout">
 							<LogOut className="w-5 h-5" />
 						</button>

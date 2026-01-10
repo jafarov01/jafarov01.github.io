@@ -11,6 +11,8 @@ export interface Profile {
 	cf: string;
 	visa_expiry: string;
 	ranking_position: number;
+	university: string;
+	degree: string;
 }
 
 // Dynamic skill definition - users can add/remove/edit skills
@@ -100,7 +102,9 @@ export const profileData: Profile = {
 	unipd_id: "",
 	cf: "",
 	visa_expiry: "",
-	ranking_position: 0
+	ranking_position: 0,
+	university: "",
+	degree: ""
 };
 
 // Default skill definitions (users can modify these)

@@ -11,7 +11,9 @@ import {
 	Zap,
 	Plus,
 	Trash2,
-	X
+	X,
+	Edit2,
+	Save
 } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { type Exam } from '../lib/seedData';
@@ -20,13 +22,14 @@ const examStatuses: Exam['status'][] = ['study_plan', 'enrolled', 'planned', 'bo
 const examCategories = ['Mandatory Core', 'Elective', 'Free Choice', 'Seminar', 'Thesis', 'Other'];
 
 export function Academics() {
-	const { exams, updateExamStatus, addExam, deleteExam, getPassedCFUs, profile } = useData();
+	const { exams, updateExamStatus, updateExam, addExam, deleteExam, getPassedCFUs, profile } = useData();
 	const now = new Date();
 	const passedCFUs = getPassedCFUs();
 	const cfuProgress = (passedCFUs / 20) * 100;
 
-	const [showAddModal, setShowAddModal] = useState(false);
-	const [newExam, setNewExam] = useState({
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [editingExam, setEditingExam] = useState<Exam | null>(null);
+	const [formData, setFormData] = useState({
 		name: '',
 		cfu: 6,
 		status: 'enrolled' as Exam['status'],
@@ -40,20 +43,8 @@ export function Academics() {
 		await updateExamStatus(examId, newStatus);
 	};
 
-	const handleAddExam = async () => {
-		if (!newExam.name.trim()) return;
-
-		await addExam({
-			name: newExam.name,
-			cfu: newExam.cfu,
-			status: newExam.status,
-			exam_date: newExam.exam_date || null,
-			strategy_notes: newExam.strategy_notes,
-			is_scholarship_critical: newExam.is_scholarship_critical,
-			category: newExam.category
-		});
-
-		setNewExam({
+	const resetForm = () => {
+		setFormData({
 			name: '',
 			cfu: 6,
 			status: 'enrolled',
@@ -62,7 +53,49 @@ export function Academics() {
 			is_scholarship_critical: true,
 			category: 'Mandatory Core'
 		});
-		setShowAddModal(false);
+		setEditingExam(null);
+	};
+
+	const openAddModal = () => {
+		resetForm();
+		setIsModalOpen(true);
+	};
+
+	const openEditModal = (exam: Exam) => {
+		setEditingExam(exam);
+		setFormData({
+			name: exam.name,
+			cfu: exam.cfu,
+			status: exam.status,
+			exam_date: exam.exam_date || '',
+			strategy_notes: exam.strategy_notes,
+			is_scholarship_critical: exam.is_scholarship_critical,
+			category: exam.category
+		});
+		setIsModalOpen(true);
+	};
+
+	const handleSave = async () => {
+		if (!formData.name.trim()) return;
+
+		const examData = {
+			name: formData.name,
+			cfu: formData.cfu,
+			status: formData.status,
+			exam_date: formData.exam_date || null,
+			strategy_notes: formData.strategy_notes,
+			is_scholarship_critical: formData.is_scholarship_critical,
+			category: formData.category
+		};
+
+		if (editingExam) {
+			await updateExam(editingExam.id, examData);
+		} else {
+			await addExam(examData);
+		}
+
+		setIsModalOpen(false);
+		resetForm();
 	};
 
 	const getStatusColor = (status: Exam['status']) => {
@@ -108,7 +141,7 @@ export function Academics() {
 					</p>
 				</div>
 				<button
-					onClick={() => setShowAddModal(true)}
+					onClick={openAddModal}
 					className="btn-cyber px-4 py-2 flex items-center gap-2"
 				>
 					<Plus className="w-4 h-4" />
@@ -163,7 +196,7 @@ export function Academics() {
 						<BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
 						<p className="text-gray-500">No exams tracked yet.</p>
 						<button
-							onClick={() => setShowAddModal(true)}
+							onClick={openAddModal}
 							className="mt-4 btn-cyber px-4 py-2"
 						>
 							Add Your First Exam
@@ -190,15 +223,23 @@ export function Academics() {
 												: 'bg-dark-700 border-dark-600 hover:border-neon-cyan/30'
 										}`}
 								>
-									{/* Delete button */}
-									<button
-										onClick={() => deleteExam(exam.id)}
-										className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red transition-all"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+									{/* Action buttons */}
+									<div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+										<button
+											onClick={() => openEditModal(exam)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-cyan/20 text-gray-500 hover:text-neon-cyan"
+										>
+											<Edit2 className="w-4 h-4" />
+										</button>
+										<button
+											onClick={() => deleteExam(exam.id)}
+											className="p-1.5 rounded bg-dark-600 hover:bg-neon-red/20 text-gray-500 hover:text-neon-red"
+										>
+											<Trash2 className="w-4 h-4" />
+										</button>
+									</div>
 
-									<div className="flex items-start justify-between pr-8">
+									<div className="flex items-start justify-between pr-20">
 										<div className="flex-1">
 											<div className="flex items-center gap-3 mb-2">
 												{isPassed ? (
@@ -239,7 +280,7 @@ export function Academics() {
 											</p>
 										</div>
 
-										<div className="text-right flex flex-col items-end gap-3">
+										<div className="text-right flex flex-col items-end gap-3 min-w-[120px]">
 											{/* Countdown */}
 											{!isPassed && daysLeft !== null && daysLeft > 0 && (
 												<div className={`text-center ${daysLeft <= 7 ? 'text-neon-red' :
@@ -258,7 +299,7 @@ export function Academics() {
 											)}
 
 											{/* Status selector */}
-											<div className="flex flex-wrap gap-2 justify-end max-w-xs">
+											<div className="flex flex-wrap gap-2 justify-end max-w-xs mt-auto">
 												{examStatuses.map(status => (
 													<button
 														key={status}
@@ -306,13 +347,15 @@ export function Academics() {
 				</div>
 			</div>
 
-			{/* Add Exam Modal */}
-			{showAddModal && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-					<div className="card-cyber p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+			{/* Add/Edit Exam Modal */}
+			{isModalOpen && (
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+					<div className="card-cyber p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
 						<div className="flex items-center justify-between mb-6">
-							<h3 className="text-xl font-bold text-white">Add New Exam</h3>
-							<button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-white">
+							<h3 className="text-xl font-bold text-white">
+								{editingExam ? 'Edit Exam' : 'Add New Exam'}
+							</h3>
+							<button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-white">
 								<X className="w-6 h-6" />
 							</button>
 						</div>
@@ -322,8 +365,8 @@ export function Academics() {
 								<label className="block text-sm text-gray-400 mb-2">Exam Name *</label>
 								<input
 									type="text"
-									value={newExam.name}
-									onChange={e => setNewExam({ ...newExam, name: e.target.value })}
+									value={formData.name}
+									onChange={e => setFormData({ ...formData, name: e.target.value })}
 									placeholder="e.g., Machine Learning"
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none"
 								/>
@@ -336,16 +379,16 @@ export function Academics() {
 										type="number"
 										min="1"
 										max="24"
-										value={newExam.cfu}
-										onChange={e => setNewExam({ ...newExam, cfu: parseInt(e.target.value) || 1 })}
+										value={formData.cfu}
+										onChange={e => setFormData({ ...formData, cfu: parseInt(e.target.value) || 1 })}
 										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 									/>
 								</div>
 								<div>
 									<label className="block text-sm text-gray-400 mb-2">Category</label>
 									<select
-										value={newExam.category}
-										onChange={e => setNewExam({ ...newExam, category: e.target.value })}
+										value={formData.category}
+										onChange={e => setFormData({ ...formData, category: e.target.value })}
 										className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 									>
 										{examCategories.map(cat => (
@@ -358,8 +401,8 @@ export function Academics() {
 							<div>
 								<label className="block text-sm text-gray-400 mb-2">Status</label>
 								<select
-									value={newExam.status}
-									onChange={e => setNewExam({ ...newExam, status: e.target.value as Exam['status'] })}
+									value={formData.status}
+									onChange={e => setFormData({ ...formData, status: e.target.value as Exam['status'] })}
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 								>
 									{examStatuses.map(status => (
@@ -372,8 +415,8 @@ export function Academics() {
 								<label className="block text-sm text-gray-400 mb-2">Exam Date (optional)</label>
 								<input
 									type="datetime-local"
-									value={newExam.exam_date}
-									onChange={e => setNewExam({ ...newExam, exam_date: e.target.value })}
+									value={formData.exam_date}
+									onChange={e => setFormData({ ...formData, exam_date: e.target.value })}
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white focus:border-neon-cyan focus:outline-none"
 								/>
 								<p className="text-xs text-gray-500 mt-1">Leave empty if date is TBD</p>
@@ -382,8 +425,8 @@ export function Academics() {
 							<div>
 								<label className="block text-sm text-gray-400 mb-2">Strategy Notes</label>
 								<textarea
-									value={newExam.strategy_notes}
-									onChange={e => setNewExam({ ...newExam, strategy_notes: e.target.value })}
+									value={formData.strategy_notes}
+									onChange={e => setFormData({ ...formData, strategy_notes: e.target.value })}
 									placeholder="e.g., Focus on chapters 1-5, project deadline..."
 									rows={2}
 									className="w-full px-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none resize-none"
@@ -394,11 +437,11 @@ export function Academics() {
 								<input
 									type="checkbox"
 									id="scholarship_critical"
-									checked={newExam.is_scholarship_critical}
-									onChange={e => setNewExam({ ...newExam, is_scholarship_critical: e.target.checked })}
+									checked={formData.is_scholarship_critical}
+									onChange={e => setFormData({ ...formData, is_scholarship_critical: e.target.checked })}
 									className="w-4 h-4 rounded bg-dark-700 border-dark-600 text-neon-cyan focus:ring-neon-cyan"
 								/>
-								<label htmlFor="scholarship_critical" className="text-gray-400">
+								<label htmlFor="scholarship_critical" className="text-gray-400 select-none cursor-pointer">
 									Scholarship Critical (counts toward 20 CFU goal)
 								</label>
 							</div>
@@ -406,16 +449,17 @@ export function Academics() {
 
 						<div className="flex gap-3 mt-6">
 							<button
-								onClick={() => setShowAddModal(false)}
+								onClick={() => setIsModalOpen(false)}
 								className="flex-1 px-4 py-2 rounded-lg bg-dark-700 text-gray-400 hover:bg-dark-600"
 							>
 								Cancel
 							</button>
 							<button
-								onClick={handleAddExam}
-								className="flex-1 btn-cyber py-2"
+								onClick={handleSave}
+								className="flex-1 btn-cyber py-2 flex items-center justify-center gap-2"
 							>
-								Add Exam
+								{editingExam ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+								{editingExam ? 'Save Changes' : 'Add Exam'}
 							</button>
 						</div>
 					</div>

@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import {
 	Shield, AlertTriangle, CheckCircle2, Clock,
-	FileWarning, Calendar, AlertOctagon, Info
+	FileWarning, Calendar, AlertOctagon, Info,
+	Plus, X, Trash2, Edit2, Save
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { type BureaucracyDoc } from '../lib/seedData';
 
 const STATUS_CONFIG = {
 	valid: { color: 'text-neon-green', bg: 'bg-neon-green/10', border: 'border-neon-green/30', icon: CheckCircle2, label: 'VALID' },
@@ -13,8 +16,27 @@ const STATUS_CONFIG = {
 	unknown: { color: 'text-neon-red', bg: 'bg-neon-red/10', border: 'border-neon-red/30', icon: FileWarning, label: 'UNKNOWN' }
 };
 
+const DOC_TYPES = [
+	{ value: 'visa', label: 'Visa / Permit' },
+	{ value: 'tax', label: 'Tax Document' },
+	{ value: 'university', label: 'University' },
+	{ value: 'insurance', label: 'Insurance' },
+	{ value: 'other', label: 'Other' }
+];
+
 export function Bureaucracy() {
-	const { bureaucracy, profile, updateBureaucracy } = useData();
+	const { bureaucracy, profile, updateBureaucracy, addBureaucracy, deleteBureaucracy } = useData();
+	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+	const [editingDoc, setEditingDoc] = useState<BureaucracyDoc | null>(null);
+
+	// Form State
+	const [formData, setFormData] = useState<Partial<BureaucracyDoc>>({
+		name: '',
+		type: 'other',
+		status: 'pending',
+		notes: '',
+		is_critical: false
+	});
 
 	const criticalItems = bureaucracy.filter(doc => doc.is_critical);
 	const otherItems = bureaucracy.filter(doc => !doc.is_critical);
@@ -30,13 +52,61 @@ export function Bureaucracy() {
 		await updateBureaucracy(docId, { status: newStatus as any });
 	};
 
+	const resetForm = () => {
+		setFormData({
+			name: '',
+			type: 'other',
+			status: 'pending',
+			notes: '',
+			is_critical: false,
+			issue_date: '',
+			expiry_date: ''
+		});
+		setEditingDoc(null);
+	};
+
+	const handleSave = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			if (editingDoc) {
+				await updateBureaucracy(editingDoc.id, formData);
+			} else {
+				await addBureaucracy(formData as Omit<BureaucracyDoc, 'id'>);
+			}
+			setIsAddModalOpen(false);
+			resetForm();
+		} catch (error) {
+			console.error('Error saving document:', error);
+		}
+	};
+
+	const handleDelete = async (id: string) => {
+		if (confirm('Are you sure you want to delete this document?')) {
+			await deleteBureaucracy(id);
+		}
+	};
+
+	const openEditModal = (doc: BureaucracyDoc) => {
+		setEditingDoc(doc);
+		setFormData({ ...doc });
+		setIsAddModalOpen(true);
+	};
+
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
-			<div>
-				<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-					<Shield className="w-8 h-8 text-neon-purple" />Bureaucracy
-				</h1>
-				<p className="text-gray-500 mt-1">Legal Status • Permits • Deadlines</p>
+			<div className="flex justify-between items-center">
+				<div>
+					<h1 className="text-3xl font-bold text-white flex items-center gap-3">
+						<Shield className="w-8 h-8 text-neon-purple" />Bureaucracy
+					</h1>
+					<p className="text-gray-500 mt-1">Legal Status • Permits • Deadlines</p>
+				</div>
+				<button
+					onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+					className="btn-cyber flex items-center gap-2"
+				>
+					<Plus className="w-4 h-4" /> Add Document
+				</button>
 			</div>
 
 			{/* Global Warning Banner */}
@@ -67,12 +137,17 @@ export function Bureaucracy() {
 							const daysLeft = getDaysUntilExpiry(doc.expiry_date);
 
 							return (
-								<div key={doc.id} className={`p-4 rounded-lg border ${config.border} ${config.bg}`}>
+								<div key={doc.id} className={`p-4 rounded-lg border ${config.border} ${config.bg} group relative`}>
 									<div className="flex items-start justify-between">
 										<div className="flex items-start gap-4">
 											<StatusIcon className={`w-6 h-6 ${config.color} mt-1`} />
 											<div>
-												<h3 className="text-lg font-semibold text-white">{doc.name}</h3>
+												<h3 className="text-lg font-semibold text-white flex items-center gap-2">
+													{doc.name}
+													<button onClick={() => openEditModal(doc)} className="text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+														<Edit2 className="w-3 h-3" />
+													</button>
+												</h3>
 												<p className="text-sm text-gray-400 capitalize">{doc.type.replace('_', ' ')}</p>
 												<p className="text-sm text-gray-500 mt-2">{doc.notes}</p>
 												{doc.expiry_date && (
@@ -89,19 +164,26 @@ export function Bureaucracy() {
 											</div>
 										</div>
 										<div className="flex flex-col items-end gap-2">
-											<span className={`px-3 py-1 rounded text-xs font-medium ${config.bg} ${config.color} border ${config.border}`}>
-												{config.label}
-											</span>
+											<div className="flex items-center gap-2">
+												<span className={`px-3 py-1 rounded text-xs font-medium ${config.bg} ${config.color} border ${config.border}`}>
+													{config.label}
+												</span>
+												<button
+													onClick={() => handleDelete(doc.id)}
+													className="text-gray-600 hover:text-neon-red transition-colors p-1"
+													title="Delete document"
+												>
+													<Trash2 className="w-4 h-4" />
+												</button>
+											</div>
 											<select
 												value={doc.status}
 												onChange={(e) => handleStatusChange(doc.id, e.target.value)}
-												className="bg-dark-700 border border-dark-600 rounded px-2 py-1 text-xs text-gray-400"
+												className="bg-dark-700 border border-dark-600 rounded px-2 py-1 text-xs text-gray-400 mt-2"
 											>
-												<option value="valid">Valid</option>
-												<option value="expiring_soon">Expiring Soon</option>
-												<option value="expired">Expired</option>
-												<option value="pending">Pending</option>
-												<option value="unknown">Unknown</option>
+												{Object.keys(STATUS_CONFIG).map(status => (
+													<option key={status} value={status}>{STATUS_CONFIG[status as keyof typeof STATUS_CONFIG].label}</option>
+												))}
 											</select>
 										</div>
 									</div>
@@ -126,27 +208,27 @@ export function Bureaucracy() {
 							const StatusIcon = config.icon;
 
 							return (
-								<div key={doc.id} className="p-3 rounded-lg bg-dark-700 border border-dark-600 flex items-center justify-between">
+								<div key={doc.id} className="p-3 rounded-lg bg-dark-700 border border-dark-600 flex items-center justify-between group">
 									<div className="flex items-center gap-3">
 										<StatusIcon className={`w-5 h-5 ${config.color}`} />
 										<div>
-											<span className="text-white font-medium">{doc.name}</span>
+											<span className="text-white font-medium flex items-center gap-2">
+												{doc.name}
+												<button onClick={() => openEditModal(doc)} className="text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+													<Edit2 className="w-3 h-3" />
+												</button>
+											</span>
 											<span className="text-gray-500 text-sm ml-2">({doc.type.replace('_', ' ')})</span>
 										</div>
 									</div>
 									<div className="flex items-center gap-2">
 										<span className={`px-2 py-1 rounded text-xs ${config.bg} ${config.color}`}>{config.label}</span>
-										<select
-											value={doc.status}
-											onChange={(e) => handleStatusChange(doc.id, e.target.value)}
-											className="bg-dark-600 border border-dark-500 rounded px-2 py-1 text-xs text-gray-400"
+										<button
+											onClick={() => handleDelete(doc.id)}
+											className="text-gray-600 hover:text-neon-red transition-colors p-1 opacity-0 group-hover:opacity-100"
 										>
-											<option value="valid">Valid</option>
-											<option value="expiring_soon">Expiring Soon</option>
-											<option value="expired">Expired</option>
-											<option value="pending">Pending</option>
-											<option value="unknown">Unknown</option>
-										</select>
+											<Trash2 className="w-4 h-4" />
+										</button>
 									</div>
 								</div>
 							);
@@ -188,6 +270,124 @@ export function Bureaucracy() {
 					</div>
 				</div>
 			</div>
+
+			{/* Add/Edit Modal */}
+			{isAddModalOpen && (
+				<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+					<div className="bg-dark-800 border border-dark-600 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+						<div className="p-6 border-b border-dark-600 flex justify-between items-center">
+							<h2 className="text-xl font-bold text-white flex items-center gap-2">
+								{editingDoc ? <Edit2 className="w-5 h-5 text-neon-cyan" /> : <Plus className="w-5 h-5 text-neon-green" />}
+								{editingDoc ? 'Edit Document' : 'Add Document'}
+							</h2>
+							<button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-white">
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<form onSubmit={handleSave} className="p-6 space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-gray-400 mb-1">Document Name</label>
+								<input
+									type="text"
+									required
+									value={formData.name}
+									onChange={e => setFormData({ ...formData, name: e.target.value })}
+									className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									placeholder="e.g. Residence Permit"
+								/>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-400 mb-1">Type</label>
+									<select
+										value={formData.type}
+										onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+										className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									>
+										{DOC_TYPES.map(type => (
+											<option key={type.value} value={type.value}>{type.label}</option>
+										))}
+									</select>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-400 mb-1">Status</label>
+									<select
+										value={formData.status}
+										onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+										className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									>
+										{Object.keys(STATUS_CONFIG).map(status => (
+											<option key={status} value={status}>{STATUS_CONFIG[status as keyof typeof STATUS_CONFIG].label}</option>
+										))}
+									</select>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-400 mb-1">Issue Date</label>
+									<input
+										type="date"
+										value={formData.issue_date || ''}
+										onChange={e => setFormData({ ...formData, issue_date: e.target.value })}
+										className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-400 mb-1">Expiry Date</label>
+									<input
+										type="date"
+										value={formData.expiry_date || ''}
+										onChange={e => setFormData({ ...formData, expiry_date: e.target.value })}
+										className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<div>
+								<label className="block text-sm font-medium text-gray-400 mb-1">Notes</label>
+								<textarea
+									value={formData.notes || ''}
+									onChange={e => setFormData({ ...formData, notes: e.target.value })}
+									className="w-full bg-dark-900 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none h-24 resize-none"
+									placeholder="Add details, protocol numbers, or action items..."
+								/>
+							</div>
+
+							<div className="flex items-center gap-2">
+								<input
+									type="checkbox"
+									id="is_critical"
+									checked={formData.is_critical || false}
+									onChange={e => setFormData({ ...formData, is_critical: e.target.checked })}
+									className="w-4 h-4 rounded border-dark-600 bg-dark-900 text-neon-purple focus:ring-neon-purple"
+								/>
+								<label htmlFor="is_critical" className="text-sm font-medium text-white cursor-pointer select-none">
+									Mark as Critical Document
+								</label>
+							</div>
+
+							<div className="pt-4 flex justify-end gap-3">
+								<button
+									type="button"
+									onClick={() => setIsAddModalOpen(false)}
+									className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+								>
+									Cancel
+								</button>
+								<button
+									type="submit"
+									className="btn-cyber flex items-center gap-2"
+								>
+									<Save className="w-4 h-4" /> Save Document
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
+

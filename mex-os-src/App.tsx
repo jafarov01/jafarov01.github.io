@@ -9,6 +9,7 @@ import { Scholarship } from './components/Scholarship';
 import { Cashflow } from './components/Cashflow';
 import { Bureaucracy } from './components/Bureaucracy';
 import { Habits } from './components/Habits';
+import { ProfileSettings } from './components/ProfileSettings';
 import './index.css';
 
 function ProtectedRoute() {
@@ -52,6 +53,7 @@ function App() {
 						<Route path="/cashflow" element={<Cashflow />} />
 						<Route path="/bureaucracy" element={<Bureaucracy />} />
 						<Route path="/habits" element={<Habits />} />
+						<Route path="/settings" element={<ProfileSettings />} />
 					</Route>
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
