@@ -195,225 +195,29 @@ export const profileData: Profile = {
 	degree: ""
 };
 
-// Default skill definitions (users can modify these)
-export const skillDefinitionsData: SkillDefinition[] = [
-	{
-		id: "python",
-		name: "Python",
-		icon: "code",
-		color: "neon-yellow",
-		targetPerDay: "30 mins",
-		trackingOptions: ["0 mins", "15 mins", "30 mins", "1 hour", "2 hours"],
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "italian",
-		name: "Italian",
-		icon: "languages",
-		color: "neon-purple",
-		targetPerDay: "20 mins",
-		trackingOptions: ["0 mins", "10 mins", "20 mins", "30 mins", "1 hour"],
-		createdAt: new Date().toISOString()
-	}
-];
+// ============================================================================
+// VALIDATION LOGIC
+// ============================================================================
 
-// Default habit definitions (users can modify these)
-export const habitDefinitionsData: HabitDefinition[] = [
-	{
-		id: "gym_session",
-		name: "Gym Session",
-		icon: "dumbbell",
-		color: "neon-green",
-		trackingType: "boolean",
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "deep_work_hours",
-		name: "Deep Work",
-		icon: "brain",
-		color: "neon-cyan",
-		trackingType: "hours",
-		target: 4,
-		maxValue: 8,
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "sleep_hours",
-		name: "Sleep",
-		icon: "moon",
-		color: "neon-purple",
-		trackingType: "hours",
-		target: 8,
-		maxValue: 12,
-		createdAt: new Date().toISOString()
-	}
-];
+export function validateImportData(data: any): { valid: boolean; error?: string } {
+	if (!data || typeof data !== 'object') return { valid: false, error: 'Invalid JSON format' };
 
-export const examsData: Exam[] = [
-	{
-		id: "computability",
-		name: "Computability",
-		cfu: 6,
-		status: "booked",
-		exam_date: "2026-01-23T09:00:00",
-		strategy_notes: "Main Event. 13 days deep work.",
-		is_scholarship_critical: true,
-		category: "Mandatory Core",
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "economics",
-		name: "Economics",
-		cfu: 6,
-		status: "planned",
-		exam_date: "2026-01-27T09:00:00",
-		strategy_notes: "Easy Win",
-		is_scholarship_critical: true,
-		category: "Mandatory Core",
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "web_info_mgmt",
-		name: "Web Info Management",
-		cfu: 6,
-		status: "planned",
-		exam_date: "2026-01-30T09:00:00",
-		strategy_notes: "KILL SWITCH if no project",
-		is_scholarship_critical: true,
-		category: "Mandatory Core",
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "sw_verification",
-		name: "Software Verification",
-		cfu: 6,
-		status: "booked",
-		exam_date: "2026-02-03T09:00:00",
-		strategy_notes: "Oral Exam",
-		is_scholarship_critical: true,
-		category: "Mandatory Core",
-		createdAt: new Date().toISOString()
-	},
-	{
-		id: "runtimes",
-		name: "Runtimes",
-		cfu: 6,
-		status: "booked",
-		exam_date: "2026-02-20T09:00:00",
-		strategy_notes: "Project based",
-		is_scholarship_critical: true,
-		category: "Mandatory Core",
-		createdAt: new Date().toISOString()
+	const requiredKeys = ['profile', 'academics', 'finance', 'transactions', 'bureaucracy', 'skills', 'habitDefinitions'];
+	for (const key of requiredKeys) {
+		if (!(key in data)) return { valid: false, error: `Missing required section: ${key}` };
 	}
-];
 
-export const financeData: FinanceEntry[] = [
-	{
-		id: "installment_1_base",
-		source: "Regional Scholarship",
-		type: "income",
-		amount: 2106.39,
-		status: "received",
-		unlock_condition: "None - Base installment",
-		expected_date: "2025-12-15"
-	},
-	{
-		id: "offsite_bonus",
-		source: "Regional Scholarship",
-		type: "income",
-		amount: 3160.14,
-		status: "pending",
-		unlock_condition: "Rent Check Positive",
-		expected_date: "2026-02-15"
-	},
-	{
-		id: "installment_2_merit",
-		source: "Regional Scholarship",
-		type: "income",
-		amount: 2106.39,
-		status: "locked",
-		unlock_condition: "20 CFUs needed",
-		expected_date: "2026-03-15"
-	}
-];
+	// Basic Type Checks (Soft validation to allow for user customizations, but ensure structure)
+	if (typeof data.profile.name !== 'string') return { valid: false, error: 'Profile name is missing or invalid' };
+	if (!Array.isArray(data.academics)) return { valid: false, error: 'Academics must be an array' };
+	if (!Array.isArray(data.finance)) return { valid: false, error: 'Finance must be an array' };
+	if (!Array.isArray(data.transactions)) return { valid: false, error: 'Transactions must be an array' };
+	if (!Array.isArray(data.bureaucracy)) return { valid: false, error: 'Bureaucracy must be an array' };
+	if (!Array.isArray(data.skills)) return { valid: false, error: 'Skills must be an array' };
+	if (!Array.isArray(data.habitDefinitions)) return { valid: false, error: 'HabitDefinitions must be an array' };
 
-export const transactionsData: Transaction[] = [
-	{
-		id: "tx_salary_jan",
-		date: "2026-01-05",
-		description: "Remote Job Salary",
-		amount: 1500,
-		type: "income",
-		category: "salary",
-		recurring: true,
-		notes: "Monthly remote work income"
-	},
-	{
-		id: "tx_rent_jan",
-		date: "2026-01-01",
-		description: "Padova Rent",
-		amount: 450,
-		type: "expense",
-		category: "rent",
-		recurring: true
-	},
-	{
-		id: "tx_groceries_jan",
-		date: "2026-01-08",
-		description: "Weekly Groceries",
-		amount: 85,
-		type: "expense",
-		category: "food",
-		recurring: false
-	},
-	{
-		id: "tx_transport_jan",
-		date: "2026-01-03",
-		description: "Monthly Transport Pass",
-		amount: 35,
-		type: "expense",
-		category: "transport",
-		recurring: true
-	}
-];
-
-export const bureaucracyData: BureaucracyDoc[] = [
-	{
-		id: "visa_permit",
-		name: "Student Visa / Residence Permit",
-		type: "visa",
-		status: "unknown",
-		notes: "CRITICAL: Expiry date unknown. Must verify immediately.",
-		is_critical: true
-	},
-	{
-		id: "codice_fiscale",
-		name: "Codice Fiscale",
-		type: "tax",
-		status: "valid",
-		issue_date: "2025-09-15",
-		notes: "Permanent, no expiry",
-		is_critical: false
-	},
-	{
-		id: "uni_enrollment",
-		name: "University Enrollment",
-		type: "university",
-		status: "valid",
-		issue_date: "2025-09-01",
-		expiry_date: "2026-09-30",
-		notes: "Academic Year Enrollment",
-		is_critical: true
-	},
-	{
-		id: "health_insurance",
-		name: "Health Coverage",
-		type: "insurance",
-		status: "pending",
-		notes: "Verify health system registration",
-		is_critical: true
-	}
-];
+	return { valid: true };
+}
 
 // ============================================================================
 // SEED FUNCTION - Only seeds collections that don't exist yet

@@ -17,7 +17,8 @@ import {
 	type Profile, type Exam, type FinanceEntry, type HabitEntry, type Transaction,
 	type BureaucracyDoc, type SkillDefinition, type HabitDefinition,
 	type FullUserData,
-	profileData
+	profileData,
+	validateImportData
 } from '../lib/seedData';
 
 interface DataContextType {
@@ -147,8 +148,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		setHabits([]);
 	};
 
+	// (Empty - removal)
+
 	const importData = async (data: FullUserData) => {
 		if (!user) return;
+
+		// STRICT VALIDATION
+		const validation = validateImportData(data);
+		if (!validation.valid) {
+			console.error("Import failed:", validation.error);
+			throw new Error(`Import failed: ${validation.error}. Please check against Blueprint.`);
+		}
 
 		await hardResetData();
 
