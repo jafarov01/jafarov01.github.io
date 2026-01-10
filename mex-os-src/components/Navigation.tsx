@@ -75,12 +75,12 @@ export function Navigation() {
 										</div>
 									</NavLink>
 									<NavLink
-										to="/scholarship"
+										to="/funding"
 										onClick={() => setFinanceOpen(false)}
 										className={({ isActive }) => `block px-4 py-2 text-sm ${isActive ? 'text-white bg-dark-600' : 'text-gray-400 hover:text-white hover:bg-dark-600'}`}
 									>
 										<div className="flex items-center gap-2">
-											<GraduationCap className="w-4 h-4" />Scholarship
+											<GraduationCap className="w-4 h-4" />Funding
 										</div>
 									</NavLink>
 								</div>
@@ -130,7 +130,7 @@ export function Navigation() {
 					<NavLink to="/cashflow" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 						<DollarSign className="w-4 h-4" />
 					</NavLink>
-					<NavLink to="/scholarship" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+					<NavLink to="/funding" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 						<BookOpen className="w-4 h-4" />
 					</NavLink>
 					<NavLink to="/bureaucracy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass} relative`}>

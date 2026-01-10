@@ -5,11 +5,11 @@ import { Login } from './components/Login';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { Academics } from './components/Academics';
-import { Scholarship } from './components/Scholarship';
-import { Cashflow } from './components/Cashflow';
 import { Bureaucracy } from './components/Bureaucracy';
 import { Habits } from './components/Habits';
 import { ProfileSettings } from './components/ProfileSettings';
+import { Funding } from './components/Funding';
+import { Cashflow } from './components/Cashflow';
 import './index.css';
 
 function ProtectedRoute() {
@@ -49,8 +49,8 @@ function App() {
 					<Route element={<ProtectedRoute />}>
 						<Route path="/" element={<Dashboard />} />
 						<Route path="/academics" element={<Academics />} />
-						<Route path="/scholarship" element={<Scholarship />} />
 						<Route path="/cashflow" element={<Cashflow />} />
+						<Route path="/funding" element={<Funding />} />
 						<Route path="/bureaucracy" element={<Bureaucracy />} />
 						<Route path="/habits" element={<Habits />} />
 						<Route path="/settings" element={<ProfileSettings />} />

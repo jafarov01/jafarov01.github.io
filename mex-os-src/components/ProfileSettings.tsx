@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
-import { User, Save, Building2, GraduationCap, CreditCard, Calendar, BarChart4 } from 'lucide-react';
+import { User, Save, Building2, GraduationCap, CreditCard, Calendar } from 'lucide-react';
 import { type Profile } from '../lib/seedData';
 
 export function ProfileSettings() {
@@ -51,8 +51,8 @@ export function ProfileSettings() {
 			<form onSubmit={handleSubmit} className="card-cyber p-8 space-y-6">
 				{message && (
 					<div className={`p-4 rounded-lg border ${message.type === 'success'
-						? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
-						: 'bg-neon-red/10 border-neon-red/30 text-neon-red'
+							? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
+							: 'bg-neon-red/10 border-neon-red/30 text-neon-red'
 						}`}>
 						{message.text}
 					</div>
@@ -145,21 +145,6 @@ export function ProfileSettings() {
 								onChange={handleChange}
 								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
 							/>
-						</div>
-
-						<div>
-							<label className="block text-sm text-gray-400 mb-1">Current Ranking Position</label>
-							<div className="relative">
-								<BarChart4 className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-								<input
-									type="number"
-									name="ranking_position"
-									value={formData.ranking_position || 0}
-									onChange={handleChange}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
-								/>
-							</div>
-							<p className="text-xs text-gray-500 mt-1">For regional scholarship ranking</p>
 						</div>
 					</div>
 				</div>

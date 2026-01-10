@@ -358,9 +358,36 @@ function createInitialHabitEntry(): HabitEntry {
 export async function seedUserData(userId: string): Promise<boolean> {
 	try {
 		const batch = writeBatch(db);
+
+		// Check user document for initialization flag
+		const userDocRef = doc(db, 'users', userId);
+		const userDocSnap = await getDoc(userDocRef);
+
+		// If user is already initialized, DO NOT SEED anything automatically
+		// This respects user deletions (empty collections stay empty)
+		if (userDocSnap.exists() && userDocSnap.data().isInitialized) {
+			console.log('User initialized. Skipping auto-seed.');
+			return true;
+		}
+
+		console.log('User not initialized or first login. Starting seed...');
 		let needsSeed = false;
 
-		// Check each collection and seed only if empty
+		// Initialize profile if missing
+		if (!userDocSnap.exists()) {
+			needsSeed = true;
+			batch.set(userDocRef, {
+				profile: profileData,
+				isInitialized: true,
+				createdAt: new Date().toISOString()
+			});
+		} else if (userDocSnap.exists() && !userDocSnap.data().isInitialized) {
+			// Mark as initialized if document exists but flag is missing
+			batch.update(userDocRef, { isInitialized: true });
+			needsSeed = true; // Ensure we commit this update
+		}
+
+		// Check each collection and seed only if empty AND user was not initialized
 		const collections = [
 			{ name: 'academics', data: examsData, keyField: 'id' },
 			{ name: 'finance', data: financeData, keyField: 'id' },
@@ -384,15 +411,6 @@ export async function seedUserData(userId: string): Promise<boolean> {
 			}
 		}
 
-		// Check and seed profile
-		const userDocRef = doc(db, 'users', userId);
-		const userDocSnap = await getDoc(userDocRef);
-
-		if (!userDocSnap.exists()) {
-			needsSeed = true;
-			batch.set(userDocRef, { profile: profileData });
-		}
-
 		// Check and seed lifestyle (today's habit entry)
 		const lifestyleRef = collection(db, 'users', userId, 'lifestyle');
 		const lifestyleSnapshot = await getDocs(lifestyleRef);
@@ -406,14 +424,12 @@ export async function seedUserData(userId: string): Promise<boolean> {
 
 		if (needsSeed) {
 			await batch.commit();
-			console.log('Seed data uploaded successfully');
-			return true;
-		} else {
-			console.log('Data already exists, skipping seed');
-			return false;
+			console.log('Seeding completed successfully.');
 		}
+
+		return true;
 	} catch (error) {
-		console.error('Error seeding data:', error);
-		throw error;
+		console.error('Error seeding user data:', error);
+		return false;
 	}
 }
