@@ -15,14 +15,18 @@ const STATUS_CONFIG = {
 	expiring_soon: { color: 'text-neon-yellow', bg: 'bg-neon-yellow/10', border: 'border-neon-yellow/30', icon: Clock, label: 'EXPIRING SOON' },
 	expired: { color: 'text-neon-red', bg: 'bg-neon-red/10', border: 'border-neon-red/30', icon: AlertOctagon, label: 'EXPIRED' },
 	pending: { color: 'text-neon-cyan', bg: 'bg-neon-cyan/10', border: 'border-neon-cyan/30', icon: Clock, label: 'PENDING' },
+	processing: { color: 'text-neon-purple', bg: 'bg-neon-purple/10', border: 'border-neon-purple/30', icon: Clock, label: 'PROCESSING' },
+	submitted: { color: 'text-neon-cyan', bg: 'bg-neon-cyan/10', border: 'border-neon-cyan/30', icon: CheckCircle2, label: 'SUBMITTED' },
 	unknown: { color: 'text-neon-red', bg: 'bg-neon-red/10', border: 'border-neon-red/30', icon: FileWarning, label: 'UNKNOWN' }
 };
 
 const DOC_TYPES = [
 	{ value: 'visa', label: 'Visa / Permit' },
+	{ value: 'residence_permit', label: 'Residence Permit' },
 	{ value: 'tax', label: 'Tax Document' },
 	{ value: 'university', label: 'University' },
 	{ value: 'insurance', label: 'Insurance' },
+	{ value: 'mobility', label: 'Mobility / Exchange' },
 	{ value: 'other', label: 'Other' }
 ];
 
@@ -68,7 +72,7 @@ export function Bureaucracy() {
 		const dismissedKey = 'mex_bureaucracy_alert_dismissed';
 		const lastDismissed = localStorage.getItem(dismissedKey);
 		const today = format(new Date(), 'yyyy-MM-dd');
-		
+
 		// Show alert if not dismissed today and there are urgent docs
 		if (hasUrgentDocs && lastDismissed !== today) {
 			setShowExpiryAlert(true);

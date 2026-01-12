@@ -158,7 +158,7 @@ export interface Transaction {
 	description: string;
 	amount: number;
 	type: 'income' | 'expense';
-	category: 'salary' | 'freelance' | 'scholarship' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other';
+	category: 'salary' | 'freelance' | 'scholarship' | 'gift' | 'refund' | 'other_income' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other_expense';
 	recurring: boolean;
 	notes?: string;
 }
@@ -167,8 +167,8 @@ export interface Transaction {
 export interface BureaucracyDoc {
 	id: string;
 	name: string;
-	type: 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'other';
-	status: 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'unknown';
+	type: 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'mobility' | 'other';
+	status: 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'processing' | 'submitted' | 'unknown';
 	issue_date?: string;
 	expiry_date?: string;
 	notes: string;
@@ -253,7 +253,7 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			description: "Transaction description",
 			amount: 0,
 			type: "expense", // 'income' | 'expense'
-			category: "food", // 'salary' | 'freelance' | 'scholarship' | 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other'
+			category: "food", // Income: 'salary' | 'freelance' | 'scholarship' | 'gift' | 'refund' | 'other_income' / Expense: 'rent' | 'utilities' | 'food' | 'transport' | 'entertainment' | 'health' | 'education' | 'other_expense'
 			recurring: false,
 			notes: "Optional notes"
 		}
@@ -262,8 +262,8 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 		{
 			id: "doc_id_placeholder",
 			name: "Document Name",
-			type: "other", // 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'other'
-			status: "valid", // 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'unknown'
+			type: "other", // 'visa' | 'residence_permit' | 'tax' | 'insurance' | 'university' | 'mobility' | 'other'
+			status: "valid", // 'valid' | 'expiring_soon' | 'expired' | 'pending' | 'processing' | 'submitted' | 'unknown'
 			issue_date: "2025-01-01",
 			expiry_date: "2026-01-01",
 			notes: "Document notes",
@@ -406,7 +406,7 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	}
 
 	// Validate transactions
-	const validTxCategories = ['salary', 'freelance', 'scholarship', 'rent', 'utilities', 'food', 'transport', 'entertainment', 'health', 'education', 'other'];
+	const validTxCategories = ['salary', 'freelance', 'scholarship', 'gift', 'refund', 'other_income', 'rent', 'utilities', 'food', 'transport', 'entertainment', 'health', 'education', 'other_expense'];
 	const validTxTypes = ['income', 'expense'];
 	for (const tx of data.transactions) {
 		if (!tx.description || typeof tx.description !== 'string') {
@@ -427,8 +427,8 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	}
 
 	// Validate bureaucracy documents
-	const validDocTypes = ['visa', 'residence_permit', 'tax', 'insurance', 'university', 'other'];
-	const validDocStatuses = ['valid', 'expiring_soon', 'expired', 'pending', 'unknown'];
+	const validDocTypes = ['visa', 'residence_permit', 'tax', 'insurance', 'university', 'mobility', 'other'];
+	const validDocStatuses = ['valid', 'expiring_soon', 'expired', 'pending', 'processing', 'submitted', 'unknown'];
 	for (const doc of data.bureaucracy) {
 		if (!doc.name || typeof doc.name !== 'string') {
 			return { valid: false, error: `Bureaucracy document missing required 'name' field` };
@@ -520,16 +520,13 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 		if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
 		if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
 
-		// Validate campaigns
-		const validCampaignStatuses = ['active', 'planned', 'completed', 'failed'];
-		const validRuleStatuses = ['pending', 'triggered', 'safe'];
-		
+		// Validate campaigns - status is flexible to allow user customization (e.g., 'active_phase_2')
 		for (const campaign of (data.strategy.campaigns || [])) {
 			if (!campaign.name || typeof campaign.name !== 'string') {
 				return { valid: false, error: `Campaign missing required 'name' field` };
 			}
-			if (campaign.status && !validCampaignStatuses.includes(campaign.status)) {
-				return { valid: false, error: `Invalid campaign status '${campaign.status}' for: ${campaign.name}. Valid values: ${validCampaignStatuses.join(', ')}` };
+			if (campaign.status && typeof campaign.status !== 'string') {
+				return { valid: false, error: `Campaign status must be a string for: ${campaign.name}` };
 			}
 			if (campaign.startDate && isNaN(Date.parse(campaign.startDate))) {
 				return { valid: false, error: `Invalid start date for campaign: ${campaign.name}` };
@@ -537,7 +534,7 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 			if (campaign.endDate && isNaN(Date.parse(campaign.endDate))) {
 				return { valid: false, error: `Invalid end date for campaign: ${campaign.name}` };
 			}
-			
+
 			// v7.0: Validate campaign rules
 			if (campaign.rules && Array.isArray(campaign.rules)) {
 				for (let i = 0; i < campaign.rules.length; i++) {
@@ -551,12 +548,13 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 					if (!rule.deadline || isNaN(Date.parse(rule.deadline))) {
 						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' has invalid or missing deadline. Format: YYYY-MM-DD` };
 					}
-					if (rule.status && !validRuleStatuses.includes(rule.status)) {
-						return { valid: false, error: `Invalid rule status '${rule.status}' in campaign '${campaign.name}'. Valid values: ${validRuleStatuses.join(', ')}` };
+					// Rule status is flexible - allows custom suffixes like 'pending_check_jan15'
+					if (rule.status && typeof rule.status !== 'string') {
+						return { valid: false, error: `Rule status must be a string in campaign '${campaign.name}'` };
 					}
 				}
 			}
-			
+
 			// Validate linked_exams are strings (IDs)
 			if (campaign.linked_exams && !Array.isArray(campaign.linked_exams)) {
 				return { valid: false, error: `linked_exams must be an array in campaign: ${campaign.name}` };
