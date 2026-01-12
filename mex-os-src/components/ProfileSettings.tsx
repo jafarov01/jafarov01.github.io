@@ -82,9 +82,9 @@ export function ProfileSettings() {
 				await importData(json);
 				showToast('Data imported successfully', 'success');
 				setImportFile(null);
-			} catch (error) {
+			} catch (error: any) {
 				console.error('Import failed', error);
-				showToast('Import failed. Check file format.', 'error');
+				showToast(error instanceof Error ? error.message : 'Import failed. Check file format.', 'error');
 			}
 		};
 		reader.readAsText(importFile);
