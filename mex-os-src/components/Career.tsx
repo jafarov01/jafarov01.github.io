@@ -25,6 +25,7 @@ import {
 import { format, differenceInMonths } from 'date-fns';
 import { type Job, type Education, type JobType, type EducationStatus } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
+import { CVGenerator } from './CVGenerator';
 
 const jobTypes: JobType[] = ['full-time', 'contract', 'freelance', 'internship'];
 const workModes: ('remote' | 'onsite' | 'hybrid')[] = ['remote', 'onsite', 'hybrid'];
@@ -555,11 +556,11 @@ export function Career() {
 												</p>
 											)}
 
-{edu.thesis_description && (
-<p className="text-sm text-gray-500 mt-1 ml-4">
-{edu.thesis_description}
-</p>
-)}
+											{edu.thesis_description && (
+												<p className="text-sm text-gray-500 mt-1 ml-4">
+													{edu.thesis_description}
+												</p>
+											)}
 										</div>
 
 										<div className="flex items-center gap-2">
@@ -587,6 +588,17 @@ export function Career() {
 			{/* Skills Tab */}
 			{activeTab === 'skills' && (
 				<div className="space-y-6">
+					{/* Generate CV Card */}
+					<div className="card-cyber p-6 flex items-center justify-between">
+						<div>
+							<h3 className="text-lg font-semibold text-white mb-1">Generate Professional CV</h3>
+							<p className="text-sm text-gray-500">
+								ATS-friendly PDF using your profile, work history, education, and skills.
+							</p>
+						</div>
+						<CVGenerator />
+					</div>
+
 					<div className="card-cyber p-6">
 						<h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
 							<Code className="w-5 h-5 text-neon-purple" />
@@ -750,19 +762,19 @@ export function Career() {
 									</div>
 								</div>
 
-<div>
-<label className="block text-sm text-gray-400 mb-1">Work Mode</label>
-<select
-value={jobForm.work_mode}
-onChange={e => setJobForm({ ...jobForm, work_mode: e.target.value as 'remote' | 'onsite' | 'hybrid' | '' })}
-className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
->
-<option value="">— Select —</option>
-{workModes.map(m => (
-<option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-))}
-</select>
-</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Work Mode</label>
+									<select
+										value={jobForm.work_mode}
+										onChange={e => setJobForm({ ...jobForm, work_mode: e.target.value as 'remote' | 'onsite' | 'hybrid' | '' })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+									>
+										<option value="">— Select —</option>
+										{workModes.map(m => (
+											<option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+										))}
+									</select>
+								</div>
 
 								<div className="grid grid-cols-3 gap-4">
 									<div>
@@ -1001,16 +1013,16 @@ className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focu
 									</select>
 								</div>
 
-<div>
-<label className="block text-sm text-gray-400 mb-1">Location</label>
-<input
-type="text"
-value={eduForm.location}
-onChange={e => setEduForm({ ...eduForm, location: e.target.value })}
-className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-placeholder="e.g. Budapest, Hungary"
-/>
-</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Location</label>
+									<input
+										type="text"
+										value={eduForm.location}
+										onChange={e => setEduForm({ ...eduForm, location: e.target.value })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										placeholder="e.g. Budapest, Hungary"
+									/>
+								</div>
 
 								<div className="grid grid-cols-2 gap-4">
 									<div>
@@ -1055,18 +1067,18 @@ placeholder="e.g. Budapest, Hungary"
 									/>
 								</div>
 
-{eduForm.thesis_title && (
-<div>
-<label className="block text-sm text-gray-400 mb-1">Thesis Description</label>
-<textarea
-value={eduForm.thesis_description}
-onChange={e => setEduForm({ ...eduForm, thesis_description: e.target.value })}
-rows={3}
-className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none resize-none"
-placeholder="Describe your thesis project..."
-/>
-</div>
-)}
+								{eduForm.thesis_title && (
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Thesis Description</label>
+										<textarea
+											value={eduForm.thesis_description}
+											onChange={e => setEduForm({ ...eduForm, thesis_description: e.target.value })}
+											rows={3}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none resize-none"
+											placeholder="Describe your thesis project..."
+										/>
+									</div>
+								)}
 							</div>
 						</div>
 
