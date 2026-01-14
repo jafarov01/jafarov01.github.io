@@ -15,6 +15,7 @@ export interface Profile {
 	linkedin_url?: string;        // LinkedIn profile URL
 	github_url?: string;          // GitHub profile URL
 	professional_summary?: string; // CV summary paragraph
+	photo_url?: string;           // v7.1: CV photo (URL or base64 data URI)
 	// existing fields
 	unipd_id: string;
 	cf: string;

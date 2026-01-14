@@ -1,136 +1,132 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image } from '@react-pdf/renderer';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
 import { FileText, Loader2 } from 'lucide-react';
 
-// PDF Styles - Matching the reference CV (ForSEJob.pdf) structure
+// PDF Styles - Exact match to ForSEJob.pdf structure as analyzed by Gemini
 const styles = StyleSheet.create({
 	page: {
-		padding: 40,
-		paddingTop: 35,
-		paddingBottom: 35,
-		fontSize: 10,
+		flexDirection: 'column',
+		backgroundColor: '#FFFFFF',
+		padding: 30, // 30pt margins
 		fontFamily: 'Helvetica',
-		color: '#222222',
-		lineHeight: 1.3,
+		fontSize: 10,
+		lineHeight: 1.5,
 	},
-	// Header section - Name centered, large
-	header: {
-		alignItems: 'center',
-		marginBottom: 12,
+	// Header Section - Row layout for text + photo
+	headerContainer: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'flex-start',
+		marginBottom: 20,
+		borderBottomWidth: 1,
+		borderBottomColor: '#EEEEEE',
+		paddingBottom: 10,
+	},
+	// Text column in header (left side)
+	headerTextColumn: {
+		flexDirection: 'column',
+		maxWidth: '70%',
 	},
 	name: {
 		fontSize: 24,
 		fontFamily: 'Helvetica-Bold',
+		textTransform: 'uppercase',
+		marginBottom: 4,
+		color: '#000000',
+	},
+	professionalTitle: {
+		fontSize: 14,
+		color: '#444444',
+		marginBottom: 4,
+	},
+	contactInfo: {
+		fontSize: 10,
 		color: '#000000',
 		marginBottom: 2,
 	},
-	title: {
-		fontSize: 11,
-		color: '#444444',
-		marginBottom: 8,
+	// Profile Photo - Circular, passport size
+	profilePhoto: {
+		width: 70,
+		height: 70,
+		borderRadius: 35, // Makes it circular
+		objectFit: 'cover',
 	},
-	contactLine: {
-		fontSize: 9,
-		color: '#333333',
-		textAlign: 'center',
-	},
-	link: {
-		color: '#0066cc',
-		textDecoration: 'none',
-	},
-	// Section styles - Centered, uppercase headings
-	section: {
-		marginTop: 14,
-		marginBottom: 6,
-	},
-	sectionTitle: {
-		fontSize: 11,
+	// Section Headers
+	sectionHeader: {
+		fontSize: 12,
 		fontFamily: 'Helvetica-Bold',
-		color: '#000000',
-		textAlign: 'center',
 		textTransform: 'uppercase',
 		letterSpacing: 1,
-		marginBottom: 8,
+		borderBottomWidth: 1,
+		borderBottomColor: '#000000',
+		marginBottom: 10,
+		marginTop: 15,
 		paddingBottom: 2,
 	},
-	// Professional Summary
-	summary: {
-		fontSize: 10,
-		lineHeight: 1.4,
-		color: '#333333',
-		textAlign: 'justify',
-	},
-	// Experience & Education entries
+	// Work Experience & Education Blocks
 	entryContainer: {
 		marginBottom: 10,
 	},
-	entryHeader: {
+	entryHeaderRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		alignItems: 'flex-start',
-		marginBottom: 1,
+		alignItems: 'flex-end',
+		marginBottom: 2,
 	},
-	entryRole: {
-		fontSize: 10,
+	roleTitle: {
+		fontSize: 11,
 		fontFamily: 'Helvetica-Bold',
-		color: '#000000',
 	},
-	entryDate: {
+	dateText: {
 		fontSize: 10,
-		color: '#333333',
+		textAlign: 'right',
 	},
-	entryCompany: {
+	companyLocation: {
 		fontSize: 10,
-		fontStyle: 'italic',
-		color: '#333333',
-		marginBottom: 3,
+		fontFamily: 'Helvetica-Oblique',
+		marginBottom: 5,
+		color: '#444444',
 	},
-	bulletContainer: {
+	// Bullet Points
+	bulletPoint: {
 		flexDirection: 'row',
 		marginBottom: 2,
-		paddingLeft: 12,
 	},
-	bulletPoint: {
-		width: 12,
+	bulletDot: {
+		width: 10,
 		fontSize: 10,
-		color: '#333333',
 	},
-	bulletText: {
+	bulletContent: {
 		flex: 1,
-		fontSize: 9.5,
-		lineHeight: 1.35,
-		color: '#333333',
-		textAlign: 'justify',
+		fontSize: 10,
+		lineHeight: 1.4,
 	},
-	// Skills section - Multi-column
-	skillsGrid: {
+	// Skills Grid
+	skillsContainer: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		gap: 8,
 	},
 	skillColumn: {
-		width: '32%',
-		marginBottom: 6,
+		width: '50%',
+		marginBottom: 5,
 	},
-	skillCategory: {
-		fontSize: 9,
+	skillLabel: {
 		fontFamily: 'Helvetica-Bold',
-		color: '#000000',
+	},
+	// Summary text
+	summaryText: {
+		fontSize: 10,
+		lineHeight: 1.5,
+		marginBottom: 10,
+		textAlign: 'justify',
+	},
+	// Award/Thesis label
+	labelText: {
+		fontSize: 10,
 		marginBottom: 2,
 	},
-	skillList: {
-		fontSize: 9,
-		color: '#333333',
-		lineHeight: 1.3,
-	},
-	// Award/Thesis styling
-	awardText: {
-		fontSize: 9.5,
-		color: '#333333',
-		marginTop: 2,
-	},
-	awardLabel: {
+	boldLabel: {
 		fontFamily: 'Helvetica-Bold',
 	},
 });
@@ -141,6 +137,14 @@ const formatDateRange = (startDate: string, endDate: string | null): string => {
 	const end = endDate ? format(new Date(endDate), 'MMMM yyyy') : 'Present';
 	return `${start} – ${end}`;
 };
+
+// Helper component for bullet points
+const BulletItem = ({ text }: { text: string }) => (
+	<View style={styles.bulletPoint}>
+		<Text style={styles.bulletDot}>•</Text>
+		<Text style={styles.bulletContent}>{text}</Text>
+	</View>
+);
 
 // CV Document Component
 interface CVDocumentProps {
@@ -153,6 +157,7 @@ interface CVDocumentProps {
 		linkedin_url?: string;
 		github_url?: string;
 		professional_summary?: string;
+		photo_url?: string;
 	};
 	jobs: Array<{
 		company: string;
@@ -202,7 +207,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
 	);
 
-	// Category display names (matching reference CV structure)
+	// Category display names
 	const categoryLabels: Record<string, string> = {
 		language: 'Programming Languages',
 		frontend: 'Frameworks & Libraries',
@@ -214,157 +219,139 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		other: 'Other Skills',
 	};
 
-	// Build contact line parts
-	const contactParts: string[] = [];
-	if (profile.location) contactParts.push(profile.location);
+	// Build contact lines (split for cleaner layout next to photo)
+	const contactLine1Parts: string[] = [];
+	const contactLine2Parts: string[] = [];
+	if (profile.email) contactLine1Parts.push(profile.email);
+	if (profile.linkedin_url) contactLine1Parts.push('LinkedIn');
+	if (profile.github_url) contactLine2Parts.push('GitHub');
+	if (profile.phone) contactLine2Parts.push(profile.phone);
 
-	// Build the contact line text
-	const buildContactLine = () => {
-		const parts: React.ReactNode[] = [];
-
-		if (profile.email) {
-			parts.push(<Text key="email">{profile.email}</Text>);
+	// Merge skills with same display category
+	const mergedSkillCategories: Record<string, string[]> = {};
+	Object.entries(skillsByCategory).forEach(([cat, skillNames]) => {
+		const displayLabel = categoryLabels[cat] || cat;
+		if (!mergedSkillCategories[displayLabel]) {
+			mergedSkillCategories[displayLabel] = [];
 		}
-		if (profile.linkedin_url) {
-			const linkedinDisplay = 'LinkedIn';
-			if (parts.length > 0) parts.push(<Text key="sep1"> | </Text>);
-			parts.push(
-				<Link key="linkedin" src={profile.linkedin_url} style={styles.link}>
-					{linkedinDisplay}
-				</Link>
-			);
-		}
-		if (profile.github_url) {
-			const githubDisplay = 'GitHub';
-			if (parts.length > 0) parts.push(<Text key="sep2"> | </Text>);
-			parts.push(
-				<Link key="github" src={profile.github_url} style={styles.link}>
-					{githubDisplay}
-				</Link>
-			);
-		}
-		if (profile.phone) {
-			if (parts.length > 0) parts.push(<Text key="sep3"> | </Text>);
-			parts.push(<Text key="phone">{profile.phone}</Text>);
-		}
-
-		return parts;
-	};
-
-	// Organize skills for multi-column display
-	const skillCategories = Object.entries(skillsByCategory);
+		mergedSkillCategories[displayLabel].push(...skillNames);
+	});
 
 	return (
 		<Document>
 			<Page size="A4" style={styles.page}>
-				{/* Header - Centered name and title */}
-				<View style={styles.header}>
-					<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
-					{profile.professional_title && (
-						<Text style={styles.title}>{profile.professional_title}</Text>
+				{/* --- HEADER WITH PHOTO --- */}
+				<View style={styles.headerContainer}>
+					{/* Left Column: Text Info */}
+					<View style={styles.headerTextColumn}>
+						<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
+						{profile.professional_title && (
+							<Text style={styles.professionalTitle}>{profile.professional_title}</Text>
+						)}
+						{profile.location && (
+							<Text style={styles.contactInfo}>{profile.location}</Text>
+						)}
+						{contactLine1Parts.length > 0 && (
+							<Text style={styles.contactInfo}>{contactLine1Parts.join(' | ')}</Text>
+						)}
+						{contactLine2Parts.length > 0 && (
+							<Text style={styles.contactInfo}>{contactLine2Parts.join(' | ')}</Text>
+						)}
+					</View>
+
+					{/* Right Column: Photo */}
+					{profile.photo_url && (
+						<Image
+							style={styles.profilePhoto}
+							src={profile.photo_url}
+						/>
 					)}
-					{profile.location && (
-						<Text style={styles.contactLine}>{profile.location}</Text>
-					)}
-					<Text style={styles.contactLine}>
-						{buildContactLine()}
-					</Text>
 				</View>
 
-				{/* Professional Summary */}
+				{/* --- PROFESSIONAL SUMMARY --- */}
 				{profile.professional_summary && (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Professional Summary</Text>
-						<Text style={styles.summary}>{profile.professional_summary}</Text>
-					</View>
+					<>
+						<Text style={styles.sectionHeader}>Professional Summary</Text>
+						<Text style={styles.summaryText}>{profile.professional_summary}</Text>
+					</>
 				)}
 
-				{/* Work Experience */}
+				{/* --- WORK EXPERIENCE --- */}
 				{sortedJobs.length > 0 && (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Work Experience</Text>
+					<>
+						<Text style={styles.sectionHeader}>Work Experience</Text>
 						{sortedJobs.map((job, idx) => (
 							<View key={idx} style={styles.entryContainer}>
-								<View style={styles.entryHeader}>
-									<Text style={styles.entryRole}>{job.role}</Text>
-									<Text style={styles.entryDate}>
+								<View style={styles.entryHeaderRow}>
+									<Text style={styles.roleTitle}>{job.role}</Text>
+									<Text style={styles.dateText}>
 										{formatDateRange(job.startDate, job.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.entryCompany}>
-									{job.company} - {job.location}{job.work_mode ? ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})` : ''}
+								<Text style={styles.companyLocation}>
+									{job.company} - {job.location}
+									{job.work_mode ? ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})` : ''}
 								</Text>
 								{job.achievements && job.achievements.length > 0 && (
-									<View>
+									<>
 										{job.achievements.map((achievement, i) => (
-											<View key={i} style={styles.bulletContainer}>
-												<Text style={styles.bulletPoint}>-</Text>
-												<Text style={styles.bulletText}>{achievement}</Text>
-											</View>
+											<BulletItem key={i} text={achievement} />
 										))}
-									</View>
+									</>
 								)}
 							</View>
 						))}
-					</View>
+					</>
 				)}
 
-				{/* Education */}
+				{/* --- EDUCATION --- */}
 				{sortedEducation.length > 0 && (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Education</Text>
+					<>
+						<Text style={styles.sectionHeader}>Education</Text>
 						{sortedEducation.map((edu, idx) => (
 							<View key={idx} style={styles.entryContainer}>
-								<View style={styles.entryHeader}>
-									<Text style={styles.entryRole}>{edu.degree}</Text>
-									<Text style={styles.entryDate}>
+								<View style={styles.entryHeaderRow}>
+									<Text style={styles.roleTitle}>{edu.degree}</Text>
+									<Text style={styles.dateText}>
 										{formatDateRange(edu.startDate, edu.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.entryCompany}>
+								<Text style={styles.companyLocation}>
 									{edu.institution}{edu.location ? ` - ${edu.location}` : ''}
 								</Text>
 								{edu.scholarship_name && (
-									<View style={styles.bulletContainer}>
-										<Text style={styles.bulletPoint}>-</Text>
-										<Text style={styles.bulletText}>
-											<Text style={styles.awardLabel}>Award: </Text>
-											{edu.scholarship_name}
-										</Text>
-									</View>
+									<Text style={styles.labelText}>
+										<Text style={styles.boldLabel}>Award: </Text>
+										{edu.scholarship_name}
+									</Text>
 								)}
 								{edu.thesis_title && (
-									<View style={styles.bulletContainer}>
-										<Text style={styles.bulletPoint}>-</Text>
-										<Text style={styles.bulletText}>
-											<Text style={styles.awardLabel}>Thesis Project: </Text>
-											{edu.thesis_title}
-											{edu.thesis_description ? ` ${edu.thesis_description}` : ''}
-										</Text>
-									</View>
+									<Text style={styles.labelText}>
+										<Text style={styles.boldLabel}>Thesis Project: </Text>
+										{edu.thesis_title}
+										{edu.thesis_description ? `. ${edu.thesis_description}` : ''}
+									</Text>
 								)}
 							</View>
 						))}
-					</View>
+					</>
 				)}
 
-				{/* Skills - Multi-column layout */}
-				{skillCategories.length > 0 && (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Skills</Text>
-						<View style={styles.skillsGrid}>
-							{skillCategories.map(([category, skillNames]) => (
-								<View key={category} style={styles.skillColumn}>
-									<Text style={styles.skillCategory}>
-										{categoryLabels[category] || category}:
-									</Text>
-									<Text style={styles.skillList}>
+				{/* --- SKILLS --- */}
+				{Object.keys(mergedSkillCategories).length > 0 && (
+					<>
+						<Text style={styles.sectionHeader}>Skills</Text>
+						<View style={styles.skillsContainer}>
+							{Object.entries(mergedSkillCategories).map(([label, skillNames]) => (
+								<View key={label} style={styles.skillColumn}>
+									<Text style={{ fontSize: 10 }}>
+										<Text style={styles.skillLabel}>{label}: </Text>
 										{skillNames.join(', ')}
 									</Text>
 								</View>
 							))}
 						</View>
-					</View>
+					</>
 				)}
 			</Page>
 		</Document>

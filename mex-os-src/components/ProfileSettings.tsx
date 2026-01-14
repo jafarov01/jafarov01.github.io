@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
-import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database, Briefcase, MapPin, Mail, Phone, Linkedin, Github, FileText } from 'lucide-react';
+import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database, Briefcase, MapPin, Mail, Phone, Linkedin, Github, FileText, Camera } from 'lucide-react';
 import { type Profile, BLUEPRINT_TEMPLATE } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -305,6 +305,35 @@ export function ProfileSettings() {
 								/>
 							</div>
 						</div>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Photo URL (for CV)</label>
+							<div className="relative">
+								<Camera className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="url"
+									name="photo_url"
+									value={formData.photo_url || ''}
+									onChange={handleChange}
+									placeholder="https://example.com/your-photo.jpg"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+							<p className="text-xs text-gray-600 mt-1">Passport-size photo URL. Appears in CV header.</p>
+						</div>
+						{formData.photo_url && (
+							<div className="flex items-center gap-3">
+								<img
+									src={formData.photo_url}
+									alt="CV Photo Preview"
+									className="w-16 h-16 rounded-full object-cover border-2 border-neon-purple"
+									onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+								/>
+								<span className="text-sm text-gray-400">Preview</span>
+							</div>
+						)}
 					</div>
 
 					<div>
