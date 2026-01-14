@@ -1,53 +1,50 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link } from '@react-pdf/renderer';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
 import { FileText, Loader2 } from 'lucide-react';
 
-// --- STYLES: PIXEL-PERFECT REFERENCE ALIGNMENT ---
+// --- PRODUCTION-PERFECT STYLES: PIXEL-PERFECT REFERENCE ALIGNMENT ---
 
 const styles = StyleSheet.create({
-
 	page: {
-		paddingVertical: 16, // Corrected padding
-		paddingHorizontal: 14, // Corrected padding
+		paddingVertical: 16,
+		paddingHorizontal: 14,
 		fontFamily: 'Helvetica',
-		fontSize: 9.5, // Baseline for body text
-		lineHeight: 1.35, // Tighter leading
+		fontSize: 9.5,
+		lineHeight: 1.35,
 		color: '#000000',
 	},
 
-	// Header Container
+	// ===== HEADER SECTION =====
 	headerContainer: {
 		flexDirection: 'column',
-		marginBottom: 8,
-		borderBottomWidth: 0.5,
-		borderBottomColor: '#CCCCCC',
-		paddingBottom: 6,
+		marginBottom: 12,
+		paddingBottom: 8,
 	},
 
-	// Name & Title Stack
 	nameBlock: {
 		flexDirection: 'column',
+		marginBottom: 3,
 	},
 
 	name: {
 		fontSize: 13,
 		fontFamily: 'Helvetica-Bold',
 		textTransform: 'uppercase',
-		marginBottom: 1,
+		marginBottom: 2,
 		letterSpacing: 0.5,
 	},
 
 	titleAndLocation: {
 		flexDirection: 'row',
-		marginBottom: 3,
+		marginBottom: 4,
 		fontSize: 9.5,
 		color: '#333333',
+		gap: 12,
 	},
 
 	title: {
 		fontFamily: 'Helvetica-Bold',
-		marginRight: 8,
 	},
 
 	location: {
@@ -57,38 +54,53 @@ const styles = StyleSheet.create({
 	contactLine: {
 		fontSize: 8.5,
 		color: '#000000',
-		marginBottom: 2,
+		marginBottom: 0,
 		lineHeight: 1.3,
 	},
 
-	// Sections
-	sectionHeader: {
+	// Clickable link styling for PDF
+	link: {
+		color: '#0066CC',
+		textDecoration: 'underline',
+	},
+
+	// ===== SECTION HEADERS WITH CENTERED DIVIDER =====
+	sectionHeaderContainer: {
+		flexDirection: 'column',
+		marginTop: 8,
+		marginBottom: 6,
+	},
+
+	sectionHeaderText: {
 		fontSize: 9.5,
 		fontFamily: 'Helvetica-Bold',
 		textTransform: 'uppercase',
-		borderBottomWidth: 0.5,
-		borderBottomColor: '#000000',
-		marginBottom: 4,
-		marginTop: 6,
-		paddingBottom: 1.5,
 		letterSpacing: 0.3,
+		marginBottom: 2,
+		textAlign: 'left',
 	},
 
-	// Professional Summary
+	sectionDivider: {
+		borderBottomWidth: 1,
+		borderBottomColor: '#000000',
+		marginBottom: 4,
+	},
+
+	// ===== PROFESSIONAL SUMMARY =====
 	summaryText: {
 		fontSize: 9,
 		lineHeight: 1.4,
 		marginBottom: 4,
 		color: '#000000',
+		textAlign: 'justify',
 	},
 
-	// Entries (Experience/Education)
+	// ===== WORK EXPERIENCE ENTRY =====
 	entryContainer: {
-		marginBottom: 4,
-		// wrap property removed from style object
+		marginBottom: 6,
+		flexDirection: 'column',
 	},
 
-	// Role/Degree + Date Header
 	headerRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -107,19 +119,18 @@ const styles = StyleSheet.create({
 		fontSize: 8.5,
 		color: '#555555',
 		textAlign: 'right',
-		// whiteSpace removed
+		minWidth: 80,
 	},
 
-	// Company/Institution + Location
 	companyRow: {
 		fontSize: 9,
 		fontFamily: 'Helvetica-Oblique',
-		marginBottom: 2,
+		marginBottom: 2.5,
 		color: '#333333',
 		lineHeight: 1.3,
 	},
 
-	// Bullet Points - Em-dash style (–)
+	// ===== BULLET POINTS =====
 	bulletRow: {
 		flexDirection: 'row',
 		marginBottom: 1.5,
@@ -127,22 +138,23 @@ const styles = StyleSheet.create({
 	},
 
 	bulletDash: {
-		width: 8,
+		width: 7,
 		fontSize: 8.5,
-		marginRight: 4,
+		marginRight: 5,
 	},
 
 	bulletText: {
 		flex: 1,
 		fontSize: 9,
 		lineHeight: 1.35,
+		textAlign: 'justify',
 	},
 
-	// Award/Thesis inline styling
+	// ===== AWARD/THESIS ROWS =====
 	awardRow: {
 		flexDirection: 'row',
 		fontSize: 9,
-		marginBottom: 1,
+		marginBottom: 1.5,
 		marginLeft: 8,
 		lineHeight: 1.3,
 	},
@@ -156,29 +168,39 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 
-	// Skills - Grid layout (Category: Skill1, Skill2, Skill3)
+	// ===== SKILLS SECTION - 2-COLUMN GRID =====
 	skillsContainer: {
 		flexDirection: 'column',
 	},
 
-	skillRow: {
+	skillRowWrapper: {
 		flexDirection: 'row',
-		marginBottom: 1.5,
-		fontSize: 9,
-		lineHeight: 1.3,
-		flexWrap: 'wrap',
+		marginBottom: 2,
+		gap: 16,
+	},
+
+	skillCategoryColumn: {
+		width: '30%',
+		flexDirection: 'column',
 	},
 
 	skillCategory: {
 		fontFamily: 'Helvetica-Bold',
-		marginRight: 4,
-		minWidth: 70,
+		fontSize: 9,
+		marginBottom: 1,
+		color: '#000000',
 	},
 
-	skillValues: {
-		flex: 1,
+	skillValuesColumn: {
+		width: '70%',
+		flexDirection: 'column',
 	},
 
+	skillValue: {
+		fontSize: 9,
+		lineHeight: 1.3,
+		color: '#000000',
+	},
 });
 
 // Helper to format date range
@@ -205,18 +227,14 @@ interface CVDocumentProps {
 		company: string;
 		role: string;
 		location: string;
-		type: string;
-		work_mode?: string;
+		work_mode?: string; // Removed incorrect 'type' property
 		startDate: string;
 		endDate: string | null;
-		tech_stack: string[];
 		achievements?: string[];
-		is_current: boolean;
 	}>;
 	education: Array<{
 		institution: string;
 		degree: string;
-		status: string;
 		startDate: string;
 		endDate: string | null;
 		location?: string;
@@ -258,10 +276,14 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		database: 'Databases',
 		tools: 'Tools',
 		'soft-skill': 'Spoken Languages',
+		'frameworks-libraries': 'Frameworks & Libraries',
+		'api-protocols': 'API & Protocols',
+		'cloud-platforms': 'Cloud Platforms',
+		'methodologies': 'Methodologies & Concepts',
 		other: 'Other'
 	};
 
-	// Define the desired display order
+	// Define the desired display order (matches reference CV exactly)
 	const labelOrder = [
 		'Programming Languages',
 		'Frameworks & Libraries',
@@ -274,13 +296,49 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		'Other'
 	];
 
-	// Build contact line (compact single line: email | LinkedIn | GitHub | phone)
-	const contactParts: string[] = [];
-	if (profile.email) contactParts.push(profile.email);
-	if (profile.linkedin_url) contactParts.push('LinkedIn');
-	if (profile.github_url) contactParts.push('GitHub');
-	if (profile.phone) contactParts.push(profile.phone);
-	const contactLine = contactParts.join('   |   ');
+	// Build contact line with links
+	const buildContactLine = () => {
+		const parts = [];
+
+		if (profile.email) {
+			parts.push(
+				<Text key="email">{profile.email}</Text>
+			);
+		}
+
+		if (profile.linkedin_url) {
+			parts.push(
+				<Link key="linkedin" src={profile.linkedin_url} style={styles.link}>
+					LinkedIn
+				</Link>
+			);
+		}
+
+		if (profile.github_url) {
+			parts.push(
+				<Link key="github" src={profile.github_url} style={styles.link}>
+					GitHub
+				</Link>
+			);
+		}
+
+		if (profile.phone) {
+			parts.push(
+				<Text key="phone">{profile.phone}</Text>
+			);
+		}
+
+		// Intersperse separators
+		const result: React.ReactNode[] = [];
+		parts.forEach((part, idx) => {
+			result.push(part);
+			if (idx < parts.length - 1) {
+				result.push(<Text key={`sep-${idx}`}>   |   </Text>);
+			}
+		});
+
+		return result;
+	};
 
 	// Merge skills with same display category
 	const mergedSkillCategories: Record<string, string[]> = {};
@@ -310,7 +368,6 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 			result += ` - ${job.location}`;
 		}
 
-		// Only append work_mode if it's NOT already in location string
 		if (job.work_mode && !job.location.toLowerCase().includes(job.work_mode.toLowerCase())) {
 			result += ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})`;
 		}
@@ -321,7 +378,8 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 	return (
 		<Document>
 			<Page size="A4" style={styles.page}>
-				{/* --- HEADER --- */}
+
+				{/* ===== HEADER ===== */}
 				<View style={styles.headerContainer}>
 					<View style={styles.nameBlock}>
 						<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
@@ -336,25 +394,31 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 						</View>
 					</View>
 
-					{contactLine && (
-						<Text style={styles.contactLine}>{contactLine}</Text>
-					)}
+					<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
+						{buildContactLine()}
+					</View>
 				</View>
 
-				{/* --- PROFESSIONAL SUMMARY --- */}
+				{/* ===== PROFESSIONAL SUMMARY ===== */}
 				{profile.professional_summary && (
 					<>
-						<Text style={styles.sectionHeader}>Professional Summary</Text>
+						<View style={styles.sectionHeaderContainer}>
+							<Text style={styles.sectionHeaderText}>Professional Summary</Text>
+							<View style={styles.sectionDivider} />
+						</View>
 						<Text style={styles.summaryText}>
 							{profile.professional_summary}
 						</Text>
 					</>
 				)}
 
-				{/* --- WORK EXPERIENCE --- */}
+				{/* ===== WORK EXPERIENCE ===== */}
 				{sortedJobs.length > 0 && (
 					<>
-						<Text style={styles.sectionHeader}>Work Experience</Text>
+						<View style={styles.sectionHeaderContainer}>
+							<Text style={styles.sectionHeaderText}>Work Experience</Text>
+							<View style={styles.sectionDivider} />
+						</View>
 
 						{sortedJobs.map((job, idx) => (
 							<View key={idx} style={styles.entryContainer} wrap={false}>
@@ -385,10 +449,13 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					</>
 				)}
 
-				{/* --- EDUCATION --- */}
+				{/* ===== EDUCATION ===== */}
 				{sortedEducation.length > 0 && (
 					<>
-						<Text style={styles.sectionHeader}>Education</Text>
+						<View style={styles.sectionHeaderContainer}>
+							<Text style={styles.sectionHeaderText}>Education</Text>
+							<View style={styles.sectionDivider} />
+						</View>
 
 						{sortedEducation.map((edu, idx) => (
 							<View key={idx} style={styles.entryContainer} wrap={false}>
@@ -426,23 +493,31 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					</>
 				)}
 
-				{/* --- SKILLS - Grid Layout (Reference Style) --- */}
+				{/* ===== SKILLS - 2-COLUMN GRID LAYOUT ===== */}
 				{sortedSkillCategories.length > 0 && (
 					<>
-						<Text style={styles.sectionHeader}>Skills</Text>
+						<View style={styles.sectionHeaderContainer}>
+							<Text style={styles.sectionHeaderText}>Skills</Text>
+							<View style={styles.sectionDivider} />
+						</View>
 
 						<View style={styles.skillsContainer}>
 							{sortedSkillCategories.map(([label, skillNames], idx) => (
-								<View key={idx} style={styles.skillRow}>
-									<Text style={styles.skillCategory}>{label}:</Text>
-									<Text style={styles.skillValues}>
-										{skillNames.join(', ')}
-									</Text>
+								<View key={idx} style={styles.skillRowWrapper} wrap={false}>
+									<View style={styles.skillCategoryColumn}>
+										<Text style={styles.skillCategory}>{label}:</Text>
+									</View>
+									<View style={styles.skillValuesColumn}>
+										<Text style={styles.skillValue}>
+											{skillNames.join(', ')}
+										</Text>
+									</View>
 								</View>
 							))}
 						</View>
 					</>
 				)}
+
 			</Page>
 		</Document>
 	);
