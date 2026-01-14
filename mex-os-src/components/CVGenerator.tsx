@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link, Image } from '@react-pdf/renderer';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
 import { FileText, Loader2 } from 'lucide-react';
@@ -17,9 +17,16 @@ const styles = StyleSheet.create({
 
 	// ===== HEADER SECTION =====
 	headerContainer: {
-		flexDirection: 'column',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'flex-start',
 		marginBottom: 12,
 		paddingBottom: 8,
+	},
+
+	headerLeftColumn: {
+		flexDirection: 'column',
+		maxWidth: '80%', // Ensure space for photo
 	},
 
 	nameBlock: {
@@ -56,6 +63,14 @@ const styles = StyleSheet.create({
 		color: '#000000',
 		marginBottom: 0,
 		lineHeight: 1.3,
+	},
+
+	// Photo Style
+	photo: {
+		width: 60,
+		height: 60,
+		borderRadius: 30,
+		objectFit: 'cover',
 	},
 
 	// Clickable link styling for PDF
@@ -227,7 +242,7 @@ interface CVDocumentProps {
 		company: string;
 		role: string;
 		location: string;
-		work_mode?: string; // Removed incorrect 'type' property
+		work_mode?: string;
 		startDate: string;
 		endDate: string | null;
 		achievements?: string[];
@@ -381,22 +396,33 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 
 				{/* ===== HEADER ===== */}
 				<View style={styles.headerContainer}>
-					<View style={styles.nameBlock}>
-						<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
+					{/* Left Column: Text Info */}
+					<View style={styles.headerLeftColumn}>
+						<View style={styles.nameBlock}>
+							<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
 
-						<View style={styles.titleAndLocation}>
-							{profile.professional_title && (
-								<Text style={styles.title}>{profile.professional_title}</Text>
-							)}
-							{profile.location && (
-								<Text style={styles.location}>{profile.location}</Text>
-							)}
+							<View style={styles.titleAndLocation}>
+								{profile.professional_title && (
+									<Text style={styles.title}>{profile.professional_title}</Text>
+								)}
+								{profile.location && (
+									<Text style={styles.location}>{profile.location}</Text>
+								)}
+							</View>
+						</View>
+
+						<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
+							{buildContactLine()}
 						</View>
 					</View>
 
-					<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
-						{buildContactLine()}
-					</View>
+					{/* Right Column: Photo */}
+					{profile.photo_url && (
+						<Image
+							style={styles.photo}
+							src={profile.photo_url}
+						/>
+					)}
 				</View>
 
 				{/* ===== PROFESSIONAL SUMMARY ===== */}
