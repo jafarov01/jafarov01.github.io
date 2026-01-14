@@ -3,128 +3,115 @@ import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
 import { FileText, Loader2 } from 'lucide-react';
 
-// PDF Styles - Exact match to ForSEJob.pdf structure as analyzed by Gemini
+// --- STYLES: COMPACT / SINGLE PAGE OPTIMIZED ---
 const styles = StyleSheet.create({
 	page: {
-		flexDirection: 'column',
-		backgroundColor: '#FFFFFF',
-		padding: 30, // 30pt margins
+		padding: 20, // Reduced padding to maximize space
 		fontFamily: 'Helvetica',
-		fontSize: 10,
-		lineHeight: 1.5,
+		fontSize: 9, // Reduced font size for compactness
+		lineHeight: 1.3,
+		color: '#000000',
 	},
-	// Header Section - Row layout for text + photo
+	// Header
 	headerContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
-		marginBottom: 20,
+		marginBottom: 10,
 		borderBottomWidth: 1,
 		borderBottomColor: '#EEEEEE',
-		paddingBottom: 10,
+		paddingBottom: 5,
 	},
-	// Text column in header (left side)
-	headerTextColumn: {
+	headerLeft: {
 		flexDirection: 'column',
-		maxWidth: '70%',
+		maxWidth: '75%',
 	},
 	name: {
-		fontSize: 24,
+		fontSize: 20, // Slightly smaller to prevent wrapping
 		fontFamily: 'Helvetica-Bold',
 		textTransform: 'uppercase',
-		marginBottom: 4,
-		color: '#000000',
-	},
-	professionalTitle: {
-		fontSize: 14,
-		color: '#444444',
-		marginBottom: 4,
-	},
-	contactInfo: {
-		fontSize: 10,
-		color: '#000000',
 		marginBottom: 2,
 	},
-	// Profile Photo - Circular, passport size
-	profilePhoto: {
-		width: 70,
-		height: 70,
-		borderRadius: 35, // Makes it circular
+	title: {
+		fontSize: 12,
+		color: '#444444',
+		marginBottom: 2,
+	},
+	contactLine: {
+		fontSize: 9,
+		color: '#000000',
+	},
+	photo: {
+		width: 60,
+		height: 60,
+		borderRadius: 30, // Makes it circular
 		objectFit: 'cover',
 	},
-	// Section Headers
+	// Sections
 	sectionHeader: {
-		fontSize: 12,
+		fontSize: 11,
 		fontFamily: 'Helvetica-Bold',
 		textTransform: 'uppercase',
-		letterSpacing: 1,
 		borderBottomWidth: 1,
 		borderBottomColor: '#000000',
-		marginBottom: 10,
-		marginTop: 15,
+		marginBottom: 6,
+		marginTop: 10,
 		paddingBottom: 2,
 	},
-	// Work Experience & Education Blocks
+	// Entries (Experience/Education)
 	entryContainer: {
-		marginBottom: 10,
+		marginBottom: 6, // Tight spacing
 	},
-	entryHeaderRow: {
+	headerRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'flex-end',
-		marginBottom: 2,
+		marginBottom: 1,
 	},
-	roleTitle: {
-		fontSize: 11,
+	role: {
+		fontSize: 10,
 		fontFamily: 'Helvetica-Bold',
 	},
-	dateText: {
-		fontSize: 10,
+	date: {
+		fontSize: 9,
 		textAlign: 'right',
 	},
-	companyLocation: {
-		fontSize: 10,
+	company: {
+		fontSize: 9,
 		fontFamily: 'Helvetica-Oblique',
-		marginBottom: 5,
-		color: '#444444',
+		marginBottom: 2,
+		color: '#333333',
 	},
 	// Bullet Points
-	bulletPoint: {
+	bulletRow: {
 		flexDirection: 'row',
-		marginBottom: 2,
+		marginBottom: 1,
 	},
 	bulletDot: {
 		width: 10,
 		fontSize: 10,
+		marginLeft: 2,
 	},
-	bulletContent: {
+	bulletText: {
 		flex: 1,
-		fontSize: 10,
-		lineHeight: 1.4,
+		fontSize: 9,
 	},
-	// Skills Grid
-	skillsContainer: {
+	// Skills - List View Rows
+	skillRow: {
 		flexDirection: 'row',
-		flexWrap: 'wrap',
-	},
-	skillColumn: {
-		width: '50%',
-		marginBottom: 5,
+		marginBottom: 2,
 	},
 	skillLabel: {
 		fontFamily: 'Helvetica-Bold',
+		width: 130, // Fixed width for labels to align nicely
 	},
-	// Summary text
-	summaryText: {
-		fontSize: 10,
-		lineHeight: 1.5,
-		marginBottom: 10,
-		textAlign: 'justify',
+	skillValue: {
+		flex: 1,
 	},
-	// Award/Thesis label
+	// Thesis/Award labels
 	labelText: {
-		fontSize: 10,
-		marginBottom: 2,
+		fontSize: 9,
+		marginBottom: 1,
 	},
 	boldLabel: {
 		fontFamily: 'Helvetica-Bold',
@@ -133,16 +120,16 @@ const styles = StyleSheet.create({
 
 // Helper to format date range
 const formatDateRange = (startDate: string, endDate: string | null): string => {
-	const start = format(new Date(startDate), 'MMMM yyyy');
-	const end = endDate ? format(new Date(endDate), 'MMMM yyyy') : 'Present';
+	const start = format(new Date(startDate), 'MMM yyyy'); // Compact date format: "Sep 2021"
+	const end = endDate ? format(new Date(endDate), 'MMM yyyy') : 'Present';
 	return `${start} – ${end}`;
 };
 
 // Helper component for bullet points
-const BulletItem = ({ text }: { text: string }) => (
-	<View style={styles.bulletPoint}>
+const Bullet = ({ children }: { children: string }) => (
+	<View style={styles.bulletRow}>
 		<Text style={styles.bulletDot}>•</Text>
-		<Text style={styles.bulletContent}>{text}</Text>
+		<Text style={styles.bulletText}>{children}</Text>
 	</View>
 );
 
@@ -207,25 +194,37 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
 	);
 
-	// Category display names
+	// Category display names and order
 	const categoryLabels: Record<string, string> = {
-		language: 'Programming Languages',
-		frontend: 'Frameworks & Libraries',
-		backend: 'Frameworks & Libraries',
+		language: 'Languages',
+		frontend: 'Frontend',
+		backend: 'Backend',
 		devops: 'DevOps & Tools',
 		database: 'Databases',
-		tools: 'DevOps & Tools',
-		'soft-skill': 'Methodologies & Concepts',
-		other: 'Other Skills',
+		tools: 'Tools',
+		'soft-skill': 'Spoken Languages',
+		other: 'Other'
 	};
 
-	// Build contact lines (split for cleaner layout next to photo)
-	const contactLine1Parts: string[] = [];
-	const contactLine2Parts: string[] = [];
-	if (profile.email) contactLine1Parts.push(profile.email);
-	if (profile.linkedin_url) contactLine1Parts.push('LinkedIn');
-	if (profile.github_url) contactLine2Parts.push('GitHub');
-	if (profile.phone) contactLine2Parts.push(profile.phone);
+	// Define the desired display order
+	const labelOrder = [
+		'Languages',
+		'Frontend',
+		'Backend',
+		'Databases',
+		'DevOps & Tools',
+		'Tools',
+		'Spoken Languages',
+		'Other'
+	];
+
+	// Build contact line (compact single line)
+	const contactParts: string[] = [];
+	if (profile.email) contactParts.push(profile.email);
+	if (profile.linkedin_url) contactParts.push('LinkedIn');
+	if (profile.github_url) contactParts.push('GitHub');
+	if (profile.phone) contactParts.push(profile.phone);
+	const contactLine = contactParts.join(' | ');
 
 	// Merge skills with same display category
 	const mergedSkillCategories: Record<string, string[]> = {};
@@ -237,32 +236,42 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		mergedSkillCategories[displayLabel].push(...skillNames);
 	});
 
+	// Sort categories for display
+	const sortedSkillCategories = Object.entries(mergedSkillCategories).sort(([labelA], [labelB]) => {
+		const indexA = labelOrder.indexOf(labelA);
+		const indexB = labelOrder.indexOf(labelB);
+		// If both are found in the list, sort by index
+		if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+		// If only A is found, it comes first
+		if (indexA !== -1) return -1;
+		// If only B is found, it comes first
+		if (indexB !== -1) return 1;
+		// If neither found, sort alphabetically
+		return labelA.localeCompare(labelB);
+	});
+
 	return (
 		<Document>
 			<Page size="A4" style={styles.page}>
-				{/* --- HEADER WITH PHOTO --- */}
+				{/* --- HEADER --- */}
 				<View style={styles.headerContainer}>
-					{/* Left Column: Text Info */}
-					<View style={styles.headerTextColumn}>
+					<View style={styles.headerLeft}>
 						<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
 						{profile.professional_title && (
-							<Text style={styles.professionalTitle}>{profile.professional_title}</Text>
+							<Text style={styles.title}>{profile.professional_title}</Text>
 						)}
 						{profile.location && (
-							<Text style={styles.contactInfo}>{profile.location}</Text>
+							<Text style={styles.contactLine}>{profile.location}</Text>
 						)}
-						{contactLine1Parts.length > 0 && (
-							<Text style={styles.contactInfo}>{contactLine1Parts.join(' | ')}</Text>
-						)}
-						{contactLine2Parts.length > 0 && (
-							<Text style={styles.contactInfo}>{contactLine2Parts.join(' | ')}</Text>
+						{contactLine && (
+							<Text style={styles.contactLine}>{contactLine}</Text>
 						)}
 					</View>
 
-					{/* Right Column: Photo */}
+					{/* Photo */}
 					{profile.photo_url && (
 						<Image
-							style={styles.profilePhoto}
+							style={styles.photo}
 							src={profile.photo_url}
 						/>
 					)}
@@ -272,7 +281,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 				{profile.professional_summary && (
 					<>
 						<Text style={styles.sectionHeader}>Professional Summary</Text>
-						<Text style={styles.summaryText}>{profile.professional_summary}</Text>
+						<Text style={{ marginBottom: 5 }}>{profile.professional_summary}</Text>
 					</>
 				)}
 
@@ -281,21 +290,29 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					<>
 						<Text style={styles.sectionHeader}>Work Experience</Text>
 						{sortedJobs.map((job, idx) => (
-							<View key={idx} style={styles.entryContainer}>
-								<View style={styles.entryHeaderRow}>
-									<Text style={styles.roleTitle}>{job.role}</Text>
-									<Text style={styles.dateText}>
+							// wrap={false} implements the "Ericsson Rule" - prevents splitting component across pages
+							<View key={idx} style={styles.entryContainer} wrap={false}>
+								<View style={styles.headerRow}>
+									<Text style={styles.role}>{job.role}</Text>
+									<Text style={styles.date}>
 										{formatDateRange(job.startDate, job.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.companyLocation}>
-									{job.company} - {job.location}
-									{job.work_mode ? ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})` : ''}
+
+								{/* Sanitized Location String - avoids double (Remote) */}
+								<Text style={styles.company}>
+									{job.company}
+									{job.location ? ` - ${job.location}` : ''}
+									{/* Only append work_mode if it's NOT already in location string */}
+									{job.work_mode && !job.location.toLowerCase().includes(job.work_mode.toLowerCase())
+										? ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})`
+										: ''}
 								</Text>
+
 								{job.achievements && job.achievements.length > 0 && (
 									<>
 										{job.achievements.map((achievement, i) => (
-											<BulletItem key={i} text={achievement} />
+											<Bullet key={i}>{achievement}</Bullet>
 										))}
 									</>
 								)}
@@ -309,14 +326,14 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					<>
 						<Text style={styles.sectionHeader}>Education</Text>
 						{sortedEducation.map((edu, idx) => (
-							<View key={idx} style={styles.entryContainer}>
-								<View style={styles.entryHeaderRow}>
-									<Text style={styles.roleTitle}>{edu.degree}</Text>
-									<Text style={styles.dateText}>
+							<View key={idx} style={styles.entryContainer} wrap={false}>
+								<View style={styles.headerRow}>
+									<Text style={styles.role}>{edu.degree}</Text>
+									<Text style={styles.date}>
 										{formatDateRange(edu.startDate, edu.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.companyLocation}>
+								<Text style={styles.company}>
 									{edu.institution}{edu.location ? ` - ${edu.location}` : ''}
 								</Text>
 								{edu.scholarship_name && (
@@ -327,7 +344,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 								)}
 								{edu.thesis_title && (
 									<Text style={styles.labelText}>
-										<Text style={styles.boldLabel}>Thesis Project: </Text>
+										<Text style={styles.boldLabel}>Thesis: </Text>
 										{edu.thesis_title}
 										{edu.thesis_description ? `. ${edu.thesis_description}` : ''}
 									</Text>
@@ -337,17 +354,15 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					</>
 				)}
 
-				{/* --- SKILLS --- */}
-				{Object.keys(mergedSkillCategories).length > 0 && (
+				{/* --- SKILLS - Refactored to List View --- */}
+				{sortedSkillCategories.length > 0 && (
 					<>
 						<Text style={styles.sectionHeader}>Skills</Text>
-						<View style={styles.skillsContainer}>
-							{Object.entries(mergedSkillCategories).map(([label, skillNames]) => (
-								<View key={label} style={styles.skillColumn}>
-									<Text style={{ fontSize: 10 }}>
-										<Text style={styles.skillLabel}>{label}: </Text>
-										{skillNames.join(', ')}
-									</Text>
+						<View style={styles.entryContainer} wrap={false}>
+							{sortedSkillCategories.map(([label, skillNames]) => (
+								<View key={label} style={styles.skillRow}>
+									<Text style={styles.skillLabel}>{label}:</Text>
+									<Text style={styles.skillValue}>{skillNames.join(', ')}</Text>
 								</View>
 							))}
 						</View>
