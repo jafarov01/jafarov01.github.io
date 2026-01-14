@@ -7,6 +7,15 @@ import { db } from './firebase';
 
 export interface Profile {
 	name: string;
+	// v7.0 CV Contact Info
+	professional_title?: string;  // "Software Developer"
+	location?: string;            // "Budapest, Hungary"
+	email?: string;               // CV contact email
+	phone?: string;               // CV contact phone
+	linkedin_url?: string;        // LinkedIn profile URL
+	github_url?: string;          // GitHub profile URL
+	professional_summary?: string; // CV summary paragraph
+	// existing fields
 	unipd_id: string;
 	cf: string;
 	visa_expiry: string;
@@ -74,6 +83,7 @@ export interface Exam {
 // ============================================================================
 
 export type JobType = 'full-time' | 'contract' | 'freelance' | 'internship';
+export type WorkMode = 'remote' | 'onsite' | 'hybrid';
 
 export interface Job {
 	id: string;
@@ -81,6 +91,7 @@ export interface Job {
 	role: string;             // e.g. "Software Engineer"
 	location: string;         // e.g. "Milan, Italy (Remote)"
 	type: JobType;
+	work_mode?: WorkMode;     // v7.0: Remote / Onsite / Hybrid
 	startDate: string;        // ISO "2025-07-01"
 	endDate: string | null;   // null = Present
 	salary_gross_yr?: number; // Private data
@@ -99,8 +110,10 @@ export interface Education {
 	status: EducationStatus;
 	startDate: string;
 	endDate: string | null;
+	location?: string;        // v7.0: e.g. "Budapest, Hungary"
 	scholarship_name?: string; // e.g. "Regional Scholarship"
 	thesis_title?: string;
+	thesis_description?: string; // v7.0: Multi-line thesis project description
 }
 
 export interface Career {
@@ -202,6 +215,15 @@ export interface FullUserData {
 export const BLUEPRINT_TEMPLATE: FullUserData = {
 	profile: {
 		name: "",
+		// v7.0 CV Contact Info
+		professional_title: "Software Developer",
+		location: "City, Country",
+		email: "your.email@example.com",
+		phone: "+1 234 567 8900",
+		linkedin_url: "https://linkedin.com/in/yourprofile",
+		github_url: "https://github.com/yourusername",
+		professional_summary: "A results-driven Software Engineer with X years of experience...",
+		// existing fields
 		unipd_id: "",
 		cf: "",
 		visa_expiry: "",
@@ -304,6 +326,7 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				role: "Role Title",
 				location: "City, Country",
 				type: "full-time",
+				work_mode: "remote", // 'remote' | 'onsite' | 'hybrid'
 				startDate: "2024-01-01",
 				endDate: null,
 				tech_stack: ["Python", "React"], // Skill names from skills collection
@@ -319,7 +342,10 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				status: "enrolled",
 				startDate: "2024-10-01",
 				endDate: "2026-08-30",
-				scholarship_name: "Scholarship Name (optional)"
+				location: "City, Country", // v7.0
+				scholarship_name: "Scholarship Name (optional)",
+				thesis_title: "Thesis Title (optional)",
+				thesis_description: "Description of your thesis project..." // v7.0
 			}
 		]
 	},
@@ -354,6 +380,13 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 
 export const profileData: Profile = {
 	name: "New User",
+	professional_title: "",
+	location: "",
+	email: "",
+	phone: "",
+	linkedin_url: "",
+	github_url: "",
+	professional_summary: "",
 	unipd_id: "",
 	cf: "",
 	visa_expiry: "",
@@ -487,6 +520,7 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 
 		// Validate jobs
 		const validJobTypes = ['full-time', 'contract', 'freelance', 'internship'];
+		const validWorkModes = ['remote', 'onsite', 'hybrid'];
 		for (const job of (data.career.jobs || [])) {
 			if (!job.company || typeof job.company !== 'string') {
 				return { valid: false, error: `Job missing required 'company' field` };
@@ -496,6 +530,9 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 			}
 			if (job.type && !validJobTypes.includes(job.type)) {
 				return { valid: false, error: `Invalid job type '${job.type}' for: ${job.role} at ${job.company}. Valid values: ${validJobTypes.join(', ')}` };
+			}
+			if (job.work_mode && !validWorkModes.includes(job.work_mode)) {
+				return { valid: false, error: `Invalid work mode '${job.work_mode}' for: ${job.role} at ${job.company}. Valid values: ${validWorkModes.join(', ')}` };
 			}
 			if (job.startDate && isNaN(Date.parse(job.startDate))) {
 				return { valid: false, error: `Invalid start date for job: ${job.role} at ${job.company}` };

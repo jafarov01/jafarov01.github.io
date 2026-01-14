@@ -27,6 +27,7 @@ import { type Job, type Education, type JobType, type EducationStatus } from '..
 import { ConfirmModal } from './ConfirmModal';
 
 const jobTypes: JobType[] = ['full-time', 'contract', 'freelance', 'internship'];
+const workModes: ('remote' | 'onsite' | 'hybrid')[] = ['remote', 'onsite', 'hybrid'];
 const educationStatuses: EducationStatus[] = ['enrolled', 'graduated', 'paused'];
 
 export function Career() {
@@ -58,11 +59,12 @@ export function Career() {
 		role: '',
 		location: '',
 		type: 'full-time' as JobType,
+		work_mode: '' as 'remote' | 'onsite' | 'hybrid' | '',
 		startDate: '',
 		endDate: '',
 		salary_gross_yr: 0,
 		currency: 'EUR',
-		tech_stack: [] as string[], // Now array of skill names
+		tech_stack: [] as string[],
 		achievements: '',
 		is_current: false
 	});
@@ -76,8 +78,10 @@ export function Career() {
 		status: 'enrolled' as EducationStatus,
 		startDate: '',
 		endDate: '',
+		location: '',
 		scholarship_name: '',
-		thesis_title: ''
+		thesis_title: '',
+		thesis_description: ''
 	});
 
 	const resetJobForm = () => {
@@ -86,6 +90,7 @@ export function Career() {
 			role: '',
 			location: '',
 			type: 'full-time',
+			work_mode: '',
 			startDate: '',
 			endDate: '',
 			salary_gross_yr: 0,
@@ -105,8 +110,10 @@ export function Career() {
 			status: 'enrolled',
 			startDate: '',
 			endDate: '',
+			location: '',
 			scholarship_name: '',
-			thesis_title: ''
+			thesis_title: '',
+			thesis_description: ''
 		});
 		setEditingEdu(null);
 	};
@@ -118,11 +125,12 @@ export function Career() {
 			role: job.role,
 			location: job.location,
 			type: job.type,
+			work_mode: job.work_mode || '',
 			startDate: job.startDate,
 			endDate: job.endDate || '',
 			salary_gross_yr: job.salary_gross_yr || 0,
 			currency: job.currency || 'EUR',
-			tech_stack: job.tech_stack || [], // Already an array
+			tech_stack: job.tech_stack || [],
 			achievements: job.achievements?.join('\n') || '',
 			is_current: job.is_current
 		});
@@ -137,8 +145,10 @@ export function Career() {
 			status: edu.status,
 			startDate: edu.startDate,
 			endDate: edu.endDate || '',
+			location: edu.location || '',
 			scholarship_name: edu.scholarship_name || '',
-			thesis_title: edu.thesis_title || ''
+			thesis_title: edu.thesis_title || '',
+			thesis_description: edu.thesis_description || ''
 		});
 		setIsEduModalOpen(true);
 	};
@@ -153,11 +163,12 @@ export function Career() {
 				role: jobForm.role,
 				location: jobForm.location,
 				type: jobForm.type,
+				work_mode: jobForm.work_mode || undefined,
 				startDate: jobForm.startDate,
 				endDate: jobForm.is_current ? null : (jobForm.endDate || null),
 				salary_gross_yr: jobForm.salary_gross_yr || undefined,
 				currency: jobForm.currency,
-				tech_stack: jobForm.tech_stack, // Already an array
+				tech_stack: jobForm.tech_stack,
 				achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
 				is_current: jobForm.is_current
 			};
@@ -190,8 +201,10 @@ export function Career() {
 				status: eduForm.status,
 				startDate: eduForm.startDate,
 				endDate: eduForm.endDate || null,
+				location: eduForm.location || undefined,
 				scholarship_name: eduForm.scholarship_name || undefined,
-				thesis_title: eduForm.thesis_title || undefined
+				thesis_title: eduForm.thesis_title || undefined,
+				thesis_description: eduForm.thesis_description || undefined
 			};
 
 			if (editingEdu) {
@@ -541,6 +554,12 @@ export function Career() {
 													Thesis: "{edu.thesis_title}"
 												</p>
 											)}
+
+{edu.thesis_description && (
+<p className="text-sm text-gray-500 mt-1 ml-4">
+{edu.thesis_description}
+</p>
+)}
 										</div>
 
 										<div className="flex items-center gap-2">
@@ -683,208 +702,221 @@ export function Career() {
 						{/* Scrollable Content */}
 						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
 							<div className="space-y-4">
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Company *</label>
-									<input
-										type="text"
-										value={jobForm.company}
-										onChange={e => setJobForm({ ...jobForm, company: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-										placeholder="e.g. Google"
-									/>
-								</div>
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Role *</label>
-									<input
-										type="text"
-										value={jobForm.role}
-										onChange={e => setJobForm({ ...jobForm, role: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-										placeholder="e.g. Software Engineer"
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Location</label>
-									<input
-										type="text"
-										value={jobForm.location}
-										onChange={e => setJobForm({ ...jobForm, location: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-										placeholder="e.g. Milan, Italy (Remote)"
-									/>
-								</div>
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Type</label>
-									<select
-										value={jobForm.type}
-										onChange={e => setJobForm({ ...jobForm, type: e.target.value as JobType })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-									>
-										{jobTypes.map(t => (
-											<option key={t} value={t}>{t}</option>
-										))}
-									</select>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-3 gap-4">
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Start Date</label>
-									<input
-										type="date"
-										value={jobForm.startDate}
-										onChange={e => setJobForm({ ...jobForm, startDate: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-									/>
-								</div>
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">End Date</label>
-									<input
-										type="date"
-										value={jobForm.endDate}
-										onChange={e => setJobForm({ ...jobForm, endDate: e.target.value })}
-										disabled={jobForm.is_current}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none disabled:opacity-50"
-									/>
-								</div>
-								<div className="flex items-end">
-									<label className="flex items-center gap-2 cursor-pointer">
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Company *</label>
 										<input
-											type="checkbox"
-											checked={jobForm.is_current}
-											onChange={e => setJobForm({ ...jobForm, is_current: e.target.checked, endDate: '' })}
-											className="w-4 h-4 accent-neon-green"
+											type="text"
+											value={jobForm.company}
+											onChange={e => setJobForm({ ...jobForm, company: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+											placeholder="e.g. Google"
 										/>
-										<span className="text-sm text-gray-400">Current Position</span>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Role *</label>
+										<input
+											type="text"
+											value={jobForm.role}
+											onChange={e => setJobForm({ ...jobForm, role: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+											placeholder="e.g. Software Engineer"
+										/>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Location</label>
+										<input
+											type="text"
+											value={jobForm.location}
+											onChange={e => setJobForm({ ...jobForm, location: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+											placeholder="e.g. Milan, Italy (Remote)"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Type</label>
+										<select
+											value={jobForm.type}
+											onChange={e => setJobForm({ ...jobForm, type: e.target.value as JobType })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+										>
+											{jobTypes.map(t => (
+												<option key={t} value={t}>{t}</option>
+											))}
+										</select>
+									</div>
+								</div>
+
+<div>
+<label className="block text-sm text-gray-400 mb-1">Work Mode</label>
+<select
+value={jobForm.work_mode}
+onChange={e => setJobForm({ ...jobForm, work_mode: e.target.value as 'remote' | 'onsite' | 'hybrid' | '' })}
+className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+>
+<option value="">— Select —</option>
+{workModes.map(m => (
+<option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+))}
+</select>
+</div>
+
+								<div className="grid grid-cols-3 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Start Date</label>
+										<input
+											type="date"
+											value={jobForm.startDate}
+											onChange={e => setJobForm({ ...jobForm, startDate: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">End Date</label>
+										<input
+											type="date"
+											value={jobForm.endDate}
+											onChange={e => setJobForm({ ...jobForm, endDate: e.target.value })}
+											disabled={jobForm.is_current}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none disabled:opacity-50"
+										/>
+									</div>
+									<div className="flex items-end">
+										<label className="flex items-center gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={jobForm.is_current}
+												onChange={e => setJobForm({ ...jobForm, is_current: e.target.checked, endDate: '' })}
+												className="w-4 h-4 accent-neon-green"
+											/>
+											<span className="text-sm text-gray-400">Current Position</span>
+										</label>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Salary (Gross/Year)</label>
+										<input
+											type="number"
+											value={jobForm.salary_gross_yr || ''}
+											onChange={e => setJobForm({ ...jobForm, salary_gross_yr: Number(e.target.value) })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+											placeholder="Private - for your records"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Currency</label>
+										<select
+											value={jobForm.currency}
+											onChange={e => setJobForm({ ...jobForm, currency: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+										>
+											<option value="EUR">EUR</option>
+											<option value="USD">USD</option>
+											<option value="GBP">GBP</option>
+											<option value="HUF">HUF</option>
+										</select>
+									</div>
+								</div>
+
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">
+										Tech Stack
+										<span className="text-gray-600 ml-1">(from Skill Registry)</span>
 									</label>
-								</div>
-							</div>
+									<div className="relative">
+										<button
+											type="button"
+											onClick={() => setTechDropdownOpen(!techDropdownOpen)}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-left text-white focus:border-neon-purple focus:outline-none flex items-center justify-between"
+										>
+											<span className={jobForm.tech_stack.length === 0 ? 'text-gray-500' : 'text-white'}>
+												{jobForm.tech_stack.length === 0
+													? 'Select skills...'
+													: `${jobForm.tech_stack.length} skill${jobForm.tech_stack.length !== 1 ? 's' : ''} selected`}
+											</span>
+											<ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${techDropdownOpen ? 'rotate-180' : ''}`} />
+										</button>
 
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Salary (Gross/Year)</label>
-									<input
-										type="number"
-										value={jobForm.salary_gross_yr || ''}
-										onChange={e => setJobForm({ ...jobForm, salary_gross_yr: Number(e.target.value) })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-										placeholder="Private - for your records"
-									/>
-								</div>
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Currency</label>
-									<select
-										value={jobForm.currency}
-										onChange={e => setJobForm({ ...jobForm, currency: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
-									>
-										<option value="EUR">EUR</option>
-										<option value="USD">USD</option>
-										<option value="GBP">GBP</option>
-										<option value="HUF">HUF</option>
-									</select>
-								</div>
-							</div>
+										{techDropdownOpen && (
+											<div className="absolute z-10 w-full mt-1 bg-dark-700 border border-dark-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+												{skillDefinitions.length === 0 ? (
+													<div className="p-3 text-sm text-gray-500 text-center">
+														No skills in registry. Add skills in Skill Mastery first.
+													</div>
+												) : (
+													<>
+														{skillDefinitions.map(skill => {
+															const isSelected = jobForm.tech_stack.includes(skill.name);
+															return (
+																<button
+																	key={skill.id}
+																	type="button"
+																	onClick={() => {
+																		if (isSelected) {
+																			setJobForm({
+																				...jobForm,
+																				tech_stack: jobForm.tech_stack.filter(s => s !== skill.name)
+																			});
+																		} else {
+																			setJobForm({
+																				...jobForm,
+																				tech_stack: [...jobForm.tech_stack, skill.name]
+																			});
+																		}
+																	}}
+																	className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-dark-600 transition-colors ${isSelected ? 'bg-neon-purple/10' : ''
+																		}`}
+																>
+																	<span className="text-white">{skill.name}</span>
+																	{isSelected && <Check className="w-4 h-4 text-neon-purple" />}
+																</button>
+															);
+														})}
+													</>
+												)}
+											</div>
+										)}
+									</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">
-									Tech Stack
-									<span className="text-gray-600 ml-1">(from Skill Registry)</span>
-								</label>
-								<div className="relative">
-									<button
-										type="button"
-										onClick={() => setTechDropdownOpen(!techDropdownOpen)}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-left text-white focus:border-neon-purple focus:outline-none flex items-center justify-between"
-									>
-										<span className={jobForm.tech_stack.length === 0 ? 'text-gray-500' : 'text-white'}>
-											{jobForm.tech_stack.length === 0
-												? 'Select skills...'
-												: `${jobForm.tech_stack.length} skill${jobForm.tech_stack.length !== 1 ? 's' : ''} selected`}
-										</span>
-										<ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${techDropdownOpen ? 'rotate-180' : ''}`} />
-									</button>
-
-									{techDropdownOpen && (
-										<div className="absolute z-10 w-full mt-1 bg-dark-700 border border-dark-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-											{skillDefinitions.length === 0 ? (
-												<div className="p-3 text-sm text-gray-500 text-center">
-													No skills in registry. Add skills in Skill Mastery first.
-												</div>
-											) : (
-												<>
-													{skillDefinitions.map(skill => {
-														const isSelected = jobForm.tech_stack.includes(skill.name);
-														return (
-															<button
-																key={skill.id}
-																type="button"
-																onClick={() => {
-																	if (isSelected) {
-																		setJobForm({
-																			...jobForm,
-																			tech_stack: jobForm.tech_stack.filter(s => s !== skill.name)
-																		});
-																	} else {
-																		setJobForm({
-																			...jobForm,
-																			tech_stack: [...jobForm.tech_stack, skill.name]
-																		});
-																	}
-																}}
-																className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-dark-600 transition-colors ${
-																	isSelected ? 'bg-neon-purple/10' : ''
-																}`}
-															>
-																<span className="text-white">{skill.name}</span>
-																{isSelected && <Check className="w-4 h-4 text-neon-purple" />}
-															</button>
-														);
-													})}
-												</>
-											)}
+									{/* Selected skills display */}
+									{jobForm.tech_stack.length > 0 && (
+										<div className="flex flex-wrap gap-2 mt-2">
+											{jobForm.tech_stack.map(tech => (
+												<span
+													key={tech}
+													className="inline-flex items-center gap-1 px-2 py-1 bg-neon-purple/20 text-neon-purple text-sm rounded"
+												>
+													{tech}
+													<button
+														type="button"
+														onClick={() => setJobForm({
+															...jobForm,
+															tech_stack: jobForm.tech_stack.filter(s => s !== tech)
+														})}
+														className="hover:text-white"
+													>
+														<X className="w-3 h-3" />
+													</button>
+												</span>
+											))}
 										</div>
 									)}
 								</div>
 
-								{/* Selected skills display */}
-								{jobForm.tech_stack.length > 0 && (
-									<div className="flex flex-wrap gap-2 mt-2">
-										{jobForm.tech_stack.map(tech => (
-											<span
-												key={tech}
-												className="inline-flex items-center gap-1 px-2 py-1 bg-neon-purple/20 text-neon-purple text-sm rounded"
-											>
-												{tech}
-												<button
-													type="button"
-													onClick={() => setJobForm({
-														...jobForm,
-														tech_stack: jobForm.tech_stack.filter(s => s !== tech)
-													})}
-													className="hover:text-white"
-												>
-													<X className="w-3 h-3" />
-												</button>
-											</span>
-										))}
-									</div>
-								)}
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Achievements (one per line)</label>
-								<textarea
-									value={jobForm.achievements}
-									onChange={e => setJobForm({ ...jobForm, achievements: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none min-h-[100px]"
-									placeholder="• Improved system performance by 40%&#10;• Led migration to microservices"
-								/>
-							</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Achievements (one per line)</label>
+									<textarea
+										value={jobForm.achievements}
+										onChange={e => setJobForm({ ...jobForm, achievements: e.target.value })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none min-h-[100px]"
+										placeholder="• Improved system performance by 40%&#10;• Led migration to microservices"
+									/>
+								</div>
 							</div>
 						</div>
 
@@ -934,83 +966,107 @@ export function Career() {
 						{/* Scrollable Content */}
 						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
 							<div className="space-y-4">
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Institution *</label>
-								<input
-									type="text"
-									value={eduForm.institution}
-									onChange={e => setEduForm({ ...eduForm, institution: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-									placeholder="e.g. University of Padova"
-								/>
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Degree *</label>
-								<input
-									type="text"
-									value={eduForm.degree}
-									onChange={e => setEduForm({ ...eduForm, degree: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-									placeholder="e.g. MSc Computer Science"
-								/>
-							</div>
-
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Status</label>
-								<select
-									value={eduForm.status}
-									onChange={e => setEduForm({ ...eduForm, status: e.target.value as EducationStatus })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-								>
-									{educationStatuses.map(s => (
-										<option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-									))}
-								</select>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm text-gray-400 mb-1">Start Date</label>
+									<label className="block text-sm text-gray-400 mb-1">Institution *</label>
 									<input
-										type="date"
-										value={eduForm.startDate}
-										onChange={e => setEduForm({ ...eduForm, startDate: e.target.value })}
+										type="text"
+										value={eduForm.institution}
+										onChange={e => setEduForm({ ...eduForm, institution: e.target.value })}
 										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										placeholder="e.g. University of Padova"
 									/>
 								</div>
+
 								<div>
-									<label className="block text-sm text-gray-400 mb-1">End Date (Expected)</label>
+									<label className="block text-sm text-gray-400 mb-1">Degree *</label>
 									<input
-										type="date"
-										value={eduForm.endDate}
-										onChange={e => setEduForm({ ...eduForm, endDate: e.target.value })}
+										type="text"
+										value={eduForm.degree}
+										onChange={e => setEduForm({ ...eduForm, degree: e.target.value })}
 										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										placeholder="e.g. MSc Computer Science"
 									/>
 								</div>
-							</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Scholarship (optional)</label>
-								<input
-									type="text"
-									value={eduForm.scholarship_name}
-									onChange={e => setEduForm({ ...eduForm, scholarship_name: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-									placeholder="e.g. Regional Scholarship (7k)"
-								/>
-							</div>
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Status</label>
+									<select
+										value={eduForm.status}
+										onChange={e => setEduForm({ ...eduForm, status: e.target.value as EducationStatus })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+									>
+										{educationStatuses.map(s => (
+											<option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+										))}
+									</select>
+								</div>
 
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Thesis Title (optional)</label>
-								<input
-									type="text"
-									value={eduForm.thesis_title}
-									onChange={e => setEduForm({ ...eduForm, thesis_title: e.target.value })}
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-									placeholder="e.g. Machine Learning for Edge Computing"
-								/>
-							</div>
+<div>
+<label className="block text-sm text-gray-400 mb-1">Location</label>
+<input
+type="text"
+value={eduForm.location}
+onChange={e => setEduForm({ ...eduForm, location: e.target.value })}
+className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+placeholder="e.g. Budapest, Hungary"
+/>
+</div>
+
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Start Date</label>
+										<input
+											type="date"
+											value={eduForm.startDate}
+											onChange={e => setEduForm({ ...eduForm, startDate: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">End Date (Expected)</label>
+										<input
+											type="date"
+											value={eduForm.endDate}
+											onChange={e => setEduForm({ ...eduForm, endDate: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										/>
+									</div>
+								</div>
+
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Scholarship (optional)</label>
+									<input
+										type="text"
+										value={eduForm.scholarship_name}
+										onChange={e => setEduForm({ ...eduForm, scholarship_name: e.target.value })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										placeholder="e.g. Regional Scholarship (7k)"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Thesis Title (optional)</label>
+									<input
+										type="text"
+										value={eduForm.thesis_title}
+										onChange={e => setEduForm({ ...eduForm, thesis_title: e.target.value })}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										placeholder="e.g. Machine Learning for Edge Computing"
+									/>
+								</div>
+
+{eduForm.thesis_title && (
+<div>
+<label className="block text-sm text-gray-400 mb-1">Thesis Description</label>
+<textarea
+value={eduForm.thesis_description}
+onChange={e => setEduForm({ ...eduForm, thesis_description: e.target.value })}
+rows={3}
+className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none resize-none"
+placeholder="Describe your thesis project..."
+/>
+</div>
+)}
 							</div>
 						</div>
 

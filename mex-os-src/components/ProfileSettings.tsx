@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
-import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database } from 'lucide-react';
+import { User, Save, Building2, GraduationCap, CreditCard, Calendar, Download, Upload, AlertTriangle, FileJson, Database, Briefcase, MapPin, Mail, Phone, Linkedin, Github, FileText } from 'lucide-react';
 import { type Profile, BLUEPRINT_TEMPLATE } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -202,6 +202,122 @@ export function ProfileSettings() {
 								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
 							/>
 						</div>
+					</div>
+				</div>
+
+				{/* CV Contact Info - Full Width Section */}
+				<div className="space-y-4 pt-6 border-t border-dark-600">
+					<h2 className="text-lg font-semibold text-white flex items-center gap-2 border-b border-dark-600 pb-2">
+						<FileText className="w-5 h-5 text-neon-purple" /> CV Contact Info
+					</h2>
+					<p className="text-sm text-gray-500 mb-4">
+						This information will appear on your generated CV. Fields are optional.
+					</p>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Professional Title</label>
+							<div className="relative">
+								<Briefcase className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="text"
+									name="professional_title"
+									value={formData.professional_title || ''}
+									onChange={handleChange}
+									placeholder="e.g. Software Developer"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Location</label>
+							<div className="relative">
+								<MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="text"
+									name="location"
+									value={formData.location || ''}
+									onChange={handleChange}
+									placeholder="e.g. Budapest, Hungary"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Email</label>
+							<div className="relative">
+								<Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="email"
+									name="email"
+									value={formData.email || ''}
+									onChange={handleChange}
+									placeholder="your.email@example.com"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Phone</label>
+							<div className="relative">
+								<Phone className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="tel"
+									name="phone"
+									value={formData.phone || ''}
+									onChange={handleChange}
+									placeholder="+36 20 123 4567"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">LinkedIn URL</label>
+							<div className="relative">
+								<Linkedin className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="url"
+									name="linkedin_url"
+									value={formData.linkedin_url || ''}
+									onChange={handleChange}
+									placeholder="https://linkedin.com/in/yourprofile"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">GitHub URL</label>
+							<div className="relative">
+								<Github className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+								<input
+									type="url"
+									name="github_url"
+									value={formData.github_url || ''}
+									onChange={handleChange}
+									placeholder="https://github.com/yourusername"
+									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<label className="block text-sm text-gray-400 mb-1">Professional Summary</label>
+						<textarea
+							name="professional_summary"
+							value={formData.professional_summary || ''}
+							onChange={(e) => setFormData(prev => ({ ...prev, professional_summary: e.target.value }))}
+							rows={4}
+							placeholder="A results-driven Software Engineer with professional experience in..."
+							className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none resize-none"
+						/>
+						<p className="text-xs text-gray-600 mt-1">This will appear at the top of your CV.</p>
 					</div>
 				</div>
 
