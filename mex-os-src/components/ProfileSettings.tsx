@@ -309,31 +309,67 @@ export function ProfileSettings() {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
-							<label className="block text-sm text-gray-400 mb-1">Photo URL (for CV)</label>
-							<div className="relative">
-								<Camera className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-								<input
-									type="url"
-									name="photo_url"
-									value={formData.photo_url || ''}
-									onChange={handleChange}
-									placeholder="https://example.com/your-photo.jpg"
-									className="w-full bg-dark-700 border border-dark-600 rounded p-2 pl-9 text-white focus:border-neon-purple focus:outline-none"
-								/>
+							<label className="block text-sm text-gray-400 mb-1">CV Photo</label>
+							<div className="flex items-start gap-4">
+								{formData.photo_url ? (
+									<div className="relative group">
+										<img
+											src={formData.photo_url}
+											alt="Profile"
+											className="w-20 h-20 rounded-full object-cover border-2 border-neon-purple"
+										/>
+										<button
+											type="button"
+											onClick={() => setFormData(prev => ({ ...prev, photo_url: undefined }))}
+											className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+											title="Remove photo"
+										>
+											<AlertTriangle className="w-3 h-3" />
+										</button>
+									</div>
+								) : (
+									<div className="w-20 h-20 rounded-full bg-dark-700 border-2 border-dashed border-gray-600 flex items-center justify-center text-gray-500">
+										<User className="w-8 h-8" />
+									</div>
+								)}
+
+								<div className="flex-1">
+									<input
+										type="file"
+										id="photo-upload"
+										accept="image/jpeg,image/png"
+										className="hidden"
+										onChange={(e) => {
+											const file = e.target.files?.[0];
+											if (!file) return;
+
+											// Limit: 500KB to ensure Firestore document size safety
+											if (file.size > 500 * 1024) {
+												showToast('Image too large (max 500KB)', 'error');
+												return;
+											}
+
+											const reader = new FileReader();
+											reader.onloadend = () => {
+												setFormData(prev => ({ ...prev, photo_url: reader.result as string }));
+											};
+											reader.readAsDataURL(file);
+										}}
+									/>
+									<label
+										htmlFor="photo-upload"
+										className="btn-cyber px-4 py-2 flex items-center gap-2 cursor-pointer w-fit text-sm"
+									>
+										<Camera className="w-4 h-4" />
+										{formData.photo_url ? 'Change Photo' : 'Upload Photo'}
+									</label>
+									<p className="text-xs text-gray-500 mt-2">
+										Passport-style (Max 500KB).<br />
+										Appears in CV top-right.
+									</p>
+								</div>
 							</div>
-							<p className="text-xs text-gray-600 mt-1">Passport-size photo URL. Appears in CV header.</p>
 						</div>
-						{formData.photo_url && (
-							<div className="flex items-center gap-3">
-								<img
-									src={formData.photo_url}
-									alt="CV Photo Preview"
-									className="w-16 h-16 rounded-full object-cover border-2 border-neon-purple"
-									onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-								/>
-								<span className="text-sm text-gray-400">Preview</span>
-							</div>
-						)}
 					</div>
 
 					<div>
