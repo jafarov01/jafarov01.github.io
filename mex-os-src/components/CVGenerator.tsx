@@ -1,137 +1,144 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link } from '@react-pdf/renderer';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
 import { FileText, Loader2 } from 'lucide-react';
 
-// Register Helvetica as a standard font (already built-in for @react-pdf/renderer)
-// Using default fonts for maximum ATS compatibility
-
-// PDF Styles - ATS-friendly: single column, no tables, standard fonts
+// PDF Styles - Matching the reference CV (ForSEJob.pdf) structure
 const styles = StyleSheet.create({
 	page: {
 		padding: 40,
+		paddingTop: 35,
+		paddingBottom: 35,
 		fontSize: 10,
 		fontFamily: 'Helvetica',
-		color: '#333333',
+		color: '#222222',
+		lineHeight: 1.3,
 	},
-	// Header section
+	// Header section - Name centered, large
 	header: {
-		marginBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: '#cccccc',
-		paddingBottom: 12,
+		alignItems: 'center',
+		marginBottom: 12,
 	},
 	name: {
-		fontSize: 22,
+		fontSize: 24,
 		fontFamily: 'Helvetica-Bold',
-		color: '#1a1a1a',
-		marginBottom: 4,
+		color: '#000000',
+		marginBottom: 2,
 	},
 	title: {
-		fontSize: 12,
-		color: '#555555',
+		fontSize: 11,
+		color: '#444444',
 		marginBottom: 8,
 	},
-	contactRow: {
+	contactLine: {
+		fontSize: 9,
+		color: '#333333',
+		textAlign: 'center',
+	},
+	link: {
+		color: '#0066cc',
+		textDecoration: 'none',
+	},
+	// Section styles - Centered, uppercase headings
+	section: {
+		marginTop: 14,
+		marginBottom: 6,
+	},
+	sectionTitle: {
+		fontSize: 11,
+		fontFamily: 'Helvetica-Bold',
+		color: '#000000',
+		textAlign: 'center',
+		textTransform: 'uppercase',
+		letterSpacing: 1,
+		marginBottom: 8,
+		paddingBottom: 2,
+	},
+	// Professional Summary
+	summary: {
+		fontSize: 10,
+		lineHeight: 1.4,
+		color: '#333333',
+		textAlign: 'justify',
+	},
+	// Experience & Education entries
+	entryContainer: {
+		marginBottom: 10,
+	},
+	entryHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'flex-start',
+		marginBottom: 1,
+	},
+	entryRole: {
+		fontSize: 10,
+		fontFamily: 'Helvetica-Bold',
+		color: '#000000',
+	},
+	entryDate: {
+		fontSize: 10,
+		color: '#333333',
+	},
+	entryCompany: {
+		fontSize: 10,
+		fontStyle: 'italic',
+		color: '#333333',
+		marginBottom: 3,
+	},
+	bulletContainer: {
+		flexDirection: 'row',
+		marginBottom: 2,
+		paddingLeft: 12,
+	},
+	bulletPoint: {
+		width: 12,
+		fontSize: 10,
+		color: '#333333',
+	},
+	bulletText: {
+		flex: 1,
+		fontSize: 9.5,
+		lineHeight: 1.35,
+		color: '#333333',
+		textAlign: 'justify',
+	},
+	// Skills section - Multi-column
+	skillsGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 8,
 	},
-	contactItem: {
-		fontSize: 9,
-		color: '#666666',
-	},
-	contactSeparator: {
-		fontSize: 9,
-		color: '#999999',
-		marginHorizontal: 4,
-	},
-	// Section styles
-	section: {
-		marginBottom: 14,
-	},
-	sectionTitle: {
-		fontSize: 12,
-		fontFamily: 'Helvetica-Bold',
-		color: '#1a1a1a',
-		marginBottom: 8,
-		textTransform: 'uppercase',
-		letterSpacing: 0.5,
-	},
-	// Summary
-	summary: {
-		fontSize: 10,
-		lineHeight: 1.5,
-		color: '#444444',
-		textAlign: 'justify',
-	},
-	// Experience & Education entries
-	entryHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginBottom: 2,
-	},
-	entryTitle: {
-		fontSize: 11,
-		fontFamily: 'Helvetica-Bold',
-		color: '#1a1a1a',
-	},
-	entryDate: {
-		fontSize: 9,
-		color: '#666666',
-	},
-	entrySubtitle: {
-		fontSize: 10,
-		color: '#555555',
-		marginBottom: 4,
-	},
-	entryLocation: {
-		fontSize: 9,
-		color: '#777777',
-		fontStyle: 'italic',
-	},
-	bulletList: {
-		marginTop: 4,
-		marginLeft: 12,
-	},
-	bulletItem: {
-		fontSize: 9,
-		marginBottom: 2,
-		lineHeight: 1.4,
-		color: '#444444',
-	},
-	// Skills section
-	skillCategory: {
+	skillColumn: {
+		width: '32%',
 		marginBottom: 6,
 	},
-	skillCategoryTitle: {
-		fontSize: 10,
+	skillCategory: {
+		fontSize: 9,
 		fontFamily: 'Helvetica-Bold',
-		color: '#333333',
+		color: '#000000',
 		marginBottom: 2,
 	},
 	skillList: {
 		fontSize: 9,
-		color: '#555555',
-		lineHeight: 1.4,
+		color: '#333333',
+		lineHeight: 1.3,
 	},
-	// Entry spacing
-	entry: {
-		marginBottom: 10,
-	},
-	// Thesis
-	thesis: {
+	// Award/Thesis styling
+	awardText: {
+		fontSize: 9.5,
+		color: '#333333',
 		marginTop: 2,
-		fontSize: 9,
-		fontStyle: 'italic',
-		color: '#666666',
+	},
+	awardLabel: {
+		fontFamily: 'Helvetica-Bold',
 	},
 });
 
 // Helper to format date range
 const formatDateRange = (startDate: string, endDate: string | null): string => {
-	const start = format(new Date(startDate), 'MMM yyyy');
-	const end = endDate ? format(new Date(endDate), 'MMM yyyy') : 'Present';
+	const start = format(new Date(startDate), 'MMMM yyyy');
+	const end = endDate ? format(new Date(endDate), 'MMMM yyyy') : 'Present';
 	return `${start} – ${end}`;
 };
 
@@ -195,43 +202,73 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
 	);
 
-	// Category display names
+	// Category display names (matching reference CV structure)
 	const categoryLabels: Record<string, string> = {
 		language: 'Programming Languages',
-		frontend: 'Frontend',
-		backend: 'Backend',
-		devops: 'DevOps & Cloud',
+		frontend: 'Frameworks & Libraries',
+		backend: 'Frameworks & Libraries',
+		devops: 'DevOps & Tools',
 		database: 'Databases',
-		tools: 'Tools & Frameworks',
-		'soft-skill': 'Soft Skills',
-		other: 'Other',
+		tools: 'DevOps & Tools',
+		'soft-skill': 'Methodologies & Concepts',
+		other: 'Other Skills',
 	};
 
-	// Build contact line
-	const contactItems = [
-		profile.location,
-		profile.email,
-		profile.phone,
-		profile.linkedin_url ? profile.linkedin_url.replace('https://', '').replace('www.', '') : null,
-		profile.github_url ? profile.github_url.replace('https://', '').replace('www.', '') : null,
-	].filter(Boolean);
+	// Build contact line parts
+	const contactParts: string[] = [];
+	if (profile.location) contactParts.push(profile.location);
+
+	// Build the contact line text
+	const buildContactLine = () => {
+		const parts: React.ReactNode[] = [];
+
+		if (profile.email) {
+			parts.push(<Text key="email">{profile.email}</Text>);
+		}
+		if (profile.linkedin_url) {
+			const linkedinDisplay = 'LinkedIn';
+			if (parts.length > 0) parts.push(<Text key="sep1"> | </Text>);
+			parts.push(
+				<Link key="linkedin" src={profile.linkedin_url} style={styles.link}>
+					{linkedinDisplay}
+				</Link>
+			);
+		}
+		if (profile.github_url) {
+			const githubDisplay = 'GitHub';
+			if (parts.length > 0) parts.push(<Text key="sep2"> | </Text>);
+			parts.push(
+				<Link key="github" src={profile.github_url} style={styles.link}>
+					{githubDisplay}
+				</Link>
+			);
+		}
+		if (profile.phone) {
+			if (parts.length > 0) parts.push(<Text key="sep3"> | </Text>);
+			parts.push(<Text key="phone">{profile.phone}</Text>);
+		}
+
+		return parts;
+	};
+
+	// Organize skills for multi-column display
+	const skillCategories = Object.entries(skillsByCategory);
 
 	return (
 		<Document>
 			<Page size="A4" style={styles.page}>
-				{/* Header */}
+				{/* Header - Centered name and title */}
 				<View style={styles.header}>
 					<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
 					{profile.professional_title && (
 						<Text style={styles.title}>{profile.professional_title}</Text>
 					)}
-					<View style={styles.contactRow}>
-						{contactItems.map((item, idx) => (
-							<Text key={idx} style={styles.contactItem}>
-								{item}{idx < contactItems.length - 1 ? '  |  ' : ''}
-							</Text>
-						))}
-					</View>
+					{profile.location && (
+						<Text style={styles.contactLine}>{profile.location}</Text>
+					)}
+					<Text style={styles.contactLine}>
+						{buildContactLine()}
+					</Text>
 				</View>
 
 				{/* Professional Summary */}
@@ -247,30 +284,25 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Work Experience</Text>
 						{sortedJobs.map((job, idx) => (
-							<View key={idx} style={styles.entry}>
+							<View key={idx} style={styles.entryContainer}>
 								<View style={styles.entryHeader}>
-									<Text style={styles.entryTitle}>{job.role}</Text>
+									<Text style={styles.entryRole}>{job.role}</Text>
 									<Text style={styles.entryDate}>
 										{formatDateRange(job.startDate, job.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.entrySubtitle}>
-									{job.company}{job.work_mode ? ` (${job.work_mode})` : ''}
+								<Text style={styles.entryCompany}>
+									{job.company} - {job.location}{job.work_mode ? ` (${job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)})` : ''}
 								</Text>
-								{job.location && (
-									<Text style={styles.entryLocation}>{job.location}</Text>
-								)}
 								{job.achievements && job.achievements.length > 0 && (
-									<View style={styles.bulletList}>
-										{job.achievements.map((ach, i) => (
-											<Text key={i} style={styles.bulletItem}>• {ach}</Text>
+									<View>
+										{job.achievements.map((achievement, i) => (
+											<View key={i} style={styles.bulletContainer}>
+												<Text style={styles.bulletPoint}>-</Text>
+												<Text style={styles.bulletText}>{achievement}</Text>
+											</View>
 										))}
 									</View>
-								)}
-								{job.tech_stack && job.tech_stack.length > 0 && (
-									<Text style={{ ...styles.bulletItem, marginTop: 4, marginLeft: 12 }}>
-										Tech: {job.tech_stack.join(', ')}
-									</Text>
 								)}
 							</View>
 						))}
@@ -282,43 +314,56 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Education</Text>
 						{sortedEducation.map((edu, idx) => (
-							<View key={idx} style={styles.entry}>
+							<View key={idx} style={styles.entryContainer}>
 								<View style={styles.entryHeader}>
-									<Text style={styles.entryTitle}>{edu.degree}</Text>
+									<Text style={styles.entryRole}>{edu.degree}</Text>
 									<Text style={styles.entryDate}>
 										{formatDateRange(edu.startDate, edu.endDate)}
 									</Text>
 								</View>
-								<Text style={styles.entrySubtitle}>{edu.institution}</Text>
-								{edu.location && (
-									<Text style={styles.entryLocation}>{edu.location}</Text>
-								)}
+								<Text style={styles.entryCompany}>
+									{edu.institution}{edu.location ? ` - ${edu.location}` : ''}
+								</Text>
 								{edu.scholarship_name && (
-									<Text style={styles.thesis}>🏆 {edu.scholarship_name}</Text>
+									<View style={styles.bulletContainer}>
+										<Text style={styles.bulletPoint}>-</Text>
+										<Text style={styles.bulletText}>
+											<Text style={styles.awardLabel}>Award: </Text>
+											{edu.scholarship_name}
+										</Text>
+									</View>
 								)}
 								{edu.thesis_title && (
-									<Text style={styles.thesis}>
-										Thesis: "{edu.thesis_title}"
-										{edu.thesis_description ? ` — ${edu.thesis_description}` : ''}
-									</Text>
+									<View style={styles.bulletContainer}>
+										<Text style={styles.bulletPoint}>-</Text>
+										<Text style={styles.bulletText}>
+											<Text style={styles.awardLabel}>Thesis Project: </Text>
+											{edu.thesis_title}
+											{edu.thesis_description ? ` ${edu.thesis_description}` : ''}
+										</Text>
+									</View>
 								)}
 							</View>
 						))}
 					</View>
 				)}
 
-				{/* Technical Skills */}
-				{Object.keys(skillsByCategory).length > 0 && (
+				{/* Skills - Multi-column layout */}
+				{skillCategories.length > 0 && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Technical Skills</Text>
-						{Object.entries(skillsByCategory).map(([category, skillNames]) => (
-							<View key={category} style={styles.skillCategory}>
-								<Text style={styles.skillCategoryTitle}>
-									{categoryLabels[category] || category}:
-								</Text>
-								<Text style={styles.skillList}>{skillNames.join(', ')}</Text>
-							</View>
-						))}
+						<Text style={styles.sectionTitle}>Skills</Text>
+						<View style={styles.skillsGrid}>
+							{skillCategories.map(([category, skillNames]) => (
+								<View key={category} style={styles.skillColumn}>
+									<Text style={styles.skillCategory}>
+										{categoryLabels[category] || category}:
+									</Text>
+									<Text style={styles.skillList}>
+										{skillNames.join(', ')}
+									</Text>
+								</View>
+							))}
+						</View>
 					</View>
 				)}
 			</Page>
