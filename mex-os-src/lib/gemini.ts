@@ -1,10 +1,8 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import type { AIAction } from "./aiActions";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
 // Initialize Gemini Client
-const genAI = new GoogleGenerativeAI(API_KEY || "dummy_key_for_build");
+// const genAI = new GoogleGenerativeAI(API_KEY || "dummy_key_for_build"); // REMOVED: Now dynamic
 
 const BASE_INSTRUCTION = `You are the MEX OS Personal Coach. Your role is to help the user manage their life, career, and studies.
 	
@@ -47,12 +45,13 @@ export interface AIResponse {
 	action?: AIAction;
 }
 
-export async function sendMessage(history: ChatMessage[], newMessage: string, userContext: string): Promise<AIResponse> {
-	if (!API_KEY) {
-		return { text: "⚠️ API Key missing. Please set VITE_GEMINI_API_KEY in your .env file." };
+export async function sendMessage(apiKey: string, history: ChatMessage[], newMessage: string, userContext: string): Promise<AIResponse> {
+	if (!apiKey) {
+		return { text: "⚠️ API Key missing. Please enter your Google Gemini API Key in the settings." };
 	}
 
 	try {
+		const genAI = new GoogleGenerativeAI(apiKey);
 		// Initialize model with dynamic context in system instruction
 		const model = genAI.getGenerativeModel({
 			model: "gemini-flash-latest",
