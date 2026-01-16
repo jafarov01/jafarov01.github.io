@@ -8,7 +8,7 @@ export default defineConfig({
 		react(),
 		tailwindcss()
 	],
-	base: '/mex-os/',
+	base: '/',
 	publicDir: 'mex-os-public',
 	// Exclude root files from being processed
 	server: {
@@ -20,7 +20,7 @@ export default defineConfig({
 		outDir: 'mex-os',
 		emptyOutDir: true,
 		rollupOptions: {
-			input: resolve(__dirname, 'mex-os-index.html')
+			input: resolve(__dirname, 'index.html')
 		}
 	}
 })
