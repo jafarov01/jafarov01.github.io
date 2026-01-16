@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, User, Bot, Sparkles, Check, Loader2, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageSquare, X, Send, User, Bot, Sparkles, Check, Loader2, Minimize2, Maximize2, Trash2 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 import { sendMessage, type ChatMessage } from '../lib/gemini';
@@ -9,9 +9,12 @@ import { addDays } from 'date-fns';
 export function Coach() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [isMinimized, setIsMinimized] = useState(false);
-	const [messages, setMessages] = useState<ChatMessage[]>([
-		{ role: 'model', text: "Systems online. I am your Strategy Coach. Ready to optimize your trajectory.", timestamp: Date.now() }
-	]);
+	const [messages, setMessages] = useState<ChatMessage[]>(() => {
+		const saved = localStorage.getItem('mex_coach_history');
+		return saved ? JSON.parse(saved) : [
+			{ role: 'model', text: "Systems online. I am your Strategy Coach. Ready to optimize your trajectory.", timestamp: Date.now() }
+		];
+	});
 	const [input, setInput] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	// Store pending actions to allow user to commit them
@@ -28,6 +31,18 @@ export function Coach() {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages, isOpen, pendingAction]);
+
+	// Persist messages
+	useEffect(() => {
+		localStorage.setItem('mex_coach_history', JSON.stringify(messages));
+	}, [messages]);
+
+	const clearHistory = () => {
+		const initialMsg: ChatMessage = { role: 'model', text: "Memory wiped. Ready for new protocols.", timestamp: Date.now() };
+		setMessages([initialMsg]);
+		localStorage.removeItem('mex_coach_history');
+		showToast('Chat history cleared.', 'info');
+	};
 
 	const generateContext = () => {
 		return `
@@ -142,6 +157,13 @@ ${habitDefinitions.length > 0 ? habitDefinitions.map(h => `- ${h.name} (${h.cate
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					<button
+						onClick={clearHistory}
+						title="Clear History"
+						className="p-1 text-gray-400 hover:text-neon-red transition-colors"
+					>
+						<Trash2 className="w-4 h-4" />
+					</button>
 					<button
 						onClick={() => setIsMinimized(!isMinimized)}
 						className="p-1 text-gray-400 hover:text-white transition-colors"
