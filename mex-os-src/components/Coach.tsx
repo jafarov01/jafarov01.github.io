@@ -38,8 +38,11 @@ export function Coach() {
 		setIsLoading(true);
 		setPendingAction(null); // Clear previous action when new turn starts
 
-		// Pass recent history (last 10 messages) to context
-		const history = messages.slice(-10);
+		// Pass recent history, ensuring we skip the initial welcome message (index 0) 
+		// because Gemini requires the first history message to be from the 'user'.
+		const history = messages.length > 0 && messages[0].role === 'model'
+			? messages.slice(1).slice(-10)
+			: messages.slice(-10);
 
 		const response = await sendMessage([...history, userMsg], input);
 
