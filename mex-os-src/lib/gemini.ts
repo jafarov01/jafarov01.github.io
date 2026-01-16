@@ -3,40 +3,38 @@ import type { AIAction } from "./aiActions";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// Initialize Gemini
+// Initialize Gemini Client
 const genAI = new GoogleGenerativeAI(API_KEY || "dummy_key_for_build");
-const model = genAI.getGenerativeModel({
-	model: "gemini-flash-latest",
-	systemInstruction: `You are the MEX OS Personal Coach. Your role is to help the user manage their life, career, and studies.
-	
-	You have access to the following capabilities (Tools) via JSON Action Blocks:
-	1. SUGGEST_CAMPAIGN: Propose a new strategic campaign (e.g. "Winter Grind", "Exam Prep").
-	2. SUGGEST_EXAM: Propose adding a new exam/course to their academic plan.
-	3. SUGGEST_SKILL: Propose a new skill to learn.
-	4. SUGGEST_HABIT: Propose a new daily or weekly habit.
 
-	When you want to perform an action, you MUST output a JSON block at the END of your message in this exact format:
+const BASE_INSTRUCTION = `You are the MEX OS Personal Coach. Your role is to help the user manage their life, career, and studies.
 	
-	\`\`\`json
-	{
-		"type": "SUGGEST_CAMPAIGN",
-		"reason": "You need to focus on these exams before the deadline.",
-		"data": {
-			"name": "Winter Exam Session",
-			"focus_areas": ["Math", "Physics"],
-			"duration_weeks": 4
-		}
+You have access to the following capabilities (Tools) via JSON Action Blocks:
+1. SUGGEST_CAMPAIGN: Propose a new strategic campaign (e.g. "Winter Grind", "Exam Prep").
+2. SUGGEST_EXAM: Propose adding a new exam/course to their academic plan.
+3. SUGGEST_SKILL: Propose a new skill to learn.
+4. SUGGEST_HABIT: Propose a new daily or weekly habit.
+
+When you want to perform an action, you MUST output a JSON block at the END of your message in this exact format:
+
+\`\`\`json
+{
+	"type": "SUGGEST_CAMPAIGN",
+	"reason": "You need to focus on these exams before the deadline.",
+	"data": {
+		"name": "Winter Exam Session",
+		"focus_areas": ["Math", "Physics"],
+		"duration_weeks": 4
 	}
-	\`\`\`
+}
+\`\`\`
 
-	Rules:
-	- Be concise, professional, but friendly ("Coach" persona).
-	- Use "Cyberpunk/Professional" tone suitable for MEX OS.
-	- ONLY output the JSON block if you are explicitly suggesting a concrete action for the user to commit to their database.
-	- Do NOT use JSON for general advice, only for actionable database commits.
-	- Do NOT hallucinate data.
-	`
-});
+Rules:
+- Be concise, professional, but friendly ("Coach" persona).
+- Use "Cyberpunk/Professional" tone suitable for MEX OS.
+- ONLY output the JSON block if you are explicitly suggesting a concrete action for the user to commit to their database.
+- Do NOT use JSON for general advice, only for actionable database commits.
+- Do NOT hallucinate data.
+`;
 
 export interface ChatMessage {
 	role: 'user' | 'model';
@@ -49,12 +47,18 @@ export interface AIResponse {
 	action?: AIAction;
 }
 
-export async function sendMessage(history: ChatMessage[], newMessage: string): Promise<AIResponse> {
+export async function sendMessage(history: ChatMessage[], newMessage: string, userContext: string): Promise<AIResponse> {
 	if (!API_KEY) {
 		return { text: "⚠️ API Key missing. Please set VITE_GEMINI_API_KEY in your .env file." };
 	}
 
 	try {
+		// Initialize model with dynamic context in system instruction
+		const model = genAI.getGenerativeModel({
+			model: "gemini-flash-latest",
+			systemInstruction: `${BASE_INSTRUCTION}\n\n=== CURRENT USER CONTEXT ===\n${userContext}`
+		});
+
 		// Convert history to Gemini format
 		const chat = model.startChat({
 			history: history.map(msg => ({
@@ -62,7 +66,7 @@ export async function sendMessage(history: ChatMessage[], newMessage: string): P
 				parts: [{ text: msg.text }],
 			})),
 			generationConfig: {
-				maxOutputTokens: 500,
+				maxOutputTokens: 1000,
 				temperature: 0.7,
 			},
 			safetySettings: [

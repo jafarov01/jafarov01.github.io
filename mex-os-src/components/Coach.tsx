@@ -18,7 +18,7 @@ export function Coach() {
 	const [pendingAction, setPendingAction] = useState<AIAction | null>(null);
 
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const { addCampaign } = useData();
+	const { addCampaign, profile, campaigns, exams, skillDefinitions, habitDefinitions } = useData();
 	const { showToast } = useToast();
 
 	const scrollToBottom = () => {
@@ -28,6 +28,27 @@ export function Coach() {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages, isOpen, pendingAction]);
+
+	const generateContext = () => {
+		return `
+USER PROFILE:
+Name: ${profile?.firstName || ''} ${profile?.lastName || ''}
+Title: ${profile?.title || 'User'}
+Bio: ${profile?.bio || 'No bio'}
+
+ACTIVE CAMPAIGNS (Strategy):
+${campaigns.length > 0 ? campaigns.map(c => `- ${c.name} (Status: ${c.status}) [Focus: ${c.focus_areas?.join(', ') || ''}]`).join('\n') : "No active campaigns."}
+
+ACADEMICS / EXAMS:
+${exams.length > 0 ? exams.map(e => `- ${e.name} (${e.cfu} CFU) - Status: ${e.status}`).join('\n') : "No exams tracked."}
+
+SKILLS (Definitions):
+${skillDefinitions.length > 0 ? skillDefinitions.map(s => `- ${s.name} (${s.category}) [Target: ${s.target_level}]`).join('\n') : "No skills defined."}
+
+HABITS:
+${habitDefinitions.length > 0 ? habitDefinitions.map(h => `- ${h.name} (${h.category})`).join('\n') : "No habits defined."}
+`;
+	};
 
 	const handleSend = async () => {
 		if (!input.trim() || isLoading) return;
@@ -44,7 +65,8 @@ export function Coach() {
 			? messages.slice(1).slice(-10)
 			: messages.slice(-10);
 
-		const response = await sendMessage([...history, userMsg], input);
+		const context = generateContext();
+		const response = await sendMessage([...history, userMsg], input, context);
 
 		const botMsg: ChatMessage = { role: 'model', text: response.text, timestamp: Date.now() };
 		setMessages(prev => [...prev, botMsg]);
