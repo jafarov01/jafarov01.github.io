@@ -6,7 +6,7 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(API_KEY || "dummy_key_for_build");
 const model = genAI.getGenerativeModel({
-	model: "gemini-2.0-flash",
+	model: "gemini-2.0-flash-lite-preview-02-05",
 	systemInstruction: `You are the MEX OS Personal Coach. Your role is to help the user manage their life, career, and studies.
 	
 	You have access to the following capabilities (Tools) via JSON Action Blocks:
