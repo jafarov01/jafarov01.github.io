@@ -54,9 +54,9 @@ export function Coach() {
 	const generateContext = () => {
 		return `
 USER PROFILE:
-Name: ${profile?.firstName || ''} ${profile?.lastName || ''}
-Title: ${profile?.title || 'User'}
-Bio: ${profile?.bio || 'No bio'}
+Name: ${profile?.name || 'User'}
+Title: ${profile?.professional_title || 'User'}
+Summary: ${profile?.professional_summary || 'No summary'}
 
 ACTIVE CAMPAIGNS (Strategy):
 ${campaigns.length > 0 ? campaigns.map(c => `- ${c.name} (Status: ${c.status}) [Focus: ${c.focus_areas?.join(', ') || ''}]`).join('\n') : "No active campaigns."}
@@ -65,10 +65,10 @@ ACADEMICS / EXAMS:
 ${exams.length > 0 ? exams.map(e => `- ${e.name} (${e.cfu} CFU) - Status: ${e.status}`).join('\n') : "No exams tracked."}
 
 SKILLS (Definitions):
-${skillDefinitions.length > 0 ? skillDefinitions.map(s => `- ${s.name} (${s.category}) [Target: ${s.target_level}]`).join('\n') : "No skills defined."}
+${skillDefinitions.length > 0 ? skillDefinitions.map(s => `- ${s.name} (${s.category}) [Target: ${s.targetPerDay}]`).join('\n') : "No skills defined."}
 
 HABITS:
-${habitDefinitions.length > 0 ? habitDefinitions.map(h => `- ${h.name} (${h.category})`).join('\n') : "No habits defined."}
+${habitDefinitions.length > 0 ? habitDefinitions.map(h => `- ${h.name} (${h.trackingType})`).join('\n') : "No habits defined."}
 `;
 	};
 
