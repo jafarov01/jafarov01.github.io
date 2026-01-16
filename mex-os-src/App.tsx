@@ -15,6 +15,7 @@ import { Cashflow } from './components/Cashflow';
 import { Career } from './components/Career';
 import { Strategy } from './components/Strategy';
 import { SkillMastery } from './components/SkillMastery';
+import { Coach } from './components/Coach';
 import './index.css';
 
 function ProtectedRoute() {
@@ -38,9 +39,12 @@ function ProtectedRoute() {
 	return (
 		<ToastProvider>
 			<DataProvider>
-				<div className="min-h-screen bg-dark-900">
+				<div className="min-h-screen bg-dark-900 text-gray-300">
 					<Navigation />
-					<Outlet />
+					<div className="relative">
+						<Outlet />
+						<Coach />
+					</div>
 				</div>
 				<ToastContainer />
 			</DataProvider>
