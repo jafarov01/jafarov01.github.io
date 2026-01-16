@@ -160,7 +160,7 @@ ${habitDefinitions.length > 0 ? habitDefinitions.map(h => `- ${h.name} (${h.cate
 					<Sparkles className="w-5 h-5 text-neon-green animate-pulse" />
 					<div>
 						<h3 className="font-bold text-white text-sm">Personal Coach</h3>
-						<span className="text-[10px] text-neon-green uppercase tracking-wider">Online</span>
+						<span className="text-[10px] text-neon-green uppercase tracking-wider">v2.0 Online</span>
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
