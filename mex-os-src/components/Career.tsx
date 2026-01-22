@@ -70,7 +70,9 @@ export function Career() {
 		is_current: false,
 		cv_profiles: [] as CVProfile[],
 		achievements_se: '',
-		achievements_cs: ''
+		achievements_cs: '',
+		role_se: '',
+		role_cs: ''
 	});
 
 	// Tech stack dropdown state
@@ -104,7 +106,9 @@ export function Career() {
 			is_current: false,
 			cv_profiles: [],
 			achievements_se: '',
-			achievements_cs: ''
+			achievements_cs: '',
+			role_se: '',
+			role_cs: ''
 		});
 		setEditingJob(null);
 		setTechDropdownOpen(false);
@@ -142,7 +146,9 @@ export function Career() {
 			is_current: job.is_current,
 			cv_profiles: job.cv_profiles || [],
 			achievements_se: job.achievements_se?.join('\n') || '',
-			achievements_cs: job.achievements_cs?.join('\n') || ''
+			achievements_cs: job.achievements_cs?.join('\n') || '',
+			role_se: job.role_se || '',
+			role_cs: job.role_cs || ''
 		});
 		setIsJobModalOpen(true);
 	};
@@ -183,7 +189,9 @@ export function Career() {
 				is_current: jobForm.is_current,
 				cv_profiles: jobForm.cv_profiles,
 				achievements_se: jobForm.achievements_se.split('\n').map(s => s.trim()).filter(Boolean),
-				achievements_cs: jobForm.achievements_cs.split('\n').map(s => s.trim()).filter(Boolean)
+				achievements_cs: jobForm.achievements_cs.split('\n').map(s => s.trim()).filter(Boolean),
+				role_se: jobForm.role_se || undefined,
+				role_cs: jobForm.role_cs || undefined
 			};
 
 			if (editingJob) {
@@ -749,6 +757,30 @@ export function Career() {
 									</div>
 								</div>
 
+								{/* Role Overrides */}
+								<div className="grid grid-cols-2 gap-4 pt-2 border-t border-dark-600 mt-2">
+									<div>
+										<label className="block text-xs text-gray-500 mb-1">Role Type SE (Override)</label>
+										<input
+											type="text"
+											value={jobForm.role_se}
+											onChange={e => setJobForm({ ...jobForm, role_se: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white text-sm focus:border-neon-purple focus:outline-none"
+											placeholder="e.g. Software Engineer"
+										/>
+									</div>
+									<div>
+										<label className="block text-xs text-gray-500 mb-1">Role Type CS (Override)</label>
+										<input
+											type="text"
+											value={jobForm.role_cs}
+											onChange={e => setJobForm({ ...jobForm, role_cs: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white text-sm focus:border-neon-purple focus:outline-none"
+											placeholder="e.g. Technical Analyst"
+										/>
+									</div>
+								</div>
+
 								<div className="grid grid-cols-2 gap-4">
 									<div>
 										<label className="block text-sm text-gray-400 mb-1">Location</label>
@@ -1038,157 +1070,160 @@ export function Career() {
 						</div>
 					</div>
 				</div>
-			)}
+			)
+			}
 
 			{/* Education Modal */}
-			{isEduModalOpen && (
-				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-					<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
-						{/* Header */}
-						<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
-							<h2 className="text-xl font-bold text-white flex items-center gap-2">
-								<GraduationCap className="w-5 h-5 text-neon-cyan" />
-								{editingEdu ? 'Edit Education' : 'Add Education'}
-							</h2>
-							<button
-								onClick={() => { setIsEduModalOpen(false); resetEduForm(); }}
-								className="p-2 text-gray-400 hover:text-white"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
+			{
+				isEduModalOpen && (
+					<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+						<div className="card-cyber p-0 w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[calc(100vh-1rem)] sm:max-h-[85vh] overflow-hidden flex flex-col">
+							{/* Header */}
+							<div className="flex items-center justify-between p-4 sm:p-6 pb-4 border-b border-dark-600">
+								<h2 className="text-xl font-bold text-white flex items-center gap-2">
+									<GraduationCap className="w-5 h-5 text-neon-cyan" />
+									{editingEdu ? 'Edit Education' : 'Add Education'}
+								</h2>
+								<button
+									onClick={() => { setIsEduModalOpen(false); resetEduForm(); }}
+									className="p-2 text-gray-400 hover:text-white"
+								>
+									<X className="w-5 h-5" />
+								</button>
+							</div>
 
-						{/* Scrollable Content */}
-						<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
-							<div className="space-y-4">
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Institution *</label>
-									<input
-										type="text"
-										value={eduForm.institution}
-										onChange={e => setEduForm({ ...eduForm, institution: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-										placeholder="e.g. University of Padova"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Degree *</label>
-									<input
-										type="text"
-										value={eduForm.degree}
-										onChange={e => setEduForm({ ...eduForm, degree: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-										placeholder="e.g. MSc Computer Science"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Status</label>
-									<select
-										value={eduForm.status}
-										onChange={e => setEduForm({ ...eduForm, status: e.target.value as EducationStatus })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-									>
-										{educationStatuses.map(s => (
-											<option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-										))}
-									</select>
-								</div>
-
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Location</label>
-									<input
-										type="text"
-										value={eduForm.location}
-										onChange={e => setEduForm({ ...eduForm, location: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-										placeholder="e.g. Budapest, Hungary"
-									/>
-								</div>
-
-								<div className="grid grid-cols-2 gap-4">
+							{/* Scrollable Content */}
+							<div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4">
+								<div className="space-y-4">
 									<div>
-										<label className="block text-sm text-gray-400 mb-1">Start Date</label>
+										<label className="block text-sm text-gray-400 mb-1">Institution *</label>
 										<input
-											type="date"
-											value={eduForm.startDate}
-											onChange={e => setEduForm({ ...eduForm, startDate: e.target.value })}
+											type="text"
+											value={eduForm.institution}
+											onChange={e => setEduForm({ ...eduForm, institution: e.target.value })}
 											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											placeholder="e.g. University of Padova"
 										/>
 									</div>
+
 									<div>
-										<label className="block text-sm text-gray-400 mb-1">End Date (Expected)</label>
+										<label className="block text-sm text-gray-400 mb-1">Degree *</label>
 										<input
-											type="date"
-											value={eduForm.endDate}
-											onChange={e => setEduForm({ ...eduForm, endDate: e.target.value })}
+											type="text"
+											value={eduForm.degree}
+											onChange={e => setEduForm({ ...eduForm, degree: e.target.value })}
 											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											placeholder="e.g. MSc Computer Science"
 										/>
 									</div>
-								</div>
 
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Scholarship (optional)</label>
-									<input
-										type="text"
-										value={eduForm.scholarship_name}
-										onChange={e => setEduForm({ ...eduForm, scholarship_name: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-										placeholder="e.g. Regional Scholarship (7k)"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-sm text-gray-400 mb-1">Thesis Title (optional)</label>
-									<input
-										type="text"
-										value={eduForm.thesis_title}
-										onChange={e => setEduForm({ ...eduForm, thesis_title: e.target.value })}
-										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
-										placeholder="e.g. Machine Learning for Edge Computing"
-									/>
-								</div>
-
-								{eduForm.thesis_title && (
 									<div>
-										<label className="block text-sm text-gray-400 mb-1">Thesis Description</label>
-										<textarea
-											value={eduForm.thesis_description}
-											onChange={e => setEduForm({ ...eduForm, thesis_description: e.target.value })}
-											rows={3}
-											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none resize-none"
-											placeholder="Describe your thesis project..."
+										<label className="block text-sm text-gray-400 mb-1">Status</label>
+										<select
+											value={eduForm.status}
+											onChange={e => setEduForm({ ...eduForm, status: e.target.value as EducationStatus })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+										>
+											{educationStatuses.map(s => (
+												<option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+											))}
+										</select>
+									</div>
+
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Location</label>
+										<input
+											type="text"
+											value={eduForm.location}
+											onChange={e => setEduForm({ ...eduForm, location: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											placeholder="e.g. Budapest, Hungary"
 										/>
 									</div>
-								)}
+
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<label className="block text-sm text-gray-400 mb-1">Start Date</label>
+											<input
+												type="date"
+												value={eduForm.startDate}
+												onChange={e => setEduForm({ ...eduForm, startDate: e.target.value })}
+												className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											/>
+										</div>
+										<div>
+											<label className="block text-sm text-gray-400 mb-1">End Date (Expected)</label>
+											<input
+												type="date"
+												value={eduForm.endDate}
+												onChange={e => setEduForm({ ...eduForm, endDate: e.target.value })}
+												className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											/>
+										</div>
+									</div>
+
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Scholarship (optional)</label>
+										<input
+											type="text"
+											value={eduForm.scholarship_name}
+											onChange={e => setEduForm({ ...eduForm, scholarship_name: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											placeholder="e.g. Regional Scholarship (7k)"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Thesis Title (optional)</label>
+										<input
+											type="text"
+											value={eduForm.thesis_title}
+											onChange={e => setEduForm({ ...eduForm, thesis_title: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none"
+											placeholder="e.g. Machine Learning for Edge Computing"
+										/>
+									</div>
+
+									{eduForm.thesis_title && (
+										<div>
+											<label className="block text-sm text-gray-400 mb-1">Thesis Description</label>
+											<textarea
+												value={eduForm.thesis_description}
+												onChange={e => setEduForm({ ...eduForm, thesis_description: e.target.value })}
+												rows={3}
+												className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-cyan focus:outline-none resize-none"
+												placeholder="Describe your thesis project..."
+											/>
+										</div>
+									)}
+								</div>
+							</div>
+
+							{/* Fixed Footer */}
+							<div className="flex justify-end gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
+								<button
+									onClick={() => { setIsEduModalOpen(false); resetEduForm(); }}
+									className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+								>
+									Cancel
+								</button>
+								<button
+									onClick={handleSaveEdu}
+									disabled={!eduForm.institution.trim() || !eduForm.degree.trim() || isSavingEdu}
+									className="btn-cyber px-6 py-2 flex items-center gap-2 disabled:opacity-50"
+								>
+									{isSavingEdu ? (
+										<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+									) : (
+										<><Save className="w-4 h-4" />
+											{editingEdu ? 'Update' : 'Add'} Education</>
+									)}
+								</button>
 							</div>
 						</div>
-
-						{/* Fixed Footer */}
-						<div className="flex justify-end gap-3 p-4 sm:p-6 pt-4 border-t border-dark-600 bg-dark-800">
-							<button
-								onClick={() => { setIsEduModalOpen(false); resetEduForm(); }}
-								className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								onClick={handleSaveEdu}
-								disabled={!eduForm.institution.trim() || !eduForm.degree.trim() || isSavingEdu}
-								className="btn-cyber px-6 py-2 flex items-center gap-2 disabled:opacity-50"
-							>
-								{isSavingEdu ? (
-									<><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-								) : (
-									<><Save className="w-4 h-4" />
-										{editingEdu ? 'Update' : 'Add'} Education</>
-								)}
-							</button>
-						</div>
 					</div>
-				</div>
-			)}
+				)
+			}
 
 			<ConfirmModal
 				isOpen={confirmOpen}
@@ -1199,6 +1234,6 @@ export function Career() {
 				onConfirm={confirmDelete}
 				onCancel={() => setConfirmOpen(false)}
 			/>
-		</div>
+		</div >
 	);
 }

@@ -269,25 +269,29 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 
 	// Category Keys to Display Name
 	const labels: Record<string, string> = {
-		'language': 'Programming Languages',
-		'frameworks-libraries': 'Frameworks & Libraries',
-		'frontend': 'Frontend Development',
-		'backend': 'Backend Development',
-		'database': 'Databases',
-		'api-protocols': 'API & Protocols',
-		'cloud-platforms': 'Cloud Platforms',
-		'devops': 'DevOps',
-		'tools': 'Tools',
+		'language': 'Languages', // Spoken languages
+		'soft-skill': 'Soft Skills',
+		'tools': 'Technical Skills', // All technical stuff grouped here
+		'devops': 'Technical Skills',
+		'database': 'Technical Skills',
+		'backend': 'Technical Skills',
+		'frontend': 'Technical Skills',
+		'frameworks-libraries': 'Technical Skills',
+		'api-protocols': 'Technical Skills',
+		'cloud-platforms': 'Technical Skills',
 		'methodologies': 'Methodologies',
-		'soft-skill': 'Spoken Languages',
 		'other': 'Other Skills'
 	};
 
 	// Define Column Buckets using raw category keys
 	// Note: We include standard keys to catch any data using them.
-	const col1Keys = ['language', 'frameworks-libraries', 'frontend', 'backend'];
-	const col2Keys = ['api-protocols', 'cloud-platforms', 'devops', 'database', 'tools'];
-	const col3Keys = ['methodologies', 'soft-skill', 'other'];
+	// Define Column Buckets using raw category keys
+	// Col 1: Technical Skills (Tools, DevOps, DB, Backend, Frontend)
+	const col1Keys = ['tools', 'devops', 'database', 'backend', 'frontend', 'frameworks-libraries', 'api-protocols', 'cloud-platforms'];
+	// Col 2: Soft Skills
+	const col2Keys = ['soft-skill'];
+	// Col 3: Languages (Spoken)
+	const col3Keys = ['language'];
 
 	const getCategorizedSkills = (keys: string[]) => {
 		return keys
@@ -590,8 +594,14 @@ export function CVGenerator() {
 				if (job.achievements_cs) extraAchievements = [...extraAchievements, ...job.achievements_cs];
 			}
 
+			// Resolve Role Title Override
+			let roleTitle = job.role;
+			if (selectedProfile === 'se' && job.role_se) roleTitle = job.role_se;
+			if (selectedProfile === 'cs' && job.role_cs) roleTitle = job.role_cs;
+
 			return {
 				...job,
+				role: roleTitle,
 				achievements: [...baseAchievements, ...extraAchievements]
 			};
 		});

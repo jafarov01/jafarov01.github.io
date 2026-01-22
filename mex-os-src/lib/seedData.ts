@@ -105,6 +105,9 @@ export interface Job {
 	id: string;
 	company: string;          // e.g. "Huxelerate", "Ericsson"
 	role: string;             // e.g. "Software Engineer"
+	// v8.3 Role-specific titles
+	role_se?: string;         // Software Engineering title override
+	role_cs?: string;         // Customer Support title override
 	location: string;         // e.g. "Milan, Italy (Remote)"
 	type: JobType;
 	work_mode?: WorkMode;     // v7.0: Remote / Onsite / Hybrid
@@ -355,6 +358,8 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				id: "job_placeholder",
 				company: "Company Name",
 				role: "Role Title",
+				role_se: "Software Engineer",
+				role_cs: "Technical Systems Analyst",
 				location: "City, Country",
 				type: "full-time",
 				work_mode: "remote", // 'remote' | 'onsite' | 'hybrid'
@@ -600,6 +605,12 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 			}
 			if (!job.role || typeof job.role !== 'string') {
 				return { valid: false, error: `Job missing required 'role' field for company: ${job.company}` };
+			}
+			if (job.role_se && typeof job.role_se !== 'string') {
+				return { valid: false, error: `Invalid role_se for job: ${job.role}. Must be a string.` };
+			}
+			if (job.role_cs && typeof job.role_cs !== 'string') {
+				return { valid: false, error: `Invalid role_cs for job: ${job.role}. Must be a string.` };
 			}
 			if (job.type && !validJobTypes.includes(job.type)) {
 				return { valid: false, error: `Invalid job type '${job.type}' for: ${job.role} at ${job.company}. Valid values: ${validJobTypes.join(', ')}` };
