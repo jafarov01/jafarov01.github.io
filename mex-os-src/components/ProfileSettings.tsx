@@ -420,6 +420,45 @@ export function ProfileSettings() {
 						/>
 						<p className="text-xs text-gray-600 mt-1">This will appear at the top of your CV.</p>
 					</div>
+
+					{/* Role-Specific Summaries */}
+					<div className="grid grid-cols-1 gap-4 pt-4 border-t border-dark-600 mt-4">
+						<h3 className="text-sm font-semibold text-gray-400">Role-Specific Summaries (Overrides default)</h3>
+
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Summary (Software Engineering)</label>
+							<textarea
+								value={formData.cv_summaries?.se || ''}
+								onChange={(e) => setFormData(prev => ({
+									...prev,
+									cv_summaries: {
+										...prev.cv_summaries,
+										se: e.target.value
+									}
+								}))}
+								rows={3}
+								placeholder="Specialized summary for Software Engineering roles..."
+								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none resize-none"
+							/>
+						</div>
+
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Summary (Customer Support)</label>
+							<textarea
+								value={formData.cv_summaries?.cs || ''}
+								onChange={(e) => setFormData(prev => ({
+									...prev,
+									cv_summaries: {
+										...prev.cv_summaries,
+										cs: e.target.value
+									}
+								}))}
+								rows={3}
+								placeholder="Specialized summary for Customer Support roles..."
+								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none resize-none"
+							/>
+						</div>
+					</div>
 				</div>
 
 				<div className="pt-6 border-t border-dark-600 flex justify-end">

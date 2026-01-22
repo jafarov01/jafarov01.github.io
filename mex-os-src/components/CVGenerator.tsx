@@ -561,6 +561,17 @@ export function CVGenerator() {
 		return profile?.professional_title || 'Software Developer';
 	};
 
+	// Get summary based on profile
+	const getSummary = (): string => {
+		if (selectedProfile === 'se' && profile?.cv_summaries?.se) {
+			return profile.cv_summaries.se;
+		}
+		if (selectedProfile === 'cs' && profile?.cv_summaries?.cs) {
+			return profile.cv_summaries.cs;
+		}
+		return profile?.professional_summary || '';
+	};
+
 	// Prepare filtered data for CV
 	const filteredJobs = jobs.filter(j => selectedJobIds.has(j.id));
 	const filteredSkills = cvSkills.filter(s => selectedSkillIds.has(s.id));
@@ -569,6 +580,7 @@ export function CVGenerator() {
 	const cvProfile = {
 		...profile,
 		professional_title: getTitle(),
+		professional_summary: getSummary(),
 	};
 
 	const fileName = profile?.name
