@@ -294,12 +294,22 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 	const col3Keys = ['language'];
 
 	const getCategorizedSkills = (keys: string[]) => {
-		return keys
-			.filter(key => skillsMap[key] && skillsMap[key].length > 0)
-			.map(key => ({
-				label: labels[key] || key,
-				items: skillsMap[key]
-			}));
+		// First map all keys to their labels and items
+		const groups: Record<string, string[]> = {};
+
+		keys.forEach(key => {
+			if (skillsMap[key] && skillsMap[key].length > 0) {
+				const label = labels[key] || key;
+				if (!groups[label]) groups[label] = [];
+				groups[label].push(...skillsMap[key]);
+			}
+		});
+
+		// Then convert to array format for rendering
+		return Object.entries(groups).map(([label, items]) => ({
+			label,
+			items
+		}));
 	};
 
 	const col1Data = getCategorizedSkills(col1Keys);
@@ -580,16 +590,24 @@ export function CVGenerator() {
 	const filteredJobs = jobs
 		.filter(j => selectedJobIds.has(j.id))
 		.map(job => {
-			const baseAchievements = job.achievements || [];
+			let baseAchievements = job.achievements || [];
 			let extraAchievements: string[] = [];
 
-			if (selectedProfile === 'se' && job.achievements_se) {
-				extraAchievements = job.achievements_se;
-			} else if (selectedProfile === 'cs' && job.achievements_cs) {
-				extraAchievements = job.achievements_cs;
+			if (selectedProfile === 'se') {
+				// SE Profile Rule: Use SE achievements if present, otherwise fallback to base
+				if (job.achievements_se && job.achievements_se.length > 0) {
+					baseAchievements = job.achievements_se;
+				}
+				// Do not append base achievements if SE exists
+			} else if (selectedProfile === 'cs') {
+				// CS Profile Rule: Use CS achievements if present, otherwise fallback to base
+				// Note: User feedback implies they want STRICT separation, so we prioritize CS override
+				if (job.achievements_cs && job.achievements_cs.length > 0) {
+					baseAchievements = job.achievements_cs;
+				}
+				// If no CS achievements, use base (default behavior)
 			} else if (selectedProfile === 'full') {
-				// For full CV, include everything? Or just base?
-				// Let's include everything for maximum detail
+				// Full CV Rule: Combine everything for maximum detail
 				if (job.achievements_se) extraAchievements = [...extraAchievements, ...job.achievements_se];
 				if (job.achievements_cs) extraAchievements = [...extraAchievements, ...job.achievements_cs];
 			}
