@@ -5,6 +5,9 @@ import { db } from './firebase';
 // TYPE DEFINITIONS - All data is dynamic and stored in Firestore
 // ============================================================================
 
+// CV Profile types for role-specific CV generation
+export type CVProfile = 'se' | 'cs' | 'all'; // SE = Software Engineering, CS = Customer Support
+
 export interface Profile {
 	name: string;
 	// v7.0 CV Contact Info
@@ -16,6 +19,11 @@ export interface Profile {
 	github_url?: string;          // GitHub profile URL
 	professional_summary?: string; // CV summary paragraph
 	photo_url?: string;           // v7.1: CV photo (URL or base64 data URI)
+	// v8.0 CV Profile titles - alternate titles for role-specific CVs
+	cv_titles?: {
+		se?: string;  // Software Engineering title, e.g. "Software Engineer"
+		cs?: string;  // Customer Support title, e.g. "Customer Support Specialist"
+	};
 	// existing fields
 	unipd_id: string;
 	cf: string;
@@ -41,6 +49,8 @@ export interface SkillDefinition {
 	show_on_cv?: boolean;   // Toggle visibility for Career page
 	// v6.0 additions - Unified Skill Registry
 	is_tracked?: boolean;   // Whether to show in Protocol for daily practice tracking
+	// v8.0 CV Profiles - which CV profiles this skill should appear in
+	cv_profiles?: CVProfile[];  // ['se'], ['cs'], ['se', 'cs'], or ['all']
 	createdAt: string;
 }
 
@@ -100,6 +110,8 @@ export interface Job {
 	tech_stack: string[];     // Skill names from skills collection (e.g., ["Python", "React"])
 	achievements?: string[];  // Bullet points for CV generation
 	is_current: boolean;
+	// v8.0 CV Profiles - which CV profiles this job should appear in
+	cv_profiles?: CVProfile[];  // ['se'], ['cs'], ['se', 'cs'], or ['all']
 }
 
 export type EducationStatus = 'enrolled' | 'graduated' | 'paused';
@@ -224,6 +236,11 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 		linkedin_url: "https://linkedin.com/in/yourprofile",
 		github_url: "https://github.com/yourusername",
 		professional_summary: "A results-driven Software Engineer with X years of experience...",
+		// v8.0 CV Profile titles
+		cv_titles: {
+			se: "Software Engineer",
+			cs: "Customer Support Specialist"
+		},
 		// existing fields
 		unipd_id: "",
 		cf: "",
@@ -305,6 +322,7 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 			years_experience: 0, // Prior years of experience before tracking started
 			show_on_cv: true, // Show in Career CV Skills section
 			is_tracked: true, // Show in Protocol for daily practice
+			cv_profiles: ["all"], // 'se' | 'cs' | 'all' - which CV profiles this skill appears in
 			createdAt: new Date().toISOString()
 		}
 	],
@@ -332,7 +350,8 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				endDate: null,
 				tech_stack: ["Python", "React"], // Skill names from skills collection
 				achievements: ["Achievement 1", "Achievement 2"],
-				is_current: true
+				is_current: true,
+				cv_profiles: ["all"] // 'se' | 'cs' | 'all' - which CV profiles this job appears in
 			}
 		],
 		education: [
@@ -422,6 +441,20 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 	// FIELD-LEVEL VALIDATION
 	// ============================================================================
 
+
+	// v8.0: Validate CV titles in profile
+	if (data.profile.cv_titles) {
+		if (typeof data.profile.cv_titles !== 'object') {
+			return { valid: false, error: 'Profile cv_titles must be an object' };
+		}
+		if (data.profile.cv_titles.se && typeof data.profile.cv_titles.se !== 'string') {
+			return { valid: false, error: 'Profile cv_titles.se must be a string' };
+		}
+		if (data.profile.cv_titles.cs && typeof data.profile.cv_titles.cs !== 'string') {
+			return { valid: false, error: 'Profile cv_titles.cs must be a string' };
+		}
+	}
+
 	// Validate academics (exams)
 	const validExamStatuses = ['study_plan', 'enrolled', 'planned', 'booked', 'passed', 'dropped'];
 	for (const exam of data.academics) {
@@ -499,111 +532,134 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 		if (skill.show_on_cv !== undefined && typeof skill.show_on_cv !== 'boolean') {
 			return { valid: false, error: `Invalid show_on_cv for skill: ${skill.name}. Must be a boolean.` };
 		}
-		// Deprecated: proficiency_level is now calculated, but accept it for backwards compatibility
-	}
 
-	// Validate habit definitions
-	const validTrackingTypes = ['boolean', 'hours', 'count'];
-	for (const habit of data.habitDefinitions) {
-		if (!habit.name || typeof habit.name !== 'string') {
-			return { valid: false, error: `Habit definition missing required 'name' field` };
-		}
-		if (habit.trackingType && !validTrackingTypes.includes(habit.trackingType)) {
-			return { valid: false, error: `Invalid tracking type '${habit.trackingType}' for habit: ${habit.name}. Valid values: ${validTrackingTypes.join(', ')}` };
-		}
-	}
-
-	// v5.0 Career validation (optional but must be valid if present)
-	if (data.career) {
-		if (typeof data.career !== 'object') return { valid: false, error: 'Career must be an object' };
-		if (data.career.jobs && !Array.isArray(data.career.jobs)) return { valid: false, error: 'Career jobs must be an array' };
-		if (data.career.education && !Array.isArray(data.career.education)) return { valid: false, error: 'Career education must be an array' };
-
-		// Validate jobs
-		const validJobTypes = ['full-time', 'contract', 'freelance', 'internship'];
-		const validWorkModes = ['remote', 'onsite', 'hybrid'];
-		for (const job of (data.career.jobs || [])) {
-			if (!job.company || typeof job.company !== 'string') {
-				return { valid: false, error: `Job missing required 'company' field` };
+		if (skill.cv_profiles !== undefined) {
+			if (!Array.isArray(skill.cv_profiles)) {
+				return { valid: false, error: `Invalid cv_profiles for skill: ${skill.name}. Must be an array.` };
 			}
-			if (!job.role || typeof job.role !== 'string') {
-				return { valid: false, error: `Job missing required 'role' field for company: ${job.company}` };
-			}
-			if (job.type && !validJobTypes.includes(job.type)) {
-				return { valid: false, error: `Invalid job type '${job.type}' for: ${job.role} at ${job.company}. Valid values: ${validJobTypes.join(', ')}` };
-			}
-			if (job.work_mode && !validWorkModes.includes(job.work_mode)) {
-				return { valid: false, error: `Invalid work mode '${job.work_mode}' for: ${job.role} at ${job.company}. Valid values: ${validWorkModes.join(', ')}` };
-			}
-			if (job.startDate && isNaN(Date.parse(job.startDate))) {
-				return { valid: false, error: `Invalid start date for job: ${job.role} at ${job.company}` };
-			}
-		}
-
-		// Validate education
-		const validEduStatuses = ['enrolled', 'graduated', 'paused'];
-		for (const edu of (data.career.education || [])) {
-			if (!edu.institution || typeof edu.institution !== 'string') {
-				return { valid: false, error: `Education entry missing required 'institution' field` };
-			}
-			if (edu.status && !validEduStatuses.includes(edu.status)) {
-				return { valid: false, error: `Invalid education status '${edu.status}' for: ${edu.institution}. Valid values: ${validEduStatuses.join(', ')}` };
-			}
-		}
-	}
-
-	// v5.0 Strategy validation (optional but must be valid if present)
-	// v7.0: Enhanced with rule validation for automatic deadline detection
-	if (data.strategy) {
-		if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
-		if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
-
-		// Validate campaigns - status is flexible to allow user customization (e.g., 'active_phase_2')
-		for (const campaign of (data.strategy.campaigns || [])) {
-			if (!campaign.name || typeof campaign.name !== 'string') {
-				return { valid: false, error: `Campaign missing required 'name' field` };
-			}
-			if (campaign.status && typeof campaign.status !== 'string') {
-				return { valid: false, error: `Campaign status must be a string for: ${campaign.name}` };
-			}
-			if (campaign.startDate && isNaN(Date.parse(campaign.startDate))) {
-				return { valid: false, error: `Invalid start date for campaign: ${campaign.name}` };
-			}
-			if (campaign.endDate && isNaN(Date.parse(campaign.endDate))) {
-				return { valid: false, error: `Invalid end date for campaign: ${campaign.name}` };
-			}
-
-			// v7.0: Validate campaign rules
-			if (campaign.rules && Array.isArray(campaign.rules)) {
-				for (let i = 0; i < campaign.rules.length; i++) {
-					const rule = campaign.rules[i];
-					if (!rule.condition || typeof rule.condition !== 'string') {
-						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'condition' field` };
-					}
-					if (!rule.action || typeof rule.action !== 'string') {
-						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'action' field` };
-					}
-					if (!rule.deadline || isNaN(Date.parse(rule.deadline))) {
-						return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' has invalid or missing deadline. Format: YYYY-MM-DD` };
-					}
-					// Rule status is flexible - allows custom suffixes like 'pending_check_jan15'
-					if (rule.status && typeof rule.status !== 'string') {
-						return { valid: false, error: `Rule status must be a string in campaign '${campaign.name}'` };
-					}
+			const validProfiles = ['se', 'cs', 'all'];
+			for (const p of skill.cv_profiles) {
+				if (!validProfiles.includes(p)) {
+					return { valid: false, error: `Invalid cv_profile '${p}' for skill: ${skill.name}. Valid values: ${validProfiles.join(', ')}` };
 				}
 			}
+		}
+	}
+	// Deprecated: proficiency_level is now calculated, but accept it for backwards compatibility
 
-			// Validate linked_exams are strings (IDs)
-			if (campaign.linked_exams && !Array.isArray(campaign.linked_exams)) {
-				return { valid: false, error: `linked_exams must be an array in campaign: ${campaign.name}` };
+// Validate habit definitions
+const validTrackingTypes = ['boolean', 'hours', 'count'];
+for (const habit of data.habitDefinitions) {
+	if (!habit.name || typeof habit.name !== 'string') {
+		return { valid: false, error: `Habit definition missing required 'name' field` };
+	}
+	if (habit.trackingType && !validTrackingTypes.includes(habit.trackingType)) {
+		return { valid: false, error: `Invalid tracking type '${habit.trackingType}' for habit: ${habit.name}. Valid values: ${validTrackingTypes.join(', ')}` };
+	}
+}
+
+// v5.0 Career validation (optional but must be valid if present)
+if (data.career) {
+	if (typeof data.career !== 'object') return { valid: false, error: 'Career must be an object' };
+	if (data.career.jobs && !Array.isArray(data.career.jobs)) return { valid: false, error: 'Career jobs must be an array' };
+	if (data.career.education && !Array.isArray(data.career.education)) return { valid: false, error: 'Career education must be an array' };
+
+	// Validate jobs
+	const validJobTypes = ['full-time', 'contract', 'freelance', 'internship'];
+	const validWorkModes = ['remote', 'onsite', 'hybrid'];
+	for (const job of (data.career.jobs || [])) {
+		if (!job.company || typeof job.company !== 'string') {
+			return { valid: false, error: `Job missing required 'company' field` };
+		}
+		if (!job.role || typeof job.role !== 'string') {
+			return { valid: false, error: `Job missing required 'role' field for company: ${job.company}` };
+		}
+		if (job.type && !validJobTypes.includes(job.type)) {
+			return { valid: false, error: `Invalid job type '${job.type}' for: ${job.role} at ${job.company}. Valid values: ${validJobTypes.join(', ')}` };
+		}
+		if (job.work_mode && !validWorkModes.includes(job.work_mode)) {
+			return { valid: false, error: `Invalid work mode '${job.work_mode}' for: ${job.role} at ${job.company}. Valid values: ${validWorkModes.join(', ')}` };
+		}
+		if (job.startDate && isNaN(Date.parse(job.startDate))) {
+			return { valid: false, error: `Invalid start date for job: ${job.role} at ${job.company}` };
+		}
+		if (job.cv_profiles !== undefined) {
+			if (!Array.isArray(job.cv_profiles)) {
+				return { valid: false, error: `Invalid cv_profiles for job: ${job.role}. Must be an array.` };
 			}
-			if (campaign.linked_docs && !Array.isArray(campaign.linked_docs)) {
-				return { valid: false, error: `linked_docs must be an array in campaign: ${campaign.name}` };
+			const validProfiles = ['se', 'cs', 'all'];
+			for (const p of job.cv_profiles) {
+				if (!validProfiles.includes(p)) {
+					return { valid: false, error: `Invalid cv_profile '${p}' for job: ${job.role}. Valid values: ${validProfiles.join(', ')}` };
+				}
 			}
 		}
 	}
 
-	return { valid: true };
+	// Validate education
+	const validEduStatuses = ['enrolled', 'graduated', 'paused'];
+	for (const edu of (data.career.education || [])) {
+		if (!edu.institution || typeof edu.institution !== 'string') {
+			return { valid: false, error: `Education entry missing required 'institution' field` };
+		}
+		if (edu.status && !validEduStatuses.includes(edu.status)) {
+			return { valid: false, error: `Invalid education status '${edu.status}' for: ${edu.institution}. Valid values: ${validEduStatuses.join(', ')}` };
+		}
+	}
+}
+
+// v5.0 Strategy validation (optional but must be valid if present)
+// v7.0: Enhanced with rule validation for automatic deadline detection
+if (data.strategy) {
+	if (typeof data.strategy !== 'object') return { valid: false, error: 'Strategy must be an object' };
+	if (data.strategy.campaigns && !Array.isArray(data.strategy.campaigns)) return { valid: false, error: 'Strategy campaigns must be an array' };
+
+	// Validate campaigns - status is flexible to allow user customization (e.g., 'active_phase_2')
+	for (const campaign of (data.strategy.campaigns || [])) {
+		if (!campaign.name || typeof campaign.name !== 'string') {
+			return { valid: false, error: `Campaign missing required 'name' field` };
+		}
+		if (campaign.status && typeof campaign.status !== 'string') {
+			return { valid: false, error: `Campaign status must be a string for: ${campaign.name}` };
+		}
+		if (campaign.startDate && isNaN(Date.parse(campaign.startDate))) {
+			return { valid: false, error: `Invalid start date for campaign: ${campaign.name}` };
+		}
+		if (campaign.endDate && isNaN(Date.parse(campaign.endDate))) {
+			return { valid: false, error: `Invalid end date for campaign: ${campaign.name}` };
+		}
+
+		// v7.0: Validate campaign rules
+		if (campaign.rules && Array.isArray(campaign.rules)) {
+			for (let i = 0; i < campaign.rules.length; i++) {
+				const rule = campaign.rules[i];
+				if (!rule.condition || typeof rule.condition !== 'string') {
+					return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'condition' field` };
+				}
+				if (!rule.action || typeof rule.action !== 'string') {
+					return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' missing required 'action' field` };
+				}
+				if (!rule.deadline || isNaN(Date.parse(rule.deadline))) {
+					return { valid: false, error: `Rule ${i + 1} in campaign '${campaign.name}' has invalid or missing deadline. Format: YYYY-MM-DD` };
+				}
+				// Rule status is flexible - allows custom suffixes like 'pending_check_jan15'
+				if (rule.status && typeof rule.status !== 'string') {
+					return { valid: false, error: `Rule status must be a string in campaign '${campaign.name}'` };
+				}
+			}
+		}
+
+		// Validate linked_exams are strings (IDs)
+		if (campaign.linked_exams && !Array.isArray(campaign.linked_exams)) {
+			return { valid: false, error: `linked_exams must be an array in campaign: ${campaign.name}` };
+		}
+		if (campaign.linked_docs && !Array.isArray(campaign.linked_docs)) {
+			return { valid: false, error: `linked_docs must be an array in campaign: ${campaign.name}` };
+		}
+	}
+}
+
+return { valid: true };
 }
 
 // ============================================================================

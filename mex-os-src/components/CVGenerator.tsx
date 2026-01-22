@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Link, Image } from '@react-pdf/renderer';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, X, Check, ChevronDown, Briefcase, Code } from 'lucide-react';
+import type { CVProfile } from '../lib/seedData';
 
 // --- PRODUCTION-PERFECT STYLES v8: 3-COLUMN GRID & CENTERED HEADERS ---
 
@@ -480,21 +482,251 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 	);
 };
 
-// Main Export
+// Profile options
+const CV_PROFILES: { value: CVProfile | 'full'; label: string; description: string }[] = [
+	{ value: 'se', label: 'Software Engineering', description: 'Engineering & Developer roles' },
+	{ value: 'cs', label: 'Customer Support', description: 'Support & Help Desk roles' },
+	{ value: 'full', label: 'Full CV', description: 'Include all experiences' },
+];
+
+// Helper: Check if item matches profile
+const matchesProfile = (itemProfiles: CVProfile[] | undefined, selectedProfile: CVProfile | 'full'): boolean => {
+	if (selectedProfile === 'full') return true;
+	if (!itemProfiles || itemProfiles.length === 0) return false;
+	return itemProfiles.includes(selectedProfile) || itemProfiles.includes('all');
+};
+
+// Main Export - CV Generator with Modal
 export function CVGenerator() {
 	const { profile, jobs, education, skillDefinitions } = useData();
-	const cvSkills = skillDefinitions.filter(s => s.show_on_cv);
-	const fileName = profile?.name ? `${profile.name.replace(/\s+/g, '_')}_CV.pdf` : 'My_CV.pdf';
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedProfile, setSelectedProfile] = useState<CVProfile | 'full'>('full');
+	const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
+	const [selectedSkillIds, setSelectedSkillIds] = useState<Set<string>>(new Set());
+	const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+	// Get CV-ready skills
+	const cvSkills = useMemo(() => skillDefinitions.filter(s => s.show_on_cv), [skillDefinitions]);
+
+	// Initialize selections when modal opens
+	const openModal = () => {
+		// Auto-select items based on default profile
+		const jobIds = new Set(jobs.filter(j => matchesProfile(j.cv_profiles, selectedProfile)).map(j => j.id));
+		const skillIds = new Set(cvSkills.filter(s => matchesProfile(s.cv_profiles, selectedProfile)).map(s => s.id));
+		setSelectedJobIds(jobIds);
+		setSelectedSkillIds(skillIds);
+		setIsModalOpen(true);
+	};
+
+	// Update selections when profile changes
+	const handleProfileChange = (newProfile: CVProfile | 'full') => {
+		setSelectedProfile(newProfile);
+		const jobIds = new Set(jobs.filter(j => matchesProfile(j.cv_profiles, newProfile)).map(j => j.id));
+		const skillIds = new Set(cvSkills.filter(s => matchesProfile(s.cv_profiles, newProfile)).map(s => s.id));
+		setSelectedJobIds(jobIds);
+		setSelectedSkillIds(skillIds);
+		setIsProfileDropdownOpen(false);
+	};
+
+	// Toggle job selection
+	const toggleJob = (jobId: string) => {
+		const newSet = new Set(selectedJobIds);
+		if (newSet.has(jobId)) {
+			newSet.delete(jobId);
+		} else {
+			newSet.add(jobId);
+		}
+		setSelectedJobIds(newSet);
+	};
+
+	// Toggle skill selection
+	const toggleSkill = (skillId: string) => {
+		const newSet = new Set(selectedSkillIds);
+		if (newSet.has(skillId)) {
+			newSet.delete(skillId);
+		} else {
+			newSet.add(skillId);
+		}
+		setSelectedSkillIds(newSet);
+	};
+
+	// Get title based on profile
+	const getTitle = (): string => {
+		if (selectedProfile === 'se' && profile?.cv_titles?.se) {
+			return profile.cv_titles.se;
+		}
+		if (selectedProfile === 'cs' && profile?.cv_titles?.cs) {
+			return profile.cv_titles.cs;
+		}
+		return profile?.professional_title || 'Software Developer';
+	};
+
+	// Prepare filtered data for CV
+	const filteredJobs = jobs.filter(j => selectedJobIds.has(j.id));
+	const filteredSkills = cvSkills.filter(s => selectedSkillIds.has(s.id));
+
+	// Build CV profile for document
+	const cvProfile = {
+		...profile,
+		professional_title: getTitle(),
+	};
+
+	const fileName = profile?.name
+		? `${profile.name.replace(/\s+/g, '_')}_CV${selectedProfile !== 'full' ? `_${selectedProfile.toUpperCase()}` : ''}.pdf`
+		: 'My_CV.pdf';
+
+	const selectedProfileLabel = CV_PROFILES.find(p => p.value === selectedProfile)?.label || 'Full CV';
 
 	return (
-		<PDFDownloadLink
-			document={<CVDocument profile={profile || { name: 'Your Name' }} jobs={jobs} education={education} skills={cvSkills} />}
-			fileName={fileName}
-			className="btn-cyber px-4 py-2 flex items-center gap-2 no-underline"
-		>
-			{({ loading }) => (
-				loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><FileText className="w-4 h-4" /> Download CV (PDF)</>
+		<>
+			<button
+				onClick={openModal}
+				className="btn-cyber px-4 py-2 flex items-center gap-2"
+			>
+				<FileText className="w-4 h-4" />
+				Download CV (PDF)
+			</button>
+
+			{isModalOpen && (
+				<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+					<div className="card-cyber p-0 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+						{/* Header */}
+						<div className="flex items-center justify-between p-6 pb-4 border-b border-dark-600">
+							<h2 className="text-xl font-bold text-white flex items-center gap-2">
+								<FileText className="w-5 h-5 text-neon-purple" />
+								Generate CV
+							</h2>
+							<button
+								onClick={() => setIsModalOpen(false)}
+								className="p-2 text-gray-400 hover:text-white"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						{/* Content */}
+						<div className="flex-1 overflow-y-auto p-6 space-y-6">
+							{/* Profile Selector */}
+							<div>
+								<label className="block text-sm text-gray-400 mb-2">CV Profile</label>
+								<div className="relative">
+									<button
+										onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+										className="w-full bg-dark-700 border border-dark-600 rounded p-3 text-white text-left flex items-center justify-between hover:border-neon-purple transition-colors"
+									>
+										<span>{selectedProfileLabel}</span>
+										<ChevronDown className={`w-4 h-4 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+									</button>
+									{isProfileDropdownOpen && (
+										<div className="absolute top-full left-0 right-0 mt-1 bg-dark-700 border border-dark-600 rounded shadow-lg z-10">
+											{CV_PROFILES.map(p => (
+												<button
+													key={p.value}
+													onClick={() => handleProfileChange(p.value)}
+													className={`w-full p-3 text-left hover:bg-dark-600 transition-colors flex items-center justify-between ${selectedProfile === p.value ? 'bg-dark-600' : ''
+														}`}
+												>
+													<div>
+														<div className="text-white font-medium">{p.label}</div>
+														<div className="text-xs text-gray-500">{p.description}</div>
+													</div>
+													{selectedProfile === p.value && <Check className="w-4 h-4 text-neon-green" />}
+												</button>
+											))}
+										</div>
+									)}
+								</div>
+								<p className="text-xs text-gray-500 mt-2">
+									Title: <span className="text-neon-cyan">{getTitle()}</span>
+								</p>
+							</div>
+
+							{/* Jobs Selection */}
+							<div>
+								<div className="flex items-center gap-2 mb-3">
+									<Briefcase className="w-4 h-4 text-neon-green" />
+									<span className="text-sm text-gray-400">Work Experience ({selectedJobIds.size}/{jobs.length})</span>
+								</div>
+								<div className="space-y-2 max-h-48 overflow-y-auto">
+									{jobs.map(job => (
+										<label
+											key={job.id}
+											className={`flex items-center gap-3 p-3 rounded border cursor-pointer transition-all ${selectedJobIds.has(job.id)
+												? 'bg-neon-green/10 border-neon-green/30'
+												: 'bg-dark-700 border-dark-600 hover:border-dark-500'
+												}`}
+										>
+											<input
+												type="checkbox"
+												checked={selectedJobIds.has(job.id)}
+												onChange={() => toggleJob(job.id)}
+												className="sr-only"
+											/>
+											<div className={`w-5 h-5 rounded border flex items-center justify-center ${selectedJobIds.has(job.id)
+												? 'bg-neon-green border-neon-green'
+												: 'border-dark-500'
+												}`}>
+												{selectedJobIds.has(job.id) && <Check className="w-3 h-3 text-dark-900" />}
+											</div>
+											<div className="flex-1">
+												<div className="text-white font-medium">{job.role}</div>
+												<div className="text-xs text-gray-500">{job.company}</div>
+											</div>
+											{job.cv_profiles && job.cv_profiles.length > 0 && (
+												<div className="flex gap-1">
+													{job.cv_profiles.map(p => (
+														<span key={p} className="text-xs px-1.5 py-0.5 rounded bg-dark-600 text-gray-400">
+															{p.toUpperCase()}
+														</span>
+													))}
+												</div>
+											)}
+										</label>
+									))}
+								</div>
+							</div>
+
+							{/* Skills Selection */}
+							<div>
+								<div className="flex items-center gap-2 mb-3">
+									<Code className="w-4 h-4 text-neon-purple" />
+									<span className="text-sm text-gray-400">Skills ({selectedSkillIds.size}/{cvSkills.length})</span>
+								</div>
+								<div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+									{cvSkills.map(skill => (
+										<button
+											key={skill.id}
+											onClick={() => toggleSkill(skill.id)}
+											className={`px-3 py-1.5 rounded text-sm transition-all ${selectedSkillIds.has(skill.id)
+												? 'bg-neon-purple/20 text-neon-purple border border-neon-purple/30'
+												: 'bg-dark-700 text-gray-400 border border-dark-600 hover:border-dark-500'
+												}`}
+										>
+											{skill.name}
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+
+						{/* Footer */}
+						<div className="p-6 pt-4 border-t border-dark-600 flex items-center justify-between">
+							<p className="text-sm text-gray-500">
+								{filteredJobs.length} jobs, {filteredSkills.length} skills selected
+							</p>
+							<PDFDownloadLink
+								document={<CVDocument profile={{ ...cvProfile, name: cvProfile?.name || 'Your Name' }} jobs={filteredJobs} education={education} skills={filteredSkills} />}
+								fileName={fileName}
+								className="btn-cyber px-4 py-2 flex items-center gap-2 no-underline"
+							>
+								{({ loading }) => (
+									loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><FileText className="w-4 h-4" /> Download PDF</>
+								)}
+							</PDFDownloadLink>
+						</div>
+					</div>
+				</div>
 			)}
-		</PDFDownloadLink>
+		</>
 	);
 }

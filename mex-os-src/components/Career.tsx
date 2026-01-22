@@ -23,7 +23,7 @@ import {
 	Check
 } from 'lucide-react';
 import { format, differenceInMonths } from 'date-fns';
-import { type Job, type Education, type JobType, type EducationStatus } from '../lib/seedData';
+import { type Job, type Education, type JobType, type EducationStatus, type CVProfile } from '../lib/seedData';
 import { ConfirmModal } from './ConfirmModal';
 import { CVGenerator } from './CVGenerator';
 
@@ -67,7 +67,8 @@ export function Career() {
 		currency: 'EUR',
 		tech_stack: [] as string[],
 		achievements: '',
-		is_current: false
+		is_current: false,
+		cv_profiles: [] as CVProfile[]
 	});
 
 	// Tech stack dropdown state
@@ -98,7 +99,8 @@ export function Career() {
 			currency: 'EUR',
 			tech_stack: [],
 			achievements: '',
-			is_current: false
+			is_current: false,
+			cv_profiles: []
 		});
 		setEditingJob(null);
 		setTechDropdownOpen(false);
@@ -133,7 +135,8 @@ export function Career() {
 			currency: job.currency || 'EUR',
 			tech_stack: job.tech_stack || [],
 			achievements: job.achievements?.join('\n') || '',
-			is_current: job.is_current
+			is_current: job.is_current,
+			cv_profiles: job.cv_profiles || []
 		});
 		setIsJobModalOpen(true);
 	};
@@ -171,7 +174,8 @@ export function Career() {
 				currency: jobForm.currency,
 				tech_stack: jobForm.tech_stack,
 				achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
-				is_current: jobForm.is_current
+				is_current: jobForm.is_current,
+				cv_profiles: jobForm.cv_profiles
 			};
 
 			if (editingJob) {
@@ -807,6 +811,56 @@ export function Career() {
 											<span className="text-sm text-gray-400">Current Position</span>
 										</label>
 									</div>
+								</div>
+
+								{/* CV Profiles Selection */}
+								<div className="mb-4">
+									<label className="block text-sm text-gray-400 mb-2">CV Profiles</label>
+									<div className="flex flex-wrap gap-4 p-3 bg-dark-700/50 rounded-lg border border-dark-600">
+										<label className="flex items-center gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={jobForm.cv_profiles.includes('se')}
+												onChange={e => {
+													const newProfiles = e.target.checked
+														? [...jobForm.cv_profiles, 'se']
+														: jobForm.cv_profiles.filter(p => p !== 'se');
+													setJobForm({ ...jobForm, cv_profiles: newProfiles as CVProfile[] });
+												}}
+												className="w-4 h-4 accent-neon-green"
+											/>
+											<span className="text-white text-sm">Software Engineering</span>
+										</label>
+										<label className="flex items-center gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={jobForm.cv_profiles.includes('cs')}
+												onChange={e => {
+													const newProfiles = e.target.checked
+														? [...jobForm.cv_profiles, 'cs']
+														: jobForm.cv_profiles.filter(p => p !== 'cs');
+													setJobForm({ ...jobForm, cv_profiles: newProfiles as CVProfile[] });
+												}}
+												className="w-4 h-4 accent-neon-green"
+											/>
+											<span className="text-white text-sm">Customer Support</span>
+										</label>
+										<label className="flex items-center gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={jobForm.cv_profiles.includes('all')}
+												onChange={e => {
+													const newProfiles = e.target.checked
+														? [...jobForm.cv_profiles, 'all']
+														: jobForm.cv_profiles.filter(p => p !== 'all');
+													setJobForm({ ...jobForm, cv_profiles: newProfiles as CVProfile[] });
+												}}
+												className="w-4 h-4 accent-neon-green"
+											/>
+											<span className="text-white text-sm">All Profiles</span>
+										</label>
+									</div>
+									<p className="text-xs text-gray-500 mt-1">Select which CV types this position should appear on.</p>
 								</div>
 
 								<div className="grid grid-cols-2 gap-4">

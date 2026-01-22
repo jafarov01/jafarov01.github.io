@@ -31,7 +31,7 @@ import {
 	Loader2,
 	Info
 } from 'lucide-react';
-import { type SkillDefinition } from '../lib/seedData';
+import { type SkillDefinition, type CVProfile } from '../lib/seedData';
 import { type SkillAnalytics, LEVEL_THRESHOLDS } from '../lib/skillAlgorithm';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -80,9 +80,11 @@ export function SkillMastery() {
 		color: 'neon-cyan',
 		category: 'other' as SkillDefinition['category'],
 		targetPerDay: '30 mins',
+		// removed duplicate key
 		years_experience: 0,
 		is_tracked: true,
-		show_on_cv: true
+		show_on_cv: true,
+		cv_profiles: [] as CVProfile[]
 	});
 
 	// Get all skill analytics
@@ -119,7 +121,8 @@ export function SkillMastery() {
 			targetPerDay: '30 mins',
 			years_experience: 0,
 			is_tracked: true,
-			show_on_cv: true
+			show_on_cv: true,
+			cv_profiles: []
 		});
 		setEditingSkill(null);
 	};
@@ -139,7 +142,8 @@ export function SkillMastery() {
 			targetPerDay: skill.targetPerDay,
 			years_experience: skill.years_experience || 0,
 			is_tracked: skill.is_tracked !== false,
-			show_on_cv: skill.show_on_cv || false
+			show_on_cv: skill.show_on_cv || false,
+			cv_profiles: skill.cv_profiles || []
 		});
 		setIsModalOpen(true);
 	};
@@ -158,7 +162,8 @@ export function SkillMastery() {
 				trackingOptions: ['0 mins', '15 mins', '30 mins', '1 hour', '2 hours'],
 				years_experience: form.years_experience,
 				is_tracked: form.is_tracked,
-				show_on_cv: form.show_on_cv
+				show_on_cv: form.show_on_cv,
+				cv_profiles: form.cv_profiles.length > 0 ? form.cv_profiles : undefined
 			};
 
 			if (editingSkill) {
@@ -486,12 +491,11 @@ export function SkillMastery() {
 														{analytics.heatmapData.map((day, i) => (
 															<div
 																key={i}
-																className={`w-3 h-3 rounded-sm ${
-																	day.intensity === 0 ? 'bg-dark-600' :
+																className={`w-3 h-3 rounded-sm ${day.intensity === 0 ? 'bg-dark-600' :
 																	day.intensity === 1 ? `${colors.bg}` :
-																	day.intensity === 2 ? `${colors.bg} opacity-70` :
-																	colors.solid
-																}`}
+																		day.intensity === 2 ? `${colors.bg} opacity-70` :
+																			colors.solid
+																	}`}
 																title={`${day.date}: ${day.minutes} mins`}
 															/>
 														))}
@@ -524,11 +528,10 @@ export function SkillMastery() {
 														{LEVEL_THRESHOLDS.map((threshold) => (
 															<div
 																key={threshold.level}
-																className={`flex-1 h-3 rounded ${
-																	analytics.level >= threshold.level
-																		? colors.solid
-																		: 'bg-dark-600'
-																}`}
+																className={`flex-1 h-3 rounded ${analytics.level >= threshold.level
+																	? colors.solid
+																	: 'bg-dark-600'
+																	}`}
 															/>
 														))}
 													</div>
@@ -569,139 +572,189 @@ export function SkillMastery() {
 						{/* Scrollable Content */}
 						<div className="flex-1 overflow-y-auto p-6 pt-4">
 							<div className="space-y-4">
-							{/* Name */}
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Skill Name *</label>
-								<input
-									type="text"
-									value={form.name}
-									onChange={(e) => setForm({ ...form, name: e.target.value })}
-									className="input-cyber w-full"
-									placeholder="e.g., Python, TypeScript, Italian"
-								/>
-							</div>
-
-							{/* Category */}
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Category</label>
-								<select
-									value={form.category}
-									onChange={(e) => setForm({ ...form, category: e.target.value as SkillDefinition['category'] })}
-									className="input-cyber w-full"
-								>
-									{categories.map(cat => (
-										<option key={cat} value={cat}>
-											{cat === 'soft-skill' ? 'Soft Skill' : (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Other')}
-										</option>
-									))}
-								</select>
-							</div>
-
-							{/* Icon & Color */}
-							<div className="grid grid-cols-2 gap-4">
+								{/* Name */}
 								<div>
-									<label className="block text-sm text-gray-400 mb-1">Icon</label>
-									<div className="flex flex-wrap gap-2">
-										{availableIcons.map(icon => (
-											<button
-												key={icon}
-												type="button"
-												onClick={() => setForm({ ...form, icon })}
-												className={`p-2 rounded-lg border ${
-													form.icon === icon
+									<label className="block text-sm text-gray-400 mb-1">Skill Name *</label>
+									<input
+										type="text"
+										value={form.name}
+										onChange={(e) => setForm({ ...form, name: e.target.value })}
+										className="input-cyber w-full"
+										placeholder="e.g., Python, TypeScript, Italian"
+									/>
+								</div>
+
+								{/* Category */}
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">Category</label>
+									<select
+										value={form.category}
+										onChange={(e) => setForm({ ...form, category: e.target.value as SkillDefinition['category'] })}
+										className="input-cyber w-full"
+									>
+										{categories.map(cat => (
+											<option key={cat} value={cat}>
+												{cat === 'soft-skill' ? 'Soft Skill' : (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Other')}
+											</option>
+										))}
+									</select>
+								</div>
+
+								{/* Icon & Color */}
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Icon</label>
+										<div className="flex flex-wrap gap-2">
+											{availableIcons.map(icon => (
+												<button
+													key={icon}
+													type="button"
+													onClick={() => setForm({ ...form, icon })}
+													className={`p-2 rounded-lg border ${form.icon === icon
 														? 'border-neon-cyan bg-neon-cyan/20'
 														: 'border-dark-600 hover:border-dark-500'
-												}`}
-											>
-												<IconComponent name={icon} className="w-4 h-4 text-gray-300" />
-											</button>
-										))}
+														}`}
+												>
+													<IconComponent name={icon} className="w-4 h-4 text-gray-300" />
+												</button>
+											))}
+										</div>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">Color</label>
+										<div className="flex flex-wrap gap-2">
+											{availableColors.map(color => (
+												<button
+													key={color}
+													type="button"
+													onClick={() => setForm({ ...form, color })}
+													className={`w-8 h-8 rounded-lg ${colorMap[color].solid} ${form.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-800' : ''
+														}`}
+												/>
+											))}
+										</div>
 									</div>
 								</div>
+
+								{/* Target Per Day */}
 								<div>
-									<label className="block text-sm text-gray-400 mb-1">Color</label>
-									<div className="flex flex-wrap gap-2">
-										{availableColors.map(color => (
-											<button
-												key={color}
-												type="button"
-												onClick={() => setForm({ ...form, color })}
-												className={`w-8 h-8 rounded-lg ${colorMap[color].solid} ${
-													form.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-800' : ''
-												}`}
-											/>
-										))}
-									</div>
+									<label className="block text-sm text-gray-400 mb-1">Daily Target</label>
+									<select
+										value={form.targetPerDay}
+										onChange={(e) => setForm({ ...form, targetPerDay: e.target.value })}
+										className="input-cyber w-full"
+									>
+										<option value="15 mins">15 mins</option>
+										<option value="30 mins">30 mins</option>
+										<option value="1 hour">1 hour</option>
+										<option value="2 hours">2 hours</option>
+									</select>
 								</div>
-							</div>
 
-							{/* Target Per Day */}
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">Daily Target</label>
-								<select
-									value={form.targetPerDay}
-									onChange={(e) => setForm({ ...form, targetPerDay: e.target.value })}
-									className="input-cyber w-full"
-								>
-									<option value="15 mins">15 mins</option>
-									<option value="30 mins">30 mins</option>
-									<option value="1 hour">1 hour</option>
-									<option value="2 hours">2 hours</option>
-								</select>
-							</div>
-
-							{/* Prior Experience */}
-							<div>
-								<label className="block text-sm text-gray-400 mb-1">
-									Years of Prior Experience
-									<span className="text-gray-600 ml-1">(before tracking)</span>
-								</label>
-								<input
-									type="number"
-									min="0"
-									max="30"
-									value={form.years_experience}
-									onChange={(e) => setForm({ ...form, years_experience: parseInt(e.target.value) || 0 })}
-									className="input-cyber w-full"
-								/>
-								<p className="text-xs text-gray-500 mt-1">
-									Each year adds 50 bonus points to your score
-								</p>
-							</div>
-
-							{/* Toggles */}
-							<div className="space-y-3 pt-2">
-								<label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
-									<div className="flex items-center gap-3">
-										<Eye className="w-5 h-5 text-neon-cyan" />
-										<div>
-											<div className="text-white font-medium">Track Daily</div>
-											<div className="text-xs text-gray-500">Show in Protocol for daily practice logging</div>
-										</div>
-									</div>
+								{/* Prior Experience */}
+								<div>
+									<label className="block text-sm text-gray-400 mb-1">
+										Years of Prior Experience
+										<span className="text-gray-600 ml-1">(before tracking)</span>
+									</label>
 									<input
-										type="checkbox"
-										checked={form.is_tracked}
-										onChange={(e) => setForm({ ...form, is_tracked: e.target.checked })}
-										className="w-5 h-5 rounded border-dark-600 bg-dark-800 text-neon-cyan focus:ring-neon-cyan"
+										type="number"
+										min="0"
+										max="30"
+										value={form.years_experience}
+										onChange={(e) => setForm({ ...form, years_experience: parseInt(e.target.value) || 0 })}
+										className="input-cyber w-full"
 									/>
-								</label>
+									<p className="text-xs text-gray-500 mt-1">
+										Each year adds 50 bonus points to your score
+									</p>
+								</div>
 
-								<label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
-									<div className="flex items-center gap-3">
-										<Award className="w-5 h-5 text-neon-purple" />
-										<div>
-											<div className="text-white font-medium">Show on CV</div>
-											<div className="text-xs text-gray-500">Display in Career page for professional profile</div>
+								{/* Toggles */}
+								<div className="space-y-3 pt-2">
+									<label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
+										<div className="flex items-center gap-3">
+											<Eye className="w-5 h-5 text-neon-cyan" />
+											<div>
+												<div className="text-white font-medium">Track Daily</div>
+												<div className="text-xs text-gray-500">Show in Protocol for daily practice logging</div>
+											</div>
 										</div>
-									</div>
-									<input
-										type="checkbox"
-										checked={form.show_on_cv}
-										onChange={(e) => setForm({ ...form, show_on_cv: e.target.checked })}
-										className="w-5 h-5 rounded border-dark-600 bg-dark-800 text-neon-purple focus:ring-neon-purple"
-									/>
-								</label>
+										<input
+											type="checkbox"
+											checked={form.is_tracked}
+											onChange={(e) => setForm({ ...form, is_tracked: e.target.checked })}
+											className="w-5 h-5 rounded border-dark-600 bg-dark-800 text-neon-cyan focus:ring-neon-cyan"
+										/>
+									</label>
+
+									<label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
+										<div className="flex items-center gap-3">
+											<Award className="w-5 h-5 text-neon-purple" />
+											<div>
+												<div className="text-white font-medium">Show on CV</div>
+												<div className="text-xs text-gray-500">Display in Career page for professional profile</div>
+											</div>
+										</div>
+										<input
+											type="checkbox"
+											checked={form.show_on_cv}
+											onChange={(e) => setForm({ ...form, show_on_cv: e.target.checked })}
+											className="w-5 h-5 rounded border-dark-600 bg-dark-800 text-neon-purple focus:ring-neon-purple"
+										/>
+									</label>
+
+									{/* CV Profiles Selection */}
+									{form.show_on_cv && (
+										<div className="pt-2">
+											<label className="block text-sm text-gray-400 mb-2">CV Profiles</label>
+											<div className="flex flex-wrap gap-4 p-3 bg-dark-700/50 rounded-lg border border-dark-600">
+												<label className="flex items-center gap-2 cursor-pointer">
+													<input
+														type="checkbox"
+														checked={form.cv_profiles.includes('se')}
+														onChange={e => {
+															const newProfiles = e.target.checked
+																? [...form.cv_profiles, 'se']
+																: form.cv_profiles.filter(p => p !== 'se');
+															setForm({ ...form, cv_profiles: newProfiles as CVProfile[] });
+														}}
+														className="w-4 h-4 accent-neon-green"
+													/>
+													<span className="text-white text-sm">Software Engineering</span>
+												</label>
+												<label className="flex items-center gap-2 cursor-pointer">
+													<input
+														type="checkbox"
+														checked={form.cv_profiles.includes('cs')}
+														onChange={e => {
+															const newProfiles = e.target.checked
+																? [...form.cv_profiles, 'cs']
+																: form.cv_profiles.filter(p => p !== 'cs');
+															setForm({ ...form, cv_profiles: newProfiles as CVProfile[] });
+														}}
+														className="w-4 h-4 accent-neon-green"
+													/>
+													<span className="text-white text-sm">Customer Support</span>
+												</label>
+												<label className="flex items-center gap-2 cursor-pointer">
+													<input
+														type="checkbox"
+														checked={form.cv_profiles.includes('all')}
+														onChange={e => {
+															const newProfiles = e.target.checked
+																? [...form.cv_profiles, 'all']
+																: form.cv_profiles.filter(p => p !== 'all');
+															setForm({ ...form, cv_profiles: newProfiles as CVProfile[] });
+														}}
+														className="w-4 h-4 accent-neon-green"
+													/>
+													<span className="text-white text-sm">All Profiles</span>
+												</label>
+											</div>
+											<p className="text-xs text-gray-500 mt-1">Select which CV types this skill should appear on.</p>
+										</div>
+									)}
 								</div>
 							</div>
 						</div>

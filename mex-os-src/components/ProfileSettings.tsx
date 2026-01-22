@@ -245,6 +245,42 @@ export function ProfileSettings() {
 						</div>
 					</div>
 
+					{/* Role-Specific Titles */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Title (Software Engineering)</label>
+							<input
+								type="text"
+								value={formData.cv_titles?.se || ''}
+								onChange={(e) => setFormData(prev => ({
+									...prev,
+									cv_titles: {
+										...prev.cv_titles,
+										se: e.target.value
+									}
+								}))}
+								placeholder="e.g. Software Engineer"
+								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-400 mb-1">Title (Customer Support)</label>
+							<input
+								type="text"
+								value={formData.cv_titles?.cs || ''}
+								onChange={(e) => setFormData(prev => ({
+									...prev,
+									cv_titles: {
+										...prev.cv_titles,
+										cs: e.target.value
+									}
+								}))}
+								placeholder="e.g. Customer Support Specialist"
+								className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none"
+							/>
+						</div>
+					</div>
+
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
 							<label className="block text-sm text-gray-400 mb-1">Email</label>
