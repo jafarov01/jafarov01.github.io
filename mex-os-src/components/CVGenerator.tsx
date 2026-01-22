@@ -573,7 +573,29 @@ export function CVGenerator() {
 	};
 
 	// Prepare filtered data for CV
-	const filteredJobs = jobs.filter(j => selectedJobIds.has(j.id));
+	const filteredJobs = jobs
+		.filter(j => selectedJobIds.has(j.id))
+		.map(job => {
+			const baseAchievements = job.achievements || [];
+			let extraAchievements: string[] = [];
+
+			if (selectedProfile === 'se' && job.achievements_se) {
+				extraAchievements = job.achievements_se;
+			} else if (selectedProfile === 'cs' && job.achievements_cs) {
+				extraAchievements = job.achievements_cs;
+			} else if (selectedProfile === 'full') {
+				// For full CV, include everything? Or just base?
+				// Let's include everything for maximum detail
+				if (job.achievements_se) extraAchievements = [...extraAchievements, ...job.achievements_se];
+				if (job.achievements_cs) extraAchievements = [...extraAchievements, ...job.achievements_cs];
+			}
+
+			return {
+				...job,
+				achievements: [...baseAchievements, ...extraAchievements]
+			};
+		});
+
 	const filteredSkills = cvSkills.filter(s => selectedSkillIds.has(s.id));
 
 	// Build CV profile for document

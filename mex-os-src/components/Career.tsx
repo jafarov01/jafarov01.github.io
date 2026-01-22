@@ -68,7 +68,9 @@ export function Career() {
 		tech_stack: [] as string[],
 		achievements: '',
 		is_current: false,
-		cv_profiles: [] as CVProfile[]
+		cv_profiles: [] as CVProfile[],
+		achievements_se: '',
+		achievements_cs: ''
 	});
 
 	// Tech stack dropdown state
@@ -100,7 +102,9 @@ export function Career() {
 			tech_stack: [],
 			achievements: '',
 			is_current: false,
-			cv_profiles: []
+			cv_profiles: [],
+			achievements_se: '',
+			achievements_cs: ''
 		});
 		setEditingJob(null);
 		setTechDropdownOpen(false);
@@ -136,7 +140,9 @@ export function Career() {
 			tech_stack: job.tech_stack || [],
 			achievements: job.achievements?.join('\n') || '',
 			is_current: job.is_current,
-			cv_profiles: job.cv_profiles || []
+			cv_profiles: job.cv_profiles || [],
+			achievements_se: job.achievements_se?.join('\n') || '',
+			achievements_cs: job.achievements_cs?.join('\n') || ''
 		});
 		setIsJobModalOpen(true);
 	};
@@ -175,7 +181,9 @@ export function Career() {
 				tech_stack: jobForm.tech_stack,
 				achievements: jobForm.achievements.split('\n').map(s => s.trim()).filter(Boolean),
 				is_current: jobForm.is_current,
-				cv_profiles: jobForm.cv_profiles
+				cv_profiles: jobForm.cv_profiles,
+				achievements_se: jobForm.achievements_se.split('\n').map(s => s.trim()).filter(Boolean),
+				achievements_cs: jobForm.achievements_cs.split('\n').map(s => s.trim()).filter(Boolean)
 			};
 
 			if (editingJob) {
@@ -982,6 +990,27 @@ export function Career() {
 										className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none min-h-[100px]"
 										placeholder="• Improved system performance by 40%&#10;• Led migration to microservices"
 									/>
+								</div>
+
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dark-600">
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">SE Specific Achievements</label>
+										<textarea
+											value={jobForm.achievements_se}
+											onChange={e => setJobForm({ ...jobForm, achievements_se: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none min-h-[80px]"
+											placeholder="Extra points for Software Engineering CV"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm text-gray-400 mb-1">CS Specific Achievements</label>
+										<textarea
+											value={jobForm.achievements_cs}
+											onChange={e => setJobForm({ ...jobForm, achievements_cs: e.target.value })}
+											className="w-full bg-dark-700 border border-dark-600 rounded p-2 text-white focus:border-neon-purple focus:outline-none min-h-[80px]"
+											placeholder="Extra points for Customer Support CV"
+										/>
+									</div>
 								</div>
 							</div>
 						</div>

@@ -114,6 +114,9 @@ export interface Job {
 	currency?: string;        // "EUR", "HUF"
 	tech_stack: string[];     // Skill names from skills collection (e.g., ["Python", "React"])
 	achievements?: string[];  // Bullet points for CV generation
+	// v8.2 Role-specific achievements
+	achievements_se?: string[]; // Shown on SE CV
+	achievements_cs?: string[]; // Shown on CS CV
 	is_current: boolean;
 	// v8.0 CV Profiles - which CV profiles this job should appear in
 	cv_profiles?: CVProfile[];  // ['se'], ['cs'], ['se', 'cs'], or ['all']
@@ -359,6 +362,8 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				endDate: null,
 				tech_stack: ["Python", "React"], // Skill names from skills collection
 				achievements: ["Achievement 1", "Achievement 2"],
+				achievements_se: ["SE specific achievement"],
+				achievements_cs: ["CS specific achievement"],
 				is_current: true,
 				cv_profiles: ["all"] // 'se' | 'cs' | 'all' - which CV profiles this job appears in
 			}
@@ -615,6 +620,12 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 						return { valid: false, error: `Invalid cv_profile '${p}' for job: ${job.role}. Valid values: ${validProfiles.join(', ')}` };
 					}
 				}
+			}
+			if (job.achievements_se && !Array.isArray(job.achievements_se)) {
+				return { valid: false, error: `Invalid achievements_se for job: ${job.role}. Must be an array.` };
+			}
+			if (job.achievements_cs && !Array.isArray(job.achievements_cs)) {
+				return { valid: false, error: `Invalid achievements_cs for job: ${job.role}. Must be an array.` };
 			}
 		}
 
