@@ -49,7 +49,6 @@ const styles = StyleSheet.create({
 		marginBottom: 6,
 		fontSize: 10,
 		color: '#000000',
-		gap: 12,
 	},
 
 	title: {
@@ -328,7 +327,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		const joined: React.ReactNode[] = []; // Explicit type definition
 		parts.forEach((p, i) => {
 			joined.push(p);
-			if (i < parts.length - 1) joined.push(<Text key={`s${i}`}>   |   </Text>);
+			if (i < parts.length - 1) joined.push(<Text key={`s${i}`}> | </Text>);
 		});
 		return joined;
 	};
