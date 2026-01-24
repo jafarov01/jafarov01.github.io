@@ -327,7 +327,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 		const joined: React.ReactNode[] = []; // Explicit type definition
 		parts.forEach((p, i) => {
 			joined.push(p);
-			if (i < parts.length - 1) joined.push(<Text key={`s${i}`}> | </Text>);
+			if (i < parts.length - 1) joined.push(<Text key={`s${i}`} style={{ marginHorizontal: 5 }}>|</Text>);
 		});
 		return joined;
 	};
@@ -362,7 +362,7 @@ const CVDocument = ({ profile, jobs, education, skills }: CVDocumentProps) => {
 							<Text style={styles.name}>{profile.name || 'Your Name'}</Text>
 							<View style={styles.titleAndLocation}>
 								{profile.professional_title && <Text style={styles.title}>{profile.professional_title}</Text>}
-								{profile.professional_title && profile.location && <Text> | </Text>}
+								{profile.professional_title && profile.location && <Text style={{ marginHorizontal: 5 }}>|</Text>}
 								{profile.location && <Text style={styles.location}>{profile.location}</Text>}
 							</View>
 						</View>
