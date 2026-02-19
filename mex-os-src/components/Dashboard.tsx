@@ -18,8 +18,10 @@ import {
 	Flag,
 	ArrowRight,
 	CheckCircle2,
-	Circle
+	Circle,
+	Map
 } from 'lucide-react';
+import { ROADMAP_DATA } from '../lib/roadmapData';
 import { differenceInDays, differenceInHours, format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { StrategyDecisionModal, type TriggeredRule, type RuleAction } from './StrategyDecisionModal';
@@ -41,6 +43,7 @@ export function Dashboard() {
 		jobs,
 		getActiveCampaign,
 		updateHabit,
+		roadmapProgress,
 		// v7.0 Strategy Decision System
 		getTriggeredRules,
 		executeRuleAction,
@@ -59,7 +62,7 @@ export function Dashboard() {
 	useEffect(() => {
 		const dismissedKey = `strategy_dismissed_${format(new Date(), 'yyyy-MM-dd')}`;
 		const wasDismissed = sessionStorage.getItem(dismissedKey);
-		
+
 		if (triggeredRules.length > 0 && !wasDismissed) {
 			// Small delay to let the page render first
 			const timer = setTimeout(() => setShowDecisionModal(true), 500);
@@ -76,8 +79,8 @@ export function Dashboard() {
 				action.newStatus
 			);
 			showToast(
-				action.type === 'drop_exam' 
-					? 'Exam dropped successfully' 
+				action.type === 'drop_exam'
+					? 'Exam dropped successfully'
 					: action.type === 'change_status'
 						? 'Exam status updated'
 						: 'Rule marked as triggered',
@@ -143,7 +146,7 @@ export function Dashboard() {
 		? differenceInDays(new Date(activeCampaign.endDate), now)
 		: null;
 	const pendingRules = activeCampaign?.rules?.filter(r => r.status === 'pending').length || 0;
-	
+
 	// v7.0: Count rules that need immediate action (deadline passed)
 	const urgentRules = triggeredRules.length;
 
@@ -170,7 +173,7 @@ export function Dashboard() {
 	};
 
 	// Filter tracked skills for display and counting
-	const trackedSkills = useMemo(() => 
+	const trackedSkills = useMemo(() =>
 		skillDefinitions.filter(s => s.is_tracked !== false),
 		[skillDefinitions]
 	);
@@ -186,6 +189,12 @@ export function Dashboard() {
 		});
 		return count;
 	}, [todayHabit, habitDefinitions, trackedSkills]);
+
+	const roadmapStats = useMemo(() => {
+		const total = ROADMAP_DATA.reduce((acc, phase) => acc + phase.tasks.length, 0);
+		const completed = Object.values(roadmapProgress).filter(p => p.status === 'completed').length;
+		return { total, completed, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
+	}, [roadmapProgress]);
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -319,7 +328,30 @@ export function Dashboard() {
 			)}
 
 			{/* Stats grid */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+			<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+				{/* Roadmap Progress */}
+				<div className="card-cyber p-3 sm:p-4 border-neon-purple/30">
+					<div className="flex items-center justify-between mb-2 sm:mb-3">
+						<div className="flex items-center gap-1 sm:gap-2 text-gray-400 text-xs sm:text-sm">
+							<Map className="w-3 h-3 sm:w-4 sm:h-4 text-neon-purple flex-shrink-0" />
+							<span className="hidden sm:inline">ROADMAP</span>
+							<span className="sm:hidden">ROADMAP</span>
+						</div>
+						<span className="text-xs text-gray-500">{roadmapStats.completed}/{roadmapStats.total}</span>
+					</div>
+					<div className="h-2 sm:h-3 bg-dark-700 rounded-full overflow-hidden">
+						<div
+							className="h-full bg-neon-purple rounded-full transition-all duration-500"
+							style={{ width: `${roadmapStats.percentage}%` }}
+						/>
+					</div>
+					<div className="mt-2 text-right">
+						<span className="text-sm sm:text-lg font-bold text-neon-purple">
+							{roadmapStats.percentage}%
+						</span>
+					</div>
+				</div>
+
 				{/* CFU Progress */}
 				<div className="card-cyber p-3 sm:p-4">
 					<div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -644,6 +676,13 @@ export function Dashboard() {
 								<DollarSign className="w-4 h-4" />
 								Add Transaction
 							</Link>
+							<Link
+								to="/roadmap"
+								className="w-full btn-cyber py-3 flex items-center justify-center gap-2 border-neon-purple text-neon-purple hover:bg-neon-purple/10"
+							>
+								<Map className="w-4 h-4" />
+								Automotive Roadmap
+							</Link>
 						</div>
 					</div>
 
@@ -673,9 +712,8 @@ export function Dashboard() {
 										{def.trackingType === 'boolean' ? (
 											<button
 												onClick={() => handleQuickHabitToggle(def.id, !value)}
-												className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${
-													value ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
-												}`}
+												className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${value ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+													}`}
 											>
 												{value ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
 											</button>
@@ -685,9 +723,8 @@ export function Dashboard() {
 													<button
 														key={v}
 														onClick={() => handleQuickHabitToggle(def.id, v)}
-														className={`px-2 py-1 text-xs rounded transition-colors ${
-															value === v ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
-														}`}
+														className={`px-2 py-1 text-xs rounded transition-colors ${value === v ? 'bg-neon-green/20 text-neon-green' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+															}`}
 													>
 														{v}{def.trackingType === 'hours' ? 'h' : ''}
 													</button>
@@ -712,9 +749,8 @@ export function Dashboard() {
 												<button
 													key={opt}
 													onClick={() => handleQuickSkillChange(def.id, opt)}
-													className={`px-2 py-1 text-xs rounded transition-colors ${
-														value === opt ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
-													}`}
+													className={`px-2 py-1 text-xs rounded transition-colors ${value === opt ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-dark-600 text-gray-500 hover:bg-dark-500'
+														}`}
 												>
 													{opt.replace(' mins', 'm').replace(' min', 'm')}
 												</button>
