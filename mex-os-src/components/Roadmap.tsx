@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
-import { ROADMAP_DATA, type RoadmapTask } from '../lib/roadmapData';
-import { 
-	ChevronDown, ChevronUp, Github, CheckCircle2, 
+import { ROADMAP_DATA } from '../lib/roadmapData';
+import {
+	ChevronDown, ChevronUp, Github, CheckCircle2,
 	Circle, Clock, ExternalLink, Info, Filter,
 	Search, BarChart3, Target, Trophy
 } from 'lucide-react';
@@ -26,17 +26,17 @@ export function Roadmap() {
 	}, [roadmapProgress]);
 
 	const togglePhase = (phaseNum: number) => {
-		setExpandedPhases(prev => 
-			prev.includes(phaseNum) 
-				? prev.filter(p => p !== phaseNum) 
+		setExpandedPhases(prev =>
+			prev.includes(phaseNum)
+				? prev.filter(p => p !== phaseNum)
 				: [...prev, phaseNum]
 		);
 	};
 
 	const toggleTask = (taskId: string) => {
-		setExpandedTasks(prev => 
-			prev.includes(taskId) 
-				? prev.filter(id => id !== taskId) 
+		setExpandedTasks(prev =>
+			prev.includes(taskId)
+				? prev.filter(id => id !== taskId)
 				: [...prev, taskId]
 		);
 	};
@@ -45,8 +45,8 @@ export function Roadmap() {
 		return ROADMAP_DATA.map(phase => ({
 			...phase,
 			tasks: phase.tasks.filter(task => {
-				const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-								     task.id.toLowerCase().includes(searchQuery.toLowerCase());
+				const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					task.id.toLowerCase().includes(searchQuery.toLowerCase());
 				const progress = roadmapProgress[task.id];
 				const status = progress?.status || 'todo';
 				const matchesStatus = statusFilter === 'all' || status === statusFilter;
@@ -65,15 +65,15 @@ export function Roadmap() {
 					</div>
 					<h1 className="text-3xl font-bold neon-text-cyan mb-2">Automotive Systems Roadmap</h1>
 					<p className="text-gray-400 mb-6">30-Day Intensive Portfolio Builder for Tier-1/OEM Roles</p>
-					
+
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 						<div className="space-y-1">
 							<span className="text-xs text-gray-500 uppercase tracking-wider">Overall Progress</span>
 							<div className="flex items-center gap-2">
 								<span className="text-2xl font-bold text-neon-green">{stats.percentage}%</span>
 								<div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
-									<div 
-										className="h-full progress-bar-cyber" 
+									<div
+										className="h-full progress-bar-cyber"
 										style={{ width: `${stats.percentage}%` }}
 									/>
 								</div>
@@ -109,7 +109,7 @@ export function Roadmap() {
 			<div className="flex flex-col md:flex-row gap-4 items-center justify-between">
 				<div className="relative w-full md:w-96">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-					<input 
+					<input
 						type="text"
 						placeholder="Search tasks (e.g. 'CAN', 'LLVM')..."
 						className="w-full pl-10 pr-4 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm focus:border-neon-cyan outline-none transition-all"
@@ -122,11 +122,10 @@ export function Roadmap() {
 						<button
 							key={f}
 							onClick={() => setStatusFilter(f)}
-							className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-								statusFilter === f 
-									? 'bg-neon-cyan text-dark-900 shadow-[0_0_10px_#00ffff44]' 
+							className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${statusFilter === f
+									? 'bg-neon-cyan text-dark-900 shadow-[0_0_10px_#00ffff44]'
 									: 'bg-dark-800 text-gray-400 border border-dark-600 hover:border-gray-500'
-							}`}
+								}`}
 						>
 							{f.replace('-', ' ')}
 						</button>
@@ -138,16 +137,14 @@ export function Roadmap() {
 			<div className="space-y-4">
 				{filteredRoadmap.map(phase => (
 					<div key={phase.phase} className="space-y-2">
-						<button 
+						<button
 							onClick={() => togglePhase(phase.phase)}
-							className={`w-full flex items-center justify-between p-4 rounded-lg bg-dark-800 border transition-all ${
-								expandedPhases.includes(phase.phase) ? 'border-neon-purple/50' : 'border-dark-600 hover:border-gray-600'
-							}`}
+							className={`w-full flex items-center justify-between p-4 rounded-lg bg-dark-800 border transition-all ${expandedPhases.includes(phase.phase) ? 'border-neon-purple/50' : 'border-dark-600 hover:border-gray-600'
+								}`}
 						>
 							<div className="flex items-center gap-4">
-								<div className={`w-10 h-10 rounded flex items-center justify-center font-bold text-lg ${
-									expandedPhases.includes(phase.phase) ? 'bg-neon-purple text-white shadow-[0_0_10px_#9d00ff44]' : 'bg-dark-700 text-gray-400'
-								}`}>
+								<div className={`w-10 h-10 rounded flex items-center justify-center font-bold text-lg ${expandedPhases.includes(phase.phase) ? 'bg-neon-purple text-white shadow-[0_0_10px_#9d00ff44]' : 'bg-dark-700 text-gray-400'
+									}`}>
 									{phase.phase}
 								</div>
 								<div className="text-left">
@@ -165,19 +162,18 @@ export function Roadmap() {
 									const progress = roadmapProgress[task.id] || { status: 'todo', notes: '', github_link: '' };
 
 									return (
-										<div 
+										<div
 											key={task.id}
-											className={`card-cyber transition-all ${
-												isExpanded ? 'border-dark-500 ring-1 ring-dark-500/30' : 'hover:border-dark-500'
-											}`}
+											className={`card-cyber transition-all ${isExpanded ? 'border-dark-500 ring-1 ring-dark-500/30' : 'hover:border-dark-500'
+												}`}
 										>
 											{/* Task Header */}
-											<div 
+											<div
 												className="p-4 flex items-center justify-between cursor-pointer"
 												onClick={() => toggleTask(task.id)}
 											>
 												<div className="flex items-center gap-4 flex-1">
-													<button 
+													<button
 														onClick={(e) => {
 															e.stopPropagation();
 															const nextStatusMap: Record<string, 'todo' | 'in-progress' | 'completed'> = {
@@ -270,7 +266,7 @@ export function Roadmap() {
 													<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dark-700/30">
 														<div className="space-y-1.5">
 															<label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Status</label>
-															<select 
+															<select
 																value={progress.status}
 																onChange={(e) => updateRoadmapTask(task.id, { status: e.target.value as any })}
 																className="w-full bg-dark-900 border border-dark-600 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-neon-cyan transition-colors appearance-none cursor-pointer"
@@ -284,7 +280,7 @@ export function Roadmap() {
 															<label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">GitHub Link</label>
 															<div className="relative">
 																<Github size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-																<input 
+																<input
 																	type="text"
 																	placeholder="https://github.com/..."
 																	value={progress.github_link}
@@ -295,7 +291,7 @@ export function Roadmap() {
 														</div>
 														<div className="space-y-1.5 md:col-span-1">
 															<label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Notes</label>
-															<textarea 
+															<textarea
 																placeholder="Tracking notes, implementation details..."
 																value={progress.notes}
 																rows={1}
@@ -307,9 +303,9 @@ export function Roadmap() {
 
 													{progress.github_link && (
 														<div className="pt-2 flex justify-end">
-															<a 
-																href={progress.github_link} 
-																target="_blank" 
+															<a
+																href={progress.github_link}
+																target="_blank"
 																rel="noopener noreferrer"
 																className="flex items-center gap-1.5 text-[10px] font-bold text-neon-cyan hover:underline uppercase tracking-tighter"
 															>
@@ -334,7 +330,7 @@ export function Roadmap() {
 							<h3 className="text-xl font-bold text-gray-400">No tasks found matching your filters</h3>
 							<p className="text-gray-500 text-sm">Try adjusting your search or status filters</p>
 						</div>
-						<button 
+						<button
 							onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
 							className="text-neon-cyan text-sm font-bold uppercase hover:underline"
 						>

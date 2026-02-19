@@ -244,6 +244,7 @@ export interface FullUserData {
 	// v5.0 additions
 	career?: Career;
 	strategy?: Strategy;
+	roadmapProgress?: RoadmapProgress;
 }
 
 export const BLUEPRINT_TEMPLATE: FullUserData = {
@@ -420,7 +421,8 @@ export const BLUEPRINT_TEMPLATE: FullUserData = {
 				]
 			}
 		]
-	}
+	},
+	roadmapProgress: {} as RoadmapProgress,
 };
 
 // ============================================================================

@@ -105,7 +105,7 @@ interface DataContextType {
 
 	// Roadmap
 	updateRoadmapTask: (taskId: string, progress: Partial<RoadmapTaskProgress>) => Promise<void>;
-	
+
 	// v7.0 Strategy Decision System
 	getTriggeredRules: () => TriggeredRule[];
 	executeRuleAction: (campaignId: string, ruleIndex: number, examId?: string, newStatus?: Exam['status']) => Promise<void>;
@@ -122,7 +122,7 @@ interface DataContextType {
 	getMonthlyIncome: (year: number, month: number) => number;
 	getMonthlyExpenses: (year: number, month: number) => number;
 	getNetBalance: () => number;
-	
+
 	// v6.0 Skill Analytics
 	getSkillAnalytics: (skillId: string) => SkillAnalytics | null;
 	getAllSkillAnalytics: () => SkillAnalytics[];
@@ -173,8 +173,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			strategy: {
 				campaigns
 			},
-			roadmapProgress
-		};
+			roadmapProgress: roadmapProgress as any
+		} as FullUserData;
 	};
 
 	const hardResetData = async () => {
@@ -250,7 +250,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			{ name: 'jobs', data: data.career?.jobs },
 			{ name: 'education', data: data.career?.education },
 			{ name: 'campaigns', data: data.strategy?.campaigns },
-			{ name: 'roadmap', data: data.roadmapProgress ? Object.entries(data.roadmapProgress).map(([id, p]) => ({ ...p, id })) : [] }
+			{ name: 'roadmap', data: (data as any).roadmapProgress ? Object.entries((data as any).roadmapProgress).map(([id, p]) => ({ ...(p as any), id })) : [] }
 		];
 
 		importCollections.forEach(col => {
@@ -402,7 +402,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setCampaigns(list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
 			checkLoaded();
 		});
-		
+
 		// 12. Roadmap Progress
 		const roadmapRef = collection(db, 'users', user.uid, 'roadmap');
 		const unsubRoadmap = onSnapshot(roadmapRef, (snapshot) => {
@@ -776,11 +776,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		try {
 			const roadmapRef = doc(db, 'users', user.uid, 'roadmap', taskId);
 			const docSnap = await getDoc(roadmapRef);
-			
+
 			if (docSnap.exists()) {
-				await updateDoc(roadmapRef, { 
-					...progress, 
-					updatedAt: new Date().toISOString() 
+				await updateDoc(roadmapRef, {
+					...progress,
+					updatedAt: new Date().toISOString()
 				});
 			} else {
 				await setDoc(roadmapRef, {
@@ -816,9 +816,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 				const daysOverdue = differenceInDays(now, deadline);
 
 				// Get linked exams for this campaign
-				const linkedExams = exams.filter(e => 
-					campaign.linked_exams?.includes(e.id) && 
-					e.status !== 'passed' && 
+				const linkedExams = exams.filter(e =>
+					campaign.linked_exams?.includes(e.id) &&
+					e.status !== 'passed' &&
 					e.status !== 'dropped'
 				);
 
@@ -838,9 +838,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	}, [campaigns, exams]);
 
 	const executeRuleAction = async (
-		campaignId: string, 
-		ruleIndex: number, 
-		examId?: string, 
+		campaignId: string,
+		ruleIndex: number,
+		examId?: string,
 		newStatus?: Exam['status']
 	) => {
 		if (!user) throw new Error('User not authenticated');
@@ -890,8 +890,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			const updatedRules = [...(campaign.rules || [])];
 			const currentDeadline = new Date(updatedRules[ruleIndex].deadline);
 			const newDeadline = addDays(currentDeadline, days);
-			updatedRules[ruleIndex] = { 
-				...updatedRules[ruleIndex], 
+			updatedRules[ruleIndex] = {
+				...updatedRules[ruleIndex],
 				deadline: format(newDeadline, 'yyyy-MM-dd')
 			};
 			await updateCampaign(campaignId, { rules: updatedRules });
