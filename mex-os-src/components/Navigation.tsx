@@ -4,7 +4,7 @@ import { useData } from '../contexts/DataContext';
 import {
 	Terminal, LogOut, BookOpen, Wallet, Activity,
 	GraduationCap, Shield, DollarSign, ChevronDown,
-	Briefcase, Target, Crosshair
+	Briefcase, Target, Crosshair, Map
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
@@ -140,6 +140,10 @@ export function Navigation() {
 								<Briefcase className="w-4 h-4" />Career
 							</NavLink>
 
+							<NavLink to="/roadmap" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
+								<Map className="w-4 h-4" />Roadmap
+							</NavLink>
+
 							<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`}>
 								<Target className="w-4 h-4" />Strategy
 							</NavLink>
@@ -203,6 +207,10 @@ export function Navigation() {
 						<NavLink to="/career" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Career">
 							<Briefcase className="w-4 h-4" />
 							<span className="text-xs">Career</span>
+						</NavLink>
+						<NavLink to="/roadmap" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Roadmap">
+							<Map className="w-4 h-4" />
+							<span className="text-xs">Roadmap</span>
 						</NavLink>
 						<NavLink to="/strategy" className={({ isActive }) => `${baseNavLink} ${isActive ? activeClass : inactiveClass}`} aria-label="Strategy">
 							<Target className="w-4 h-4" />

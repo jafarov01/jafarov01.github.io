@@ -8,6 +8,7 @@ import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { Academics } from './components/Academics';
 import { Bureaucracy } from './components/Bureaucracy';
+import { Roadmap } from './components/Roadmap';
 import { Habits } from './components/Habits';
 import { ProfileSettings } from './components/ProfileSettings';
 import { Funding } from './components/Funding';
@@ -64,6 +65,7 @@ function App() {
 						<Route path="/cashflow" element={<Cashflow />} />
 						<Route path="/funding" element={<Funding />} />
 						<Route path="/bureaucracy" element={<Bureaucracy />} />
+						<Route path="/roadmap" element={<Roadmap />} />
 						<Route path="/habits" element={<Habits />} />
 						<Route path="/skills" element={<SkillMastery />} />
 						<Route path="/career" element={<Career />} />

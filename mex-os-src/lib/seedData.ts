@@ -212,6 +212,16 @@ export interface BureaucracyDoc {
 	is_critical: boolean;
 }
 
+// Roadmap progress tracking
+export interface RoadmapTaskProgress {
+	status: 'todo' | 'in-progress' | 'completed';
+	notes: string;
+	github_link: string;
+	updatedAt: string;
+}
+
+export type RoadmapProgress = Record<string, RoadmapTaskProgress>;
+
 // Dynamic habit entry - uses IDs from definitions, not hardcoded keys
 export interface HabitEntry {
 	date: string;
@@ -648,6 +658,19 @@ export function validateImportData(data: any): { valid: boolean; error?: string 
 			}
 			if (edu.status && !validEduStatuses.includes(edu.status)) {
 				return { valid: false, error: `Invalid education status '${edu.status}' for: ${edu.institution}. Valid values: ${validEduStatuses.join(', ')}` };
+			}
+		}
+	}
+
+	// Validate roadmapProgress
+	if (data.roadmapProgress) {
+		if (typeof data.roadmapProgress !== 'object') {
+			return { valid: false, error: 'roadmapProgress must be an object' };
+		}
+		for (const [id, progress] of Object.entries(data.roadmapProgress)) {
+			const p = progress as any;
+			if (!p.status || !['todo', 'in-progress', 'completed'].includes(p.status)) {
+				return { valid: false, error: `Invalid status for roadmap task: ${id}` };
 			}
 		}
 	}

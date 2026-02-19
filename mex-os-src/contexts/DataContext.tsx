@@ -18,7 +18,9 @@ import {
 	type BureaucracyDoc, type SkillDefinition, type HabitDefinition,
 	type FullUserData, type Job, type Education, type Campaign, type CampaignRule,
 	profileData,
-	validateImportData
+	validateImportData,
+	type RoadmapProgress,
+	type RoadmapTaskProgress
 } from '../lib/seedData';
 import { calculateSkillAnalytics, calculateAllSkillAnalytics, type SkillAnalytics } from '../lib/skillAlgorithm';
 import { differenceInDays, addDays, isPast, format } from 'date-fns';
@@ -47,6 +49,7 @@ interface DataContextType {
 	jobs: Job[];
 	education: Education[];
 	campaigns: Campaign[];
+	roadmapProgress: RoadmapProgress;
 	loading: boolean;
 
 	// Profile
@@ -99,6 +102,9 @@ interface DataContextType {
 	updateCampaign: (id: string, data: Partial<Campaign>) => Promise<void>;
 	deleteCampaign: (id: string) => Promise<void>;
 	getActiveCampaign: () => Campaign | null;
+
+	// Roadmap
+	updateRoadmapTask: (taskId: string, progress: Partial<RoadmapTaskProgress>) => Promise<void>;
 	
 	// v7.0 Strategy Decision System
 	getTriggeredRules: () => TriggeredRule[];
@@ -144,6 +150,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [education, setEducation] = useState<Education[]>([]);
 	const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+	const [roadmapProgress, setRoadmapProgress] = useState<RoadmapProgress>({});
 	const [loading, setLoading] = useState(true);
 
 	// --- DATA MANAGEMENT ---
@@ -165,7 +172,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			},
 			strategy: {
 				campaigns
-			}
+			},
+			roadmapProgress
 		};
 	};
 
@@ -203,6 +211,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		setJobs([]);
 		setEducation([]);
 		setCampaigns([]);
+		setRoadmapProgress({});
 	};
 
 	// (Empty - removal)
@@ -240,7 +249,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			// v5.0 Career & Strategy
 			{ name: 'jobs', data: data.career?.jobs },
 			{ name: 'education', data: data.career?.education },
-			{ name: 'campaigns', data: data.strategy?.campaigns }
+			{ name: 'campaigns', data: data.strategy?.campaigns },
+			{ name: 'roadmap', data: data.roadmapProgress ? Object.entries(data.roadmapProgress).map(([id, p]) => ({ ...p, id })) : [] }
 		];
 
 		importCollections.forEach(col => {
@@ -271,13 +281,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setJobs([]);
 			setEducation([]);
 			setCampaigns([]);
+			setRoadmapProgress({});
 			setLoading(false);
 			return;
 		}
 
 		setLoading(true);
 		let loadedCount = 0;
-		const totalCollections = 11; // profile + 7 cols + 3 v5.0 cols
+		const totalCollections = 12; // profile + 7 cols + 3 v5.0 cols + roadmap
 
 		const checkLoaded = () => {
 			loadedCount++;
@@ -391,6 +402,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			setCampaigns(list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
 			checkLoaded();
 		});
+		
+		// 12. Roadmap Progress
+		const roadmapRef = collection(db, 'users', user.uid, 'roadmap');
+		const unsubRoadmap = onSnapshot(roadmapRef, (snapshot) => {
+			const progress: RoadmapProgress = {};
+			snapshot.forEach((doc) => {
+				const data = doc.data() as RoadmapTaskProgress;
+				progress[doc.id] = data;
+			});
+			setRoadmapProgress(progress);
+			checkLoaded();
+		});
 
 		return () => {
 			unsubProfile();
@@ -405,6 +428,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			unsubJobs();
 			unsubEducation();
 			unsubCampaigns();
+			unsubRoadmap();
 		};
 	}, [user]);
 
@@ -747,6 +771,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		) || campaigns.find(c => c.status === 'active') || null;
 	}, [campaigns]);
 
+	const updateRoadmapTask = async (taskId: string, progress: Partial<RoadmapTaskProgress>) => {
+		if (!user) throw new Error('User not authenticated');
+		try {
+			const roadmapRef = doc(db, 'users', user.uid, 'roadmap', taskId);
+			const docSnap = await getDoc(roadmapRef);
+			
+			if (docSnap.exists()) {
+				await updateDoc(roadmapRef, { 
+					...progress, 
+					updatedAt: new Date().toISOString() 
+				});
+			} else {
+				await setDoc(roadmapRef, {
+					status: 'todo',
+					notes: '',
+					github_link: '',
+					...progress,
+					updatedAt: new Date().toISOString()
+				});
+			}
+		} catch (error) {
+			console.error('Failed to update roadmap task:', error);
+			throw error;
+		}
+	};
+
 	// v7.0 Strategy Decision System - Real deadline detection
 	const getTriggeredRules = useCallback((): TriggeredRule[] => {
 		const now = new Date();
@@ -947,6 +997,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			jobs,
 			education,
 			campaigns,
+			roadmapProgress,
 			loading,
 			updateProfile,
 			updateExamStatus,
@@ -981,6 +1032,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			updateCampaign,
 			deleteCampaign,
 			getActiveCampaign,
+			updateRoadmapTask,
 			// v7.0 Strategy Decision System
 			getTriggeredRules,
 			executeRuleAction,
