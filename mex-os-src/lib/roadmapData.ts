@@ -27,7 +27,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 1,
-        "id": "SYS-001",
+        "id": "SYS",
         "title": "RAII File Descriptor Wrapper",
         "priority": "Medium",
         "storyPoints": 3,
@@ -40,12 +40,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Provide read() and write() methods"
         ],
         "acceptanceCriteria": [
-          "\u2713 Opens file in constructor or via open() method",
-          "\u2713 Automatically closes in destructor",
-          "\u2713 Cannot be copied (compile error if attempted)",
-          "\u2713 Can be moved (transferred ownership works)",
-          "\u2713 No file descriptor leaks (verify with lsof or similar)",
-          "\u2713 Simple test program that reads/writes files"
+          "Opens file in constructor or via open() method",
+          "Automatically closes in destructor",
+          "Cannot be copied (compile error if attempted)",
+          "Can be moved (transferred ownership works)",
+          "No file descriptor leaks (verify with lsof or similar)",
+          "Simple test program that reads/writes files"
         ],
         "technicalHints": [
           "Use fd = -1 as invalid sentinel",
@@ -59,7 +59,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 2,
-        "id": "SYS-002",
+        "id": "SYS",
         "title": "Circular Buffer for Embedded Systems",
         "priority": "Medium",
         "storyPoints": 3,
@@ -73,12 +73,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "No dynamic memory allocation"
         ],
         "acceptanceCriteria": [
-          "\u2713 Template works with different types (int, struct, etc.)",
-          "\u2713 Handles wrapping around correctly",
-          "\u2713 size(), capacity(), empty(), full() methods work",
-          "\u2713 Can push SIZE elements before overwriting",
-          "\u2713 Iterator support (begin/end) for range-based for loop",
-          "\u2713 No heap allocation (verify with custom operator new)"
+          "Template works with different types (int, struct, etc.)",
+          "Handles wrapping around correctly",
+          "size(), capacity(), empty(), full() methods work",
+          "Can push SIZE elements before overwriting",
+          "Iterator support (begin/end) for range-based for loop",
+          "No heap allocation (verify with custom operator new)"
         ],
         "technicalHints": [
           "Use std::array<T, SIZE> for storage",
@@ -92,7 +92,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 3,
-        "id": "SYS-003",
+        "id": "SYS",
         "title": "Finite State Machine Template",
         "priority": "Medium",
         "storyPoints": 4,
@@ -106,12 +106,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Compile-time type safety"
         ],
         "acceptanceCriteria": [
-          "\u2713 Define states and events as enums",
-          "\u2713 Register transitions: on(State::A, Event::X) -> State::B",
-          "\u2713 Handles invalid transitions gracefully",
-          "\u2713 Entry/exit callbacks work correctly",
-          "\u2713 Example implementation: traffic light or door lock system",
-          "\u2713 No dynamic dispatch overhead (template-based)"
+          "Define states and events as enums",
+          "Register transitions: on(State::A, Event::X) -> State::B",
+          "Handles invalid transitions gracefully",
+          "Entry/exit callbacks work correctly",
+          "Example implementation: traffic light or door lock system",
+          "No dynamic dispatch overhead (template-based)"
         ],
         "technicalHints": [
           "Use std::map or std::unordered_map for transition table",
@@ -132,7 +132,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 4,
-        "id": "SYS-004",
+        "id": "SYS",
         "title": "Fixed-Block Memory Pool Allocator",
         "priority": "High",
         "storyPoints": 5,
@@ -146,12 +146,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Thread-unsafe (single-threaded for now)"
         ],
         "acceptanceCriteria": [
-          "\u2713 PoolAllocator(blockSize, blockCount) constructor",
-          "\u2713 void* allocate() returns nullptr when exhausted",
-          "\u2713 void deallocate(void* ptr) returns block to pool",
-          "\u2713 No memory leaks (valgrind clean)",
-          "\u2713 Benchmark: 5x+ faster than malloc for 10k allocations",
-          "\u2713 Timing measurements show constant-time behavior"
+          "PoolAllocator(blockSize, blockCount) constructor",
+          "void* allocate() returns nullptr when exhausted",
+          "void deallocate(void* ptr) returns block to pool",
+          "No memory leaks (valgrind clean)",
+          "Benchmark: 5x+ faster than malloc for 10k allocations",
+          "Timing measurements show constant-time behavior"
         ],
         "technicalHints": [
           "Allocate one big chunk: new char[blockSize * numBlocks]",
@@ -166,7 +166,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 5,
-        "id": "SYS-005",
+        "id": "SYS",
         "title": "Generic Object Pool for Message Buffers",
         "priority": "High",
         "storyPoints": 5,
@@ -180,12 +180,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Works with non-trivial types"
         ],
         "acceptanceCriteria": [
-          "\u2713 Template works with custom classes (not just POD)",
-          "\u2713 Handles constructor arguments via perfect forwarding",
-          "\u2713 Destructor called only at pool destruction, not on release",
-          "\u2713 reset() method to reinitialize objects",
-          "\u2713 Example with CAN message struct or similar",
-          "\u2713 Benchmark shows 10x+ speedup vs new/delete"
+          "Template works with custom classes (not just POD)",
+          "Handles constructor arguments via perfect forwarding",
+          "Destructor called only at pool destruction, not on release",
+          "reset() method to reinitialize objects",
+          "Example with CAN message struct or similar",
+          "Benchmark shows 10x+ speedup vs new/delete"
         ],
         "technicalHints": [
           "Use std::aligned_storage for raw memory",
@@ -199,7 +199,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 6,
-        "id": "SYS-006",
+        "id": "SYS",
         "title": "Intrusive Reference Counted Pointer",
         "priority": "Medium",
         "storyPoints": 5,
@@ -213,12 +213,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Dereference operators (*, ->)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Works with classes that have add_ref()/release() methods",
-          "\u2713 Object deleted when last pointer destroyed",
-          "\u2713 Move operations don't change ref count",
-          "\u2713 Copy operations correctly increment count",
-          "\u2713 No memory leaks with circular references test",
-          "\u2713 Comparison with std::shared_ptr overhead"
+          "Works with classes that have add_ref()/release() methods",
+          "Object deleted when last pointer destroyed",
+          "Move operations don't change ref count",
+          "Copy operations correctly increment count",
+          "No memory leaks with circular references test",
+          "Comparison with std::shared_ptr overhead"
         ],
         "technicalHints": [
           "Require base class with: void add_ref(), void release()",
@@ -233,7 +233,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 7,
-        "id": "SYS-007",
+        "id": "SYS",
         "title": "Linear Stack-Based Allocator",
         "priority": "High",
         "storyPoints": 5,
@@ -246,12 +246,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Fast allocation (just bump pointer)"
         ],
         "acceptanceCriteria": [
-          "\u2713 StackAllocator(bufferSize) pre-allocates buffer",
-          "\u2713 void* allocate(size, alignment) returns aligned memory",
-          "\u2713 deallocate() works only in reverse order (assert/throw otherwise)",
-          "\u2713 Marker get_marker() and rewind(marker) work correctly",
-          "\u2713 Handles alignment padding correctly",
-          "\u2713 Benchmark shows <10ns allocation time"
+          "StackAllocator(bufferSize) pre-allocates buffer",
+          "void* allocate(size, alignment) returns aligned memory",
+          "deallocate() works only in reverse order (assert/throw otherwise)",
+          "Marker get_marker() and rewind(marker) work correctly",
+          "Handles alignment padding correctly",
+          "Benchmark shows <10ns allocation time"
         ],
         "technicalHints": [
           "Single pointer tracks current position",
@@ -273,7 +273,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 8,
-        "id": "SYS-008",
+        "id": "SYS",
         "title": "Build Spinlock with std::atomic",
         "priority": "High",
         "storyPoints": 5,
@@ -286,12 +286,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Optional: adaptive spin (try spinning, then yield)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Protects shared data correctly (multi-threaded test)",
-          "\u2713 Uses std::memory_order_acquire/release correctly",
-          "\u2713 try_lock() returns immediately without blocking",
-          "\u2713 Benchmark vs std::mutex for short critical sections (<100ns)",
-          "\u2713 No data races (run with ThreadSanitizer)",
-          "\u2713 Documentation explaining memory ordering choices"
+          "Protects shared data correctly (multi-threaded test)",
+          "Uses std::memory_order_acquire/release correctly",
+          "try_lock() returns immediately without blocking",
+          "Benchmark vs std::mutex for short critical sections (<100ns)",
+          "No data races (run with ThreadSanitizer)",
+          "Documentation explaining memory ordering choices"
         ],
         "technicalHints": [
           "lock(): while(flag.exchange(true, std::memory_order_acquire)) {}",
@@ -305,7 +305,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 9,
-        "id": "SYS-009",
+        "id": "SYS",
         "title": "Single-Producer Single-Consumer Lock-Free Queue",
         "priority": "High",
         "storyPoints": 6,
@@ -319,12 +319,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Single producer + single consumer only"
         ],
         "acceptanceCriteria": [
-          "\u2713 Thread-safe for 1 producer + 1 consumer simultaneously",
-          "\u2713 Uses memory_order_acquire/release (not seq_cst everywhere)",
-          "\u2713 Handles full/empty conditions correctly",
-          "\u2713 No data corruption after 1M items passed between threads",
-          "\u2713 Benchmark vs std::queue with mutex",
-          "\u2713 Stress test with varying push/pop rates"
+          "Thread-safe for 1 producer + 1 consumer simultaneously",
+          "Uses memory_order_acquire/release (not seq_cst everywhere)",
+          "Handles full/empty conditions correctly",
+          "No data corruption after 1M items passed between threads",
+          "Benchmark vs std::queue with mutex",
+          "Stress test with varying push/pop rates"
         ],
         "technicalHints": [
           "Two atomic indices: head (consumer), tail (producer)",
@@ -339,7 +339,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 10,
-        "id": "SYS-010",
+        "id": "SYS",
         "title": "Counting Semaphore from Scratch",
         "priority": "High",
         "storyPoints": 5,
@@ -353,12 +353,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Correct FIFO wakeup ordering"
         ],
         "acceptanceCriteria": [
-          "\u2713 Semaphore(initial_count) constructor",
-          "\u2713 wait() blocks when count is zero",
-          "\u2713 signal() increments and wakes one waiter",
-          "\u2713 Multiple threads can wait simultaneously",
-          "\u2713 try_wait() returns immediately",
-          "\u2713 Example: producer-consumer with semaphores"
+          "Semaphore(initial_count) constructor",
+          "wait() blocks when count is zero",
+          "signal() increments and wakes one waiter",
+          "Multiple threads can wait simultaneously",
+          "try_wait() returns immediately",
+          "Example: producer-consumer with semaphores"
         ],
         "technicalHints": [
           "Use std::mutex + std::condition_variable + int count",
@@ -372,7 +372,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 11,
-        "id": "SYS-011",
+        "id": "SYS",
         "title": "Fixed-Priority Task Scheduler Simulator",
         "priority": "High",
         "storyPoints": 6,
@@ -386,12 +386,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Simple round-robin for same priority"
         ],
         "acceptanceCriteria": [
-          "\u2713 Add tasks with different priorities",
-          "\u2713 Simulation loop: pick highest priority ready task, run quantum",
-          "\u2713 Preemption works (high priority interrupts low priority)",
-          "\u2713 Periodic tasks re-added to ready queue after period",
-          "\u2713 Report deadline misses",
-          "\u2713 Example: 3 tasks (high/med/low priority)"
+          "Add tasks with different priorities",
+          "Simulation loop: pick highest priority ready task, run quantum",
+          "Preemption works (high priority interrupts low priority)",
+          "Periodic tasks re-added to ready queue after period",
+          "Report deadline misses",
+          "Example: 3 tasks (high/med/low priority)"
         ],
         "technicalHints": [
           "Use std::priority_queue or std::multimap for ready queue",
@@ -413,7 +413,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 12,
-        "id": "SYS-012",
+        "id": "SYS",
         "title": "CAN 2.0 Frame Parser and Encoder",
         "priority": "High",
         "storyPoints": 6,
@@ -426,12 +426,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Support for multiplexed signals (basic)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Struct for CAN frame (id, dlc, data[8])",
-          "\u2713 Parse from raw bytes",
-          "\u2713 Extract signals: getSignal(start_bit, length, byte_order, signed)",
-          "\u2713 Set signals: setSignal(value, start_bit, length, ...)",
-          "\u2713 Handle bit fields spanning multiple bytes",
-          "\u2713 Unit tests with known CAN frames"
+          "Struct for CAN frame (id, dlc, data[8])",
+          "Parse from raw bytes",
+          "Extract signals: getSignal(start_bit, length, byte_order, signed)",
+          "Set signals: setSignal(value, start_bit, length, ...)",
+          "Handle bit fields spanning multiple bytes",
+          "Unit tests with known CAN frames"
         ],
         "technicalHints": [
           "CAN frame: ID (11 or 29 bits), DLC (4 bits), data (0-8 bytes)",
@@ -445,7 +445,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 13,
-        "id": "SYS-013",
+        "id": "SYS",
         "title": "Parse CAN Database (DBC) Format",
         "priority": "Medium",
         "storyPoints": 7,
@@ -458,12 +458,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Basic parsing (don't need 100% DBC spec support)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Loads simple DBC file",
-          "\u2713 Extracts messages with ID, name, DLC",
-          "\u2713 Extracts signals with all parameters",
-          "\u2713 Can look up message by ID",
-          "\u2713 Can look up signal by name within message",
-          "\u2713 Example: parse, then decode CAN frame using definitions"
+          "Loads simple DBC file",
+          "Extracts messages with ID, name, DLC",
+          "Extracts signals with all parameters",
+          "Can look up message by ID",
+          "Can look up signal by name within message",
+          "Example: parse, then decode CAN frame using definitions"
         ],
         "technicalHints": [
           "DBC format: text-based, line-oriented",
@@ -478,7 +478,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 14,
-        "id": "SYS-014",
+        "id": "SYS",
         "title": "Parse Ethernet Frames with VLAN Support",
         "priority": "Medium",
         "storyPoints": 5,
@@ -491,12 +491,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Read from raw socket or pcap file"
         ],
         "acceptanceCriteria": [
-          "\u2713 Parses Ethernet frame from byte array",
-          "\u2713 Extracts all header fields correctly",
-          "\u2713 Detects VLAN tagged frames",
-          "\u2713 Identifies payload protocol",
-          "\u2713 Example: read pcap file, display frame info",
-          "\u2713 Handles jumbo frames (>1500 bytes)"
+          "Parses Ethernet frame from byte array",
+          "Extracts all header fields correctly",
+          "Detects VLAN tagged frames",
+          "Identifies payload protocol",
+          "Example: read pcap file, display frame info",
+          "Handles jumbo frames (>1500 bytes)"
         ],
         "technicalHints": [
           "Ethernet header: 14 bytes (6 dest MAC, 6 src MAC, 2 EtherType)",
@@ -517,7 +517,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 15,
-        "id": "SYS-015",
+        "id": "SYS",
         "title": "AUTOSAR RTE Sender-Receiver Port Simulator",
         "priority": "High",
         "storyPoints": 7,
@@ -531,12 +531,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "COM callbacks on data reception"
         ],
         "acceptanceCriteria": [
-          "\u2713 Port<T> template for typed communication",
-          "\u2713 SenderPort::send(data) and ReceiverPort::receive()",
-          "\u2713 Unqueued: only latest value stored",
-          "\u2713 Queued: FIFO of N elements",
-          "\u2713 Example: two \"runnables\" communicating via ports",
-          "\u2713 Demonstrate data consistency guarantees"
+          "Port<T> template for typed communication",
+          "SenderPort::send(data) and ReceiverPort::receive()",
+          "Unqueued: only latest value stored",
+          "Queued: FIFO of N elements",
+          "Example: two \"runnables\" communicating via ports",
+          "Demonstrate data consistency guarantees"
         ],
         "technicalHints": [
           "Port has name and type",
@@ -552,7 +552,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 16,
-        "id": "SYS-016",
+        "id": "SYS",
         "title": "AUTOSAR Runnable Scheduling Simulator",
         "priority": "High",
         "storyPoints": 8,
@@ -565,12 +565,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Simulate preemption based on task priority"
         ],
         "acceptanceCriteria": [
-          "\u2713 Register runnables with periods (e.g., 10ms, 100ms)",
-          "\u2713 Scheduler executes runnables at correct times",
-          "\u2713 Higher priority tasks preempt lower priority",
-          "\u2713 Measure execution times and detect overruns",
-          "\u2713 Example: 3 tasks with different periods and priorities",
-          "\u2713 Visualize execution timeline (Gantt chart or log)"
+          "Register runnables with periods (e.g., 10ms, 100ms)",
+          "Scheduler executes runnables at correct times",
+          "Higher priority tasks preempt lower priority",
+          "Measure execution times and detect overruns",
+          "Example: 3 tasks with different periods and priorities",
+          "Visualize execution timeline (Gantt chart or log)"
         ],
         "technicalHints": [
           "Discrete event simulation with time steps (1ms granularity)",
@@ -586,7 +586,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 17,
-        "id": "SYS-017",
+        "id": "SYS",
         "title": "AUTOSAR-Style Mode Manager",
         "priority": "Medium",
         "storyPoints": 6,
@@ -599,12 +599,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Mode switch synchronization across partitions"
         ],
         "acceptanceCriteria": [
-          "\u2713 Register modes: Startup, Normal, PowerSave, Shutdown",
-          "\u2713 requestModeSwitch(newMode) triggers transition",
-          "\u2713 Subscribers notified on mode change",
-          "\u2713 Can enable/disable components based on mode",
-          "\u2713 Example: ECU startup sequence with mode transitions",
-          "\u2713 Handles invalid transitions gracefully"
+          "Register modes: Startup, Normal, PowerSave, Shutdown",
+          "requestModeSwitch(newMode) triggers transition",
+          "Subscribers notified on mode change",
+          "Can enable/disable components based on mode",
+          "Example: ECU startup sequence with mode transitions",
+          "Handles invalid transitions gracefully"
         ],
         "technicalHints": [
           "Current mode stored as enum",
@@ -619,7 +619,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 18,
-        "id": "SYS-018",
+        "id": "SYS",
         "title": "AUTOSAR DEM-Style Fault Storage",
         "priority": "Medium",
         "storyPoints": 7,
@@ -633,12 +633,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "UDS service 0x19 response simulation (read DTCs)"
         ],
         "acceptanceCriteria": [
-          "\u2713 reportEvent(eventId, status) API",
-          "\u2713 Stores event with timestamp and occurrence counter",
-          "\u2713 getStoredDTCs() returns list of confirmed faults",
-          "\u2713 Aging: after 40 passed tests, clear fault",
-          "\u2713 Fault priority levels (immediate vs debounced)",
-          "\u2713 Example: simulate sensor faults and retrieval"
+          "reportEvent(eventId, status) API",
+          "Stores event with timestamp and occurrence counter",
+          "getStoredDTCs() returns list of confirmed faults",
+          "Aging: after 40 passed tests, clear fault",
+          "Fault priority levels (immediate vs debounced)",
+          "Example: simulate sensor faults and retrieval"
         ],
         "technicalHints": [
           "DTC (Diagnostic Trouble Code): 3-byte code (e.g., P0420)",
@@ -660,7 +660,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 19,
-        "id": "SYS-019",
+        "id": "SYS",
         "title": "Clang AST Visitor for Function Complexity",
         "priority": "High",
         "storyPoints": 7,
@@ -673,12 +673,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Report functions exceeding complexity threshold"
         ],
         "acceptanceCriteria": [
-          "\u2713 Compiles with Clang libraries",
-          "\u2713 Parses C++ source file and builds AST",
-          "\u2713 Visits all function definitions",
-          "\u2713 Counts decision points correctly",
-          "\u2713 Outputs: function name, line number, complexity score",
-          "\u2713 Example: analyze your previous projects"
+          "Compiles with Clang libraries",
+          "Parses C++ source file and builds AST",
+          "Visits all function definitions",
+          "Counts decision points correctly",
+          "Outputs: function name, line number, complexity score",
+          "Example: analyze your previous projects"
         ],
         "technicalHints": [
           "Include: clang/AST/RecursiveASTVisitor.h",
@@ -693,7 +693,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 20,
-        "id": "SYS-020",
+        "id": "SYS",
         "title": "Simple Language to LLVM IR Compiler",
         "priority": "High",
         "storyPoints": 8,
@@ -706,12 +706,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Print results"
         ],
         "acceptanceCriteria": [
-          "\u2713 Parses arithmetic expressions with operator precedence",
-          "\u2713 Generates valid LLVM IR",
-          "\u2713 Can compile and execute: x = 5; y = x * 2 + 3;",
-          "\u2713 Supports function definitions (bonus)",
-          "\u2713 Outputs human-readable LLVM IR",
-          "\u2713 JIT execution produces correct results"
+          "Parses arithmetic expressions with operator precedence",
+          "Generates valid LLVM IR",
+          "Can compile and execute: x = 5; y = x * 2 + 3;",
+          "Supports function definitions (bonus)",
+          "Outputs human-readable LLVM IR",
+          "JIT execution produces correct results"
         ],
         "technicalHints": [
           "Use LLVM's IRBuilder for code generation",
@@ -726,7 +726,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 21,
-        "id": "SYS-021",
+        "id": "SYS",
         "title": "LLVM Pass for Null Pointer Analysis",
         "priority": "High",
         "storyPoints": 8,
@@ -739,12 +739,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Report: file, line, pointer name"
         ],
         "acceptanceCriteria": [
-          "\u2713 Loads as LLVM pass: opt -load pass.so -nullcheck < input.bc",
-          "\u2713 Detects obvious null dereferences",
-          "\u2713 Handles basic control flow (if checks)",
-          "\u2713 Low false positive rate on test cases",
-          "\u2713 Outputs warnings with source locations",
-          "\u2713 Example: analyze real C++ code for null pointer bugs"
+          "Loads as LLVM pass: opt -load pass.so -nullcheck < input.bc",
+          "Detects obvious null dereferences",
+          "Handles basic control flow (if checks)",
+          "Low false positive rate on test cases",
+          "Outputs warnings with source locations",
+          "Example: analyze real C++ code for null pointer bugs"
         ],
         "technicalHints": [
           "Inherit from FunctionPass",
@@ -760,7 +760,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 22,
-        "id": "SYS-022",
+        "id": "SYS",
         "title": "LLVM Dead Code Elimination Optimization",
         "priority": "Medium",
         "storyPoints": 7,
@@ -773,12 +773,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Preserve side-effecting operations (calls, stores)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Removes unreachable basic blocks",
-          "\u2713 Removes unused local variables",
-          "\u2713 Doesn't remove volatile loads/stores",
-          "\u2713 Doesn't remove function calls (may have side effects)",
-          "\u2713 Verify correctness: output program behaves identically",
-          "\u2713 Measure: % of instructions eliminated"
+          "Removes unreachable basic blocks",
+          "Removes unused local variables",
+          "Doesn't remove volatile loads/stores",
+          "Doesn't remove function calls (may have side effects)",
+          "Verify correctness: output program behaves identically",
+          "Measure: % of instructions eliminated"
         ],
         "technicalHints": [
           "Mark reachable blocks starting from entry block (DFS/BFS)",
@@ -800,7 +800,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
     "tasks": [
       {
         "day": 23,
-        "id": "SYS-023",
+        "id": "SYS",
         "title": "AUTOSAR Adaptive SOME/IP-SD Parser",
         "priority": "High",
         "storyPoints": 8,
@@ -813,12 +813,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Basic service registry (offered services)"
         ],
         "acceptanceCriteria": [
-          "\u2713 Parses SOME/IP header from byte stream",
-          "\u2713 Extracts SD entries (Find/Offer/Subscribe)",
-          "\u2713 Parses endpoint options (IP + port)",
-          "\u2713 Can build OfferService message",
-          "\u2713 Maintains registry of available services",
-          "\u2713 Example: service provider sends Offer, client sends Find"
+          "Parses SOME/IP header from byte stream",
+          "Extracts SD entries (Find/Offer/Subscribe)",
+          "Parses endpoint options (IP + port)",
+          "Can build OfferService message",
+          "Maintains registry of available services",
+          "Example: service provider sends Offer, client sends Find"
         ],
         "technicalHints": [
           "SOME/IP header: 16 bytes (Service ID, Method ID, Length, Client ID, etc.)",
@@ -833,7 +833,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 24,
-        "id": "SYS-024",
+        "id": "SYS",
         "title": "Worst-Case Execution Time Certifiable Allocator",
         "priority": "High",
         "storyPoints": 7,
@@ -846,12 +846,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Documentation for timing analysis"
         ],
         "acceptanceCriteria": [
-          "\u2713 Supports sizes up to 256 bytes via pools",
-          "\u2713 Larger allocations return nullptr or use fallback",
-          "\u2713 No loops with data-dependent iteration count",
-          "\u2713 Timing measurements: min, max, average, jitter",
-          "\u2713 Max allocation time < 200ns on reference hardware",
-          "\u2713 Documentation suitable for WCET analysis tool"
+          "Supports sizes up to 256 bytes via pools",
+          "Larger allocations return nullptr or use fallback",
+          "No loops with data-dependent iteration count",
+          "Timing measurements: min, max, average, jitter",
+          "Max allocation time < 200ns on reference hardware",
+          "Documentation suitable for WCET analysis tool"
         ],
         "technicalHints": [
           "5 separate pool allocators (from Day 4)",
@@ -867,7 +867,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 25,
-        "id": "SYS-025",
+        "id": "SYS",
         "title": "CAN Transport Protocol for Diagnostic Messages",
         "priority": "High",
         "storyPoints": 8,
@@ -880,12 +880,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Timeout handling"
         ],
         "acceptanceCriteria": [
-          "\u2713 Sends single-frame messages directly",
-          "\u2713 Segments large messages into FF + multiple CFs",
-          "\u2713 Receiver reassembles multi-frame messages",
-          "\u2713 Flow control: wait, continue, overflow",
-          "\u2713 Handles timeouts (N_As, N_Bs, N_Cr)",
-          "\u2713 Example: send 200-byte diagnostic request/response"
+          "Sends single-frame messages directly",
+          "Segments large messages into FF + multiple CFs",
+          "Receiver reassembles multi-frame messages",
+          "Flow control: wait, continue, overflow",
+          "Handles timeouts (N_As, N_Bs, N_Cr)",
+          "Example: send 200-byte diagnostic request/response"
         ],
         "technicalHints": [
           "CAN frame: [N_PCI | data...]",
@@ -901,7 +901,7 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
       },
       {
         "day": 26,
-        "id": "SYS-026",
+        "id": "SYS",
         "title": "AUTOSAR E2E (End-to-End) Protection Profile",
         "priority": "High",
         "storyPoints": 7,
@@ -914,12 +914,12 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
           "Detect: lost messages, repeated messages, corrupted data"
         ],
         "acceptanceCriteria": [
-          "\u2713 Protect() adds E2E header to message",
-          "\u2713 Check() validates E2E header",
-          "\u2713 Detects corrupted data (bit flip)",
-          "\u2713 Detects lost messages (counter gap)",
-          "\u2713 Detects repeated messages (duplicate counter)",
-          "\u2713 Example: simulate communication errors and detect them"
+          "Protect() adds E2E header to message",
+          "Check() validates E2E header",
+          "Detects corrupted data (bit flip)",
+          "Detects lost messages (counter gap)",
+          "Detects repeated messages (duplicate counter)",
+          "Example: simulate communication errors and detect them"
         ],
         "technicalHints": [
           "E2E Profile 1: Counter (4 bits) + CRC (8 bits) + DataID",
@@ -932,6 +932,329 @@ export const ROADMAP_DATA: RoadmapPhase[] = [
         ],
         "estimatedTime": "7-8 hours",
         "domainConnection": "AUTOSAR E2E - Safety mechanism for ASIL-rated communication"
+      }
+    ]
+  },
+  {
+    "phase": 8,
+    "title": "CAPSTONE PROJECTS",
+    "description": "Integrate everything into complete systems",
+    "tasks": [
+      {
+        "day": "27-28",
+        "id": "SYS",
+        "title": "Integrated AUTOSAR Classic Components",
+        "priority": "Very High",
+        "storyPoints": 13,
+        "description": "Integrate previous components into a mini AUTOSAR Classic platform with: - OS task scheduling with runnables - RTE port communication - COM layer with CAN sending/receiving - Mode management - DEM for fault storage  This demonstrates understanding of complete AUTOSAR architecture.",
+        "requirements": [
+          "3 Software Components (SWC) communicating via RTE",
+          "OS scheduler executing runnables at different rates",
+          "CAN messages sent/received via COM",
+          "Mode switches triggering component activation",
+          "Fault reporting to DEM"
+        ],
+        "acceptanceCriteria": [
+          "Define 3 SWCs with sender/receiver ports",
+          "RTE connects ports between SWCs",
+          "OS schedules runnables: 10ms, 20ms, 100ms",
+          "COM sends CAN message every 100ms with data from SWC",
+          "Mode manager controls which SWCs are active",
+          "DEM stores faults reported by SWCs",
+          "Runs simulation for 10 seconds, logs all activity"
+        ],
+        "technicalHints": [
+          "Reuse: Day 15 RTE, Day 16 Scheduler, Day 12 CAN, Day 17 Mode, Day 18 DEM",
+          "SWC examples: Sensor reader, Controller, Actuator",
+          "Main loop: advance time, schedule tasks, process CAN, check modes",
+          "Configuration: define which runnable in which task, port connections",
+          "Output: execution trace showing component interactions"
+        ],
+        "estimatedTime": "12-16 hours (2 days)",
+        "domainConnection": "AUTOSAR Classic - Complete ECU software architecture"
+      },
+      {
+        "day": "29-30",
+        "id": "SYS",
+        "title": "MISRA C++ Rule Checker using Clang",
+        "priority": "Very High",
+        "storyPoints": 13,
+        "description": "Build a static analysis tool that checks several MISRA C++ rules using  Clang's AST. MISRA C++ is mandatory for automotive safety-critical code.",
+        "requirements": [
+          "Check at least 5 MISRA rules (choose from categories)",
+          "Use Clang AST visitor pattern",
+          "Report violations with: rule number, severity, location",
+          "Generate HTML report",
+          "Run on your previous projects",
+          "SUGGESTED RULES:",
+          "Rule 5-0-3: Casts shall not remove const",
+          "Rule 6-4-5: Unconditional throw must not appear in iteration statement",
+          "Rule 15-5-1: Throw by value, catch by reference",
+          "Rule 18-4-1: Don't use time functions from <ctime>",
+          "Rule 8-5-2: Braces shall be used for if/else/while bodies"
+        ],
+        "acceptanceCriteria": [
+          "Detects violations of 5+ MISRA rules",
+          "Reports: file, line, column, rule number, description",
+          "Low false positive rate (< 10% on test code)",
+          "Processes all .cpp files in directory",
+          "Generates readable HTML report",
+          "Example: analyze automotive codebase"
+        ],
+        "technicalHints": [
+          "Extend Day 19 AST visitor",
+          "Add VisitCastExpr, VisitThrowExpr, VisitCatchStmt, etc.",
+          "Check AST node properties for rule violations",
+          "Store violations in vector<Violation>",
+          "Generate HTML: iterate violations, format as table",
+          "Use clang::SourceLocation for file/line info",
+          "Consider clang-tidy architecture for reference"
+        ],
+        "estimatedTime": "12-16 hours (2 days)",
+        "domainConnection": "MISRA C++/Safety - Mandatory static analysis for automotive code certification"
+      }
+    ]
+  },
+  {
+    "phase": 9,
+    "title": "CAMPAGNARO COURSE & DESERT PREP",
+    "description": "Focused tasks for C++ multithreading, mutex, sockets, and DESERT/Hydromea integration",
+    "tasks": [
+      {
+        "day": "Extra-01",
+        "id": "CAMP",
+        "title": "Robust TCP Echo Server and Client (POSIX Sockets)",
+        "priority": "High",
+        "storyPoints": 5,
+        "description": "Implement a simple but production-style TCP echo server and client using POSIX sockets on Linux. Focus on correct error handling, clean shutdown, and separation between networking and application logic.",
+        "requirements": [
+          "TCP server listening on configurable IP/port",
+          "Accept multiple clients sequentially (no threads yet)",
+          "For each connected client: read data, echo back, handle partial reads/writes",
+          "Clean shutdown on SIGINT (Ctrl+C)",
+          "Proper error checking and logging"
+        ],
+        "acceptanceCriteria": [
+          "Server and client binaries build and run on Ubuntu",
+          "Client can send arbitrary lines and receive exact echo",
+          "Handles partial reads/writes (no assumptions about recv()/send() sizes)",
+          "Handles client disconnects gracefully (no crashes)",
+          "On SIGINT, server stops accepting new connections and exits cleanly",
+          "Clear separation between socket API wrapper and main logic"
+        ],
+        "technicalHints": [
+          "Use ::socket, ::bind, ::listen, ::accept, ::connect, ::recv, ::send, ::close",
+          "Implement read_exact() and write_all() helper functions",
+          "Use getaddrinfo() for flexible address resolution",
+          "Use sigaction() to catch SIGINT and set a shutdown flag"
+        ],
+        "estimatedTime": "4-5 hours",
+        "domainConnection": "Campagnaro course / sockets - Foundation for all networked components and DESERT-side TCP/UDP interfacing"
+      },
+      {
+        "day": "Extra-02",
+        "id": "CAMP",
+        "title": "Thread-Pooled TCP Server with Graceful Shutdown",
+        "priority": "High",
+        "storyPoints": 6,
+        "description": "Extend the TCP echo server to handle multiple clients concurrently using a thread pool. Focus on safe use of std::thread, std::mutex, and condition variables, with a clean shutdown protocol.",
+        "requirements": [
+          "Main thread accepts connections and enqueues them",
+          "Fixed-size worker thread pool handles client sessions",
+          "Shared queue protected with mutex + condition variable",
+          "Graceful shutdown: stop accepting, drain queue, join workers",
+          "Structured logging of connection lifecycle"
+        ],
+        "acceptanceCriteria": [
+          "Can serve multiple clients in parallel (e.g., 10 telnet sessions)",
+          "No data races (ThreadSanitizer clean)",
+          "No resource leaks (sockets, threads) on shutdown",
+          "Shutdown sequence is deterministic and documented",
+          "Worker threads exit reliably even under load"
+        ],
+        "technicalHints": [
+          "Reuse your thread pool design from SYS-006 / SYS-011 if available",
+          "Connection job = lambda owning the client socket fd",
+          "Use a stop_flag + notify_all() to wake workers during shutdown",
+          "Carefully define lifecycle: accept loop, enqueue, worker loop, stop"
+        ],
+        "estimatedTime": "5-7 hours",
+        "domainConnection": "Campagnaro course / multithreading+mutex - Mirrors the kind of concurrent socket handling needed in DESERT device adapters"
+      },
+      {
+        "day": "Extra-03",
+        "id": "CAMP",
+        "title": "Simple Reliable Protocol over UDP (Framing + ACK/Retry)",
+        "priority": "High",
+        "storyPoints": 7,
+        "description": "Build a small reliability layer over UDP: add message framing, sequence numbers, ACKs, and retransmissions. This models how a modem or underwater link might be abstracted in software.",
+        "requirements": [
+          "Client sends numbered messages to server over UDP",
+          "Server sends ACKs with received sequence numbers",
+          "Client retransmits if ACK not received within timeout",
+          "Detect and log loss, duplicates, and reordering",
+          "Optional: sliding window instead of stop-and-wait"
+        ],
+        "acceptanceCriteria": [
+          "Messages delivered reliably under simulated packet loss (use iptables/netem or drop randomly in code)",
+          "No infinite retransmission loops (max retry limit)",
+          "Proper handling of duplicate ACKs and late packets",
+          "Clear on-wire frame format documented (header + payload)",
+          "Statistics at end: sent, retransmitted, lost, delivered"
+        ],
+        "technicalHints": [
+          "UDP: ::socket(AF_INET, SOCK_DGRAM, 0), ::sendto, ::recvfrom",
+          "Header struct: seq_num (uint32_t), type (DATA/ACK), length, CRC (optional)",
+          "Use std::chrono for timeouts and steady_clock for reliability",
+          "Consider using select()/poll() for timeout-based waiting"
+        ],
+        "estimatedTime": "6-8 hours",
+        "domainConnection": "Campagnaro course / sockets + DESERT - Models the kind of reliability logic used between DESERT stack and real modems"
+      },
+      {
+        "day": "Extra-04",
+        "id": "CAMP",
+        "title": "DESERT Underwater Framework: Build, Run, and Map the Architecture",
+        "priority": "High",
+        "storyPoints": 5,
+        "description": "Set up the DESERT Underwater framework on Ubuntu, build it, and run at least two example scenarios. Produce a concise architecture note focusing on where a Hydromea modem interface would fit.",
+        "requirements": [
+          "Clone DESERT_Underwater and its documented dependencies",
+          "Build on your Ubuntu environment (VM or remote)",
+          "Run at least 2 official examples/tutorial scenarios successfully",
+          "Identify where applications, modems, and channels are modeled",
+          "Write a short ARCHITECTURE.md summarizing layers and extension points"
+        ],
+        "acceptanceCriteria": [
+          "DESERT builds without local hacks (or hacks are well-documented)",
+          "Two scenarios run and produce expected logs/results",
+          "Clear diagram: application layer \u2192 protocol stack \u2192 physical/modem abstraction",
+          "List of candidate files/classes for adding a new \"Hydromea\" interface",
+          "Notes on build system (Make/CMake/ns-2 integration) and runtime configuration"
+        ],
+        "technicalHints": [
+          "Follow official DESERT documentation and installation guide",
+          "Pay attention to ns-miracle/ns-2 dependencies and paths",
+          "Use dot/graphviz or ASCII diagrams for architecture mapping",
+          "Capture commands you run in a shell script or notes for reproducibility"
+        ],
+        "estimatedTime": "5-7 hours",
+        "domainConnection": "DESERT / Campagnaro research - Direct preparation for understanding where to plug in a real modem interface"
+      },
+      {
+        "day": "Extra-05",
+        "id": "CAMP",
+        "title": "Hydromea-Style Modem Adapter Interface (Abstraction Only)",
+        "priority": "High",
+        "storyPoints": 7,
+        "description": "Design and implement a C++ interface and mock implementation that represents a generic underwater modem, with operations like connect, send_frame, receive_frame, and link status. Focus on clean API boundaries and threading model.",
+        "requirements": [
+          "Define abstract ModemInterface class with pure virtual methods",
+          "Provide a MockModem implementation that simulates latency, loss, and bit errors",
+          "Thread-safe send/receive with internal worker thread handling I/O or simulation",
+          "Callbacks or observer mechanism for received frames and status changes",
+          "Configurable parameters: latency, loss rate, bandwidth"
+        ],
+        "acceptanceCriteria": [
+          "Clear header-only interface (ModemInterface.hpp) documenting responsibilities",
+          "Mock implementation can be used from a single-threaded test program safely",
+          "Thread-safe internals (no data races under stress test)",
+          "Simulation parameters demonstrably affect delay/loss behavior",
+          "Easily pluggable into a DESERT-like application module in the future"
+        ],
+        "technicalHints": [
+          "Use std::thread + std::mutex + std::condition_variable internally",
+          "Consider a background thread that pops from a queue and \"delivers\" frames after a delay",
+          "Use std::function callbacks for on_frame_received and on_status_changed",
+          "This task is about API and concurrency design, not real hardware I/O yet"
+        ],
+        "estimatedTime": "6-8 hours",
+        "domainConnection": "DESERT / Hydromea project - Direct precursor to a real Hydromea LUMA-X adapter, isolating modem specifics behind a clean interface"
+      },
+      {
+        "day": "Extra-06",
+        "id": "CAMP",
+        "title": "TCP/UDP Socket-Based Modem Adapter Prototype",
+        "priority": "Very High",
+        "storyPoints": 9,
+        "description": "Implement a concrete ModemInterface that talks over TCP or UDP sockets to a remote endpoint (simulating or replacing a real Hydromea modem process). Focus on robust multithreading and error handling.",
+        "requirements": [
+          "Implement SocketModemAdapter : ModemInterface",
+          "Internal RX/TX threads for reading/writing from/to the socket",
+          "Frame-based protocol on top of TCP or UDP (reuse EXTRA-03 framing ideas)",
+          "Reconnect logic on connection loss with backoff",
+          "Clean shutdown that terminates threads and closes sockets safely"
+        ],
+        "acceptanceCriteria": [
+          "Adapter can connect to a simple test peer and exchange framed messages",
+          "RX/TX threads terminate cleanly on shutdown (no hangs, no leaks)",
+          "Handles connection drops and reconnection attempts gracefully",
+          "High-load test (many frames) passes TSAN/ASAN checks",
+          "Ready to be integrated into a DESERT application as a \"real\" modem backend"
+        ],
+        "technicalHints": [
+          "Compose this from CAMP-001/002 (server/client) and EXTRA-03 (framing)",
+          "Careful with lifetime: ensure threads don't access destroyed objects",
+          "Use an explicit state machine for connection state (CONNECTED, RECONNECTING, STOPPING)",
+          "Add extensive logging with timestamps and thread IDs"
+        ],
+        "estimatedTime": "8-12 hours",
+        "domainConnection": "DESERT / Hydromea project - Prototype of the actual interfacing logic the professor described (multithreading + sockets)"
+      },
+      {
+        "day": "Extra-07",
+        "id": "CAMP",
+        "title": "Simulated Exam Task: Concurrency + Sockets Under Time Pressure",
+        "priority": "High",
+        "storyPoints": 6,
+        "description": "Create a mini \"exam simulator\" for yourself: set a 3\u20134 hour timer and implement a small program combining threads, mutexes, and sockets, following a short written specification. Treat it as if it were the actual exam.",
+        "requirements": [
+          "Write your own 1-page problem statement (e.g., multi-client chat server with message history)",
+          "Implement from scratch in a clean new repo, no copy-paste from old code",
+          "Use at least: std::thread, std::mutex/std::lock_guard, condition_variable, and TCP sockets",
+          "At the end, write a short self-review: what went well, what failed under time pressure"
+        ],
+        "acceptanceCriteria": [
+          "You respect a hard time limit (3\u20134 hours max)",
+          "The resulting program compiles and runs, even if not perfectly polished",
+          "You identify at least 3 concrete weaknesses or patterns to improve before the real exam",
+          "You push the code and the self-review to Git with a clear tag (e.g., exam-sim-01)"
+        ],
+        "technicalHints": [
+          "Simulate the real exam conditions: no AI, only man pages, cppreference, and your notes",
+          "Keep the spec small but non-trivial (one synchronization bug is enough to teach you a lot)",
+          "Use this to tune your personal exam strategy (design first vs. code first)"
+        ],
+        "estimatedTime": "4 hours (single session)",
+        "domainConnection": "Campagnaro exam prep - Trains the exact combination of skills (C++, threads, sockets, discipline) needed for the oral+programming exam"
+      },
+      {
+        "day": "Extra-08",
+        "id": "CAMP",
+        "title": "DESERT Scenario Design for Hydromea LUMA-X Integration (Design Document)",
+        "priority": "Medium",
+        "storyPoints": 4,
+        "description": "Without writing code yet, design a DESERT simulation scenario that uses your ModemInterface/SocketModemAdapter concept to represent a Hydromea LUMA-X UV optical modem link. Produce a short design document only.",
+        "requirements": [
+          "Identify which DESERT modules/classes would interact with the modem adapter",
+          "Define the configuration options (IP/port, latency, data rate, loss model)",
+          "Describe how control messages (init, status, errors) would be modeled",
+          "Sketch message flows: application \u2192 DESERT stack \u2192 modem adapter \u2192 remote modem",
+          "Outline a test plan: what experiments/metrics to run once implemented"
+        ],
+        "acceptanceCriteria": [
+          "2\u20133 page DESIGN.md with diagrams and clear text",
+          "Explicit mapping from DESERT building blocks to your adapter interface",
+          "At least 3 example experiments (throughput, latency under loss, reconnect behavior)",
+          "Ready to discuss with the professor as a concrete proposal for the 2 CFU project"
+        ],
+        "technicalHints": [
+          "Reuse knowledge from EXTRA-04 (DESERT architecture)",
+          "Read the Hydromea LUMA-X manual to understand capabilities and constraints",
+          "Focus on clarity and feasibility, not implementation yet"
+        ],
+        "estimatedTime": "3-4 hours",
+        "domainConnection": "DESERT / Hydromea project - Bridges your self-study work with a concrete, discussable research activity proposal"
       }
     ]
   }
