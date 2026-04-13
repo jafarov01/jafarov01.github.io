@@ -1,521 +1,390 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Makhlug Jafarov - Software Developer</title>
-	<script src="https://cdn.tailwindcss.com"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-	<style>
-		html {
-			scroll-behavior: smooth;
-		}
-
-		.primary-blue {
-			color: #1e3a8a;
-		}
-
-		.bg-primary-blue {
-			background-color: #1e3a8a;
-		}
-
-		.accent-yellow {
-			color: #f59e0b;
-		}
-
-		.bg-accent-yellow {
-			background-color: #f59e0b;
-		}
-
-		.border-accent-yellow {
-			border-color: #f59e0b;
-		}
-
-		.fade-in-up {
-			animation: fadeInUp 1s ease-out;
-		}
-
-		@keyframes fadeInUp {
-			from {
-				opacity: 0;
-				transform: translateY(20px);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		.section-title {
-			@apply text-3xl md:text-4xl font-bold text-center mb-12;
-			color: #1e40af;
-		}
-
-		.section-title .highlight {
-			color: #f59e0b;
-		}
-
-		.card {
-			@apply bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 flex flex-col;
-		}
-
-		.card-content {
-			@apply p-6 flex-grow;
-		}
-
-		.nav-link {
-			@apply px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300;
-		}
-
-		.nav-link:hover {
-			background-color: #f59e0b;
-			color: #1e3a8a;
-		}
-
-		.btn-primary {
-			@apply bg-amber-500 text-blue-900 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-amber-600 transition-all duration-300 transform hover:scale-105;
-		}
-
-		.btn-secondary {
-			@apply bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-800 transition-all duration-300 transform hover:scale-105;
-		}
-
-		.project-link {
-			@apply inline-block mt-auto bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-blue-700 transition-colors;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Makhlug Jafarov | Software Engineer</title>
+    <meta name="description" content="Portfolio of Makhlug Jafarov, Software Engineer specializing in backend architecture, AI-driven workflows, and robust system design.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
 </head>
+<body>
+    <div class="ambient-background">
+        <div class="grid-overlay"></div>
+        <div class="glow-blob blob-1"></div>
+        <div class="glow-blob blob-2"></div>
+        <div class="glow-blob blob-3"></div>
+    </div>
 
-<body class="bg-slate-50 font-sans leading-normal tracking-normal">
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="brand-logo">
+                <i data-feather="terminal" class="logo-icon"></i>
+                Makhlug_J
+            </a>
+            <ul class="nav-menu">
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="#experience" class="nav-link">Experience</a></li>
+                <li><a href="#projects" class="nav-link">Projects</a></li>
+                <li><a href="#skills" class="nav-link">Skills</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <li><a href="Makhlug_Jafarov_CV.pdf" target="_blank" class="nav-cta">Resume <i data-feather="download" class="sm-icon"></i></a></li>
+            </ul>
+            <div class="hamburger">
+                <i data-feather="menu"></i>
+            </div>
+        </div>
+    </nav>
 
-	<nav class="bg-blue-800 text-white p-4 sticky top-0 z-50 shadow-lg">
-		<div class="container mx-auto flex justify-between items-center">
-			<a href="#" class="text-2xl font-bold text-amber-400 hover:text-amber-300 transition-colors">Makhlug
-				Jafarov</a>
-			<button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
-				<i class="fas fa-bars text-2xl"></i>
-			</button>
-			<div id="mobile-menu" class="hidden md:flex md:items-center space-x-1">
-				<a href="#about" class="nav-link">About</a>
-				<a href="#skills" class="nav-link">Skills</a>
-				<a href="#portfolio" class="nav-link">Portfolio</a>
-				<a href="#academics" class="nav-link">Academics</a>
-				<a href="#favourites" class="nav-link">Favourites</a>
-				<a href="#contact" class="nav-link">Contact</a>
-				<a href="/mex-os/"
-					class="nav-link bg-amber-500 text-blue-900 hover:bg-amber-400 hover:text-blue-900 ml-4 font-bold">MEX
-					OS</a>
-			</div>
-		</div>
-	</nav>
-	<div id="full-screen-menu"
-		class="fixed inset-0 bg-blue-800 bg-opacity-95 z-40 hidden flex-col items-center justify-center space-y-6 md:hidden">
-		<a href="#about" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">About</a>
-		<a href="#skills" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">Skills</a>
-		<a href="#portfolio" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">Portfolio</a>
-		<a href="#academics" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">Academics</a>
-		<a href="#favourites"
-			class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">Favourites</a>
-		<a href="#contact" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item">Contact</a>
-		<a href="/mex-os/" class="text-white text-2xl hover:text-amber-400 transition-colors menu-item font-bold">MEX
-			OS</a>
-		<button id="close-menu-button" class="absolute top-5 right-5 text-white text-3xl">&times;</button>
-	</div>
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section id="hero" class="hero-section reveal">
+            <div class="hero-content">
+                <div class="system-status">
+                    <span class="pulse-dot"></span> System Online_
+                </div>
+                <h1 class="hero-title">
+                    Hi, I'm <span class="gradient-text">Makhlug Jafarov</span>
+                </h1>
+                <h2 class="hero-subtitle">
+                    <span class="typing-text"></span><span class="cursor">_</span>
+                </h2>
+                <p class="hero-desc">
+                    I specialize in backend architecture, structured system design, and turning logic frameworks into robust deployments. Contributed to automotive simulation infrastructure at Huxelerate, and currently pursuing my MSc in Computer Science at the University of Padova.
+                </p>
+                <div class="hero-actions">
+                    <a href="#projects" class="btn btn-primary">View Architectures <i data-feather="arrow-right"></i></a>
+                    <div class="social-links">
+                        <a href="https://github.com/jafarov01" target="_blank" aria-label="GitHub"><i data-feather="github"></i></a>
+                        <a href="https://www.linkedin.com/in/jafarov01/" target="_blank" aria-label="LinkedIn"><i data-feather="linkedin"></i></a>
+                        <a href="mailto:makhlugjafarov@gmail.com" aria-label="Email"><i data-feather="mail"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="window-controls">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="window-title">System.cpp</div>
+                    </div>
+                    <div class="window-body">
+                        <pre><code><span class="keyword">class</span> <span class="entity">Engineer</span> {
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> <span class="function">optimize</span>();
+    <span class="keyword">void</span> <span class="function">innovate</span>();
+<span class="keyword">private</span>:
+    std::string focus = <span class="string">"Backend Infra"</span>;
+    <span class="keyword">bool</span> AI_driven = <span class="constant">true</span>;
+};
 
-	<header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white py-20 md:py-32">
-		<div class="container mx-auto text-center px-4">
-			<h1 class="text-4xl md:text-6xl font-bold mb-4 fade-in-up">Makhlug Jafarov</h1>
-			<p class="text-xl md:text-3xl text-amber-300 mb-8 fade-in-up" style="animation-delay: 0.2s;">Software
-				Developer</p>
-			<p class="text-lg md:text-xl max-w-2xl mx-auto mb-10 fade-in-up" style="animation-delay: 0.4s;">Passionate
-				about backend development, modernizing systems, and building innovative solutions. Eager to leverage my
-				C++ and Java/Spring Boot experience to contribute to impactful projects.</p>
-			<a href="#portfolio" class="btn-primary fade-in-up" style="animation-delay: 0.6s;">View My Work</a>
-		</div>
-	</header>
+<span class="comment">// Executing routines...</span>
+<span class="keyword">int</span> <span class="function">main</span>() {
+    Engineer me;
+    <span class="keyword">while</span> (<span class="constant">true</span>) {
+        me.optimize();
+        me.innovate();
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-	<main>
-		<section id="about" class="py-16 md:py-24 bg-white">
-			<div class="container mx-auto px-4">
-				<h2 class="section-title">About <span class="highlight">Me</span></h2>
-				<div class="flex flex-col md:flex-row items-center md:space-x-12">
-					<div class="md:w-1/3 mb-8 md:mb-0">
-						<img src="photo.jpeg" alt="Makhlug Jafarov"
-							class="rounded-full shadow-2xl mx-auto border-4 border-amber-400 w-64 h-64 md:w-80 md:h-80 object-cover" />
-					</div>
-					<div class="md:w-2/3 text-slate-700 space-y-4 text-lg">
-						<p>Hello! I'm Makhlug Jafarov, a Software Developer based in Budapest, Hungary. As I approach my
-							BSc in Computer Science graduation in July 2025, I'm excited to apply my backend development
-							experience to new challenges.</p>
-						<p>My journey includes nearly two years at Ericsson, where I dived deep into C++, contributing
-							to the modernization of critical telecom systems and focusing on enhancing code quality
-							through refactoring with STL and design patterns. This experience, coupled with my thesis
-							project involving a full-stack Java/Spring Boot backend, has provided me with a
-							comprehensive understanding of the development lifecycle.</p>
-						<p>Working in Agile (Scrum) teams has honed my problem-solving skills and a proactive,
-							results-oriented mindset. I'm keen to continue learning, grow my expertise in new backend
-							technologies, and contribute to innovative projects.</p>
-						<p><strong class="text-blue-700">Location:</strong> Budapest, Hungary</p>
-						<p><strong class="text-blue-700">Languages:</strong> English (Fluent), Turkish (Fluent),
-							Azerbaijani (Native)</p>
-					</div>
-				</div>
-			</div>
-		</section>
+        <!-- Experience Section -->
+        <section id="experience" class="section reveal">
+            <div class="section-header">
+                <h2><span class="section-num">01.</span> Execution _Timeline</h2>
+                <div class="section-line"></div>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content card-glass">
+                        <span class="timeline-date">Jul 2025 – Mar 2026</span>
+                        <h3 class="timeline-title">Software Engineer</h3>
+                        <h4 class="timeline-company">Huxelerate <span class="badge">Milan, Italy (Remote)</span></h4>
+                        <ul class="timeline-list">
+                            <li>Engineered Python automation scripts to parse and analyze complex ARXML configurations for automotive simulation tools.</li>
+                            <li>Implemented and optimized RESTful API endpoints using Python Flask to enhance core platform functionality.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content card-glass">
+                        <span class="timeline-date">Dec 2022 – Dec 2023</span>
+                        <h3 class="timeline-title">C++ Developer</h3>
+                        <h4 class="timeline-company">Ericsson <span class="badge">Budapest, Hungary</span></h4>
+                        <ul class="timeline-list">
+                            <li>Modernized legacy C++ modules in MTAS Media Framework using modern STL functions and design patterns.</li>
+                            <li>Performed deep troubleshooting via Wireshark for protocol analysis, fixing critical stability issues.</li>
+                            <li>Developed automated function/system tests via Jenkins. (Promoted from Intern to Full-time after 10 months).</li>
+                        </ul>
+                    </div>
+                </div>
 
-		<section id="skills" class="py-16 md:py-24 bg-slate-100">
-			<div class="container mx-auto px-4">
-				<h2 class="section-title">Skills & <span class="highlight">Services</span></h2>
-				<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-					<div class="card">
-						<div class="bg-blue-700 p-4 text-center">
-							<i class="fas fa-cogs text-3xl text-amber-400"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-xl font-semibold text-blue-700 mb-3">Backend Development</h3>
-							<ul class="list-disc list-inside text-slate-600 space-y-1">
-								<li>Java, Spring Boot</li>
-								<li>C++, STL</li>
-								<li>Python, PHP</li>
-								<li>API Design (RESTful, WebSockets)</li>
-								<li>Database Management (PostgreSQL, MySQL, Oracle SQL, Firebase Firestore)</li>
-							</ul>
-						</div>
-					</div>
-					<div class="card">
-						<div class="bg-blue-700 p-4 text-center">
-							<i class="fas fa-tools text-3xl text-amber-400"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-xl font-semibold text-blue-700 mb-3">DevOps & Tools</h3>
-							<ul class="list-disc list-inside text-slate-600 space-y-1">
-								<li>Git, GitHub, Gerrit</li>
-								<li>Jenkins (CI/CD)</li>
-								<li>Docker (Foundational)</li>
-								<li>Kubernetes (Foundational)</li>
-								<li>Jira, Wireshark, Tiger</li>
-							</ul>
-						</div>
-					</div>
-					<div class="card">
-						<div class="bg-blue-700 p-4 text-center">
-							<i class="fas fa-lightbulb text-3xl text-amber-400"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-xl font-semibold text-blue-700 mb-3">Methodologies & Concepts</h3>
-							<ul class="list-disc list-inside text-slate-600 space-y-1">
-								<li>Agile (Scrum)</li>
-								<li>Object-Oriented Programming (OOP)</li>
-								<li>Design Patterns</li>
-								<li>CI/CD Principles</li>
-								<li>Test-Driven Development (TDD - Foundational)</li>
-								<li>System Modernization</li>
-							</ul>
-						</div>
-					</div>
-					<div class="card">
-						<div class="bg-blue-700 p-4 text-center">
-							<i class="fas fa-desktop text-3xl text-amber-400"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-xl font-semibold text-blue-700 mb-3">Frontend Familiarity</h3>
-							<ul class="list-disc list-inside text-slate-600 space-y-1">
-								<li>SwiftUI (iOS Development)</li>
-								<li>JavaScript</li>
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content card-glass">
+                        <span class="timeline-date">Jan 2023 – Dec 2023</span>
+                        <h3 class="timeline-title">Mobility Support Specialist</h3>
+                        <h4 class="timeline-company">Sakon <span class="badge">United States (Remote)</span></h4>
+                        <ul class="timeline-list">
+                            <li>Managed multi-channel technical support for Fortune 500 clients using Jira and TEM ticketing systems.</li>
+                        </ul>
+                    </div>
+                </div>
 
-		<section id="portfolio" class="py-16 md:py-24 bg-white">
-			<div class="container mx-auto px-4">
-				<h2 class="section-title">My <span class="highlight">Portfolio</span></h2>
-				<div class="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-10">
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fas fa-mobile-alt text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Servx App (Thesis Project)</h3>
-							<p class="text-slate-600 mb-4">Designed and built the entire backend for an iOS application
-								from scratch. Engineered a robust and scalable system using Java, Spring Boot,
-								PostgreSQL, and WebSockets. Created RESTful APIs for seamless frontend-backend
-								communication and effective data management. Also developed the native iOS frontend
-								using SwiftUI.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Java</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Spring
-									Boot</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">PostgreSQL</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">WebSockets</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">SwiftUI</span>
-							</div>
-							<a href="https://github.com/jafarov01/ServxProduction" target="_blank"
-								class="project-link">View on GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content card-glass">
+                        <span class="timeline-date">Nov 2022 – Feb 2023</span>
+                        <h3 class="timeline-title">Backend Developer</h3>
+                        <h4 class="timeline-company">Audivisa GmbH <span class="badge">Germany (Remote)</span></h4>
+                        <ul class="timeline-list">
+                            <li>Developed backend infrastructure for DiGlu School Management System using PHP and MySQL.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fab fa-cuttlefish text-6xl text-amber-300"></i> <i
-								class="fas fa-plus text-3xl text-amber-300 mx-2"></i> <i
-								class="fas fa-plus text-3xl text-amber-300 mx-2"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Ericsson - C++ System Modernization</h3>
-							<p class="text-slate-600 mb-4">As a C++ Developer on the MTAS Media Framework team, I
-								focused on modernizing key legacy C++ systems. Led refactoring of important modules,
-								incorporating modern STL functions and design patterns (e.g., Proxy). Involved in deep
-								troubleshooting using Wireshark, protocol analysis, and comprehensive testing with
-								Jenkins and Tiger within an Agile (Scrum) environment.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">C++</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">STL</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Design
-									Patterns</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Jenkins</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Agile</span>
-							</div>
-						</div>
-					</div>
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fas fa-code-branch text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Ericsson - C++ Developer Intern</h3>
-							<p class="text-slate-600 mb-4">My internship focused on C++ code refactoring tasks, updating
-								legacy C++ code to modern standards. This hands-on experience was crucial for building
-								foundational skills and led to a full-time C++ Developer role.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">C++</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Refactoring</span>
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Legacy
-									Code</span>
-							</div>
-						</div>
-					</div>
+        <!-- Projects Section -->
+        <section id="projects" class="section reveal">
+            <div class="section-header">
+                <h2><span class="section-num">02.</span> Core Deployments</h2>
+                <div class="section-line"></div>
+            </div>
+            
+            <div class="projects-grid">
+                <!-- Project 1 -->
+                <div class="project-card card-glass">
+                    <div class="project-card-inner">
+                        <div class="project-top">
+                            <i data-feather="cpu" class="project-icon"></i>
+                            <div class="project-links">
+                                <a href="#" aria-label="External Link"><i data-feather="external-link"></i></a>
+                            </div>
+                        </div>
+                        <h3 class="project-title">DİM AI Exam Tutor</h3>
+                        <p class="project-desc">
+                            AI-powered exam prep platform for ~120k candidates. Built a full-stack RAG pipeline heavily leveraging Serverless GCP, Document AI for OCR, and Gemini 1.5 Flash.
+                        </p>
+                        <div class="project-tech">
+                            <span>Python</span>
+                            <span>React</span>
+                            <span>GCP</span>
+                            <span>Vertex AI</span>
+                        </div>
+                    </div>
+                </div>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fas fa-server text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">ServxBackend</h3>
-							<p class="text-slate-600 mb-4">Servx Backend repo with SpringBoot.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Java</span>
-							</div>
-							<a href="https://github.com/jafarov01/ServxBackend" target="_blank"
-								class="project-link">View on GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
+                <!-- Project 2 -->
+                <div class="project-card card-glass">
+                    <div class="project-card-inner">
+                        <div class="project-top">
+                            <i data-feather="bot" class="project-icon"></i>
+                        </div>
+                        <h3 class="project-title">Property Operations Bot</h3>
+                        <p class="project-desc">
+                            Automated Telegram bot interface orchestrating short-term rental logistics. Parses unformatted lists via Gemini AI to PostgreSQL and syncs Slack/Gmail updates.
+                        </p>
+                        <div class="project-tech">
+                            <span>Python</span>
+                            <span>FastAPI</span>
+                            <span>PostgreSQL</span>
+                            <span>Gemini</span>
+                        </div>
+                    </div>
+                </div>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fas fa-ship text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Battle Ship Game</h3>
-							<p class="text-slate-600 mb-4">C plus plus Battle Ship Game Code.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">C++</span>
-							</div>
-							<a href="https://github.com/jafarov01/Battle-Ship-Game-Cpp" target="_blank"
-								class="project-link">View on GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
+                <!-- Project 3 -->
+                <div class="project-card card-glass">
+                    <div class="project-card-inner">
+                        <div class="project-top">
+                            <i data-feather="layout" class="project-icon"></i>
+                        </div>
+                        <h3 class="project-title">ImSolTech Platform</h3>
+                        <p class="project-desc">
+                            Full-stack EdTech gateway with FSM-based conversational AI, functional CRM tracking, Rate Limiting, and Next.js Server Components.
+                        </p>
+                        <div class="project-tech">
+                            <span>Next.js 15</span>
+                            <span>TypeScript</span>
+                            <span>PostgreSQL</span>
+                        </div>
+                    </div>
+                </div>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fas fa-dice text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Capitaly Game</h3>
-							<p class="text-slate-600 mb-4">Capitaly game simulation in Java.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Java</span>
-							</div>
-							<a href="https://github.com/jafarov01/Capitaly-Game" target="_blank"
-								class="project-link">View on GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
+                <!-- Project 4 -->
+                <div class="project-card card-glass">
+                    <div class="project-card-inner">
+                        <div class="project-top">
+                            <i data-feather="globe" class="project-icon"></i>
+                        </div>
+                        <h3 class="project-title">GLDP.az System</h3>
+                        <p class="project-desc">
+                            Multilingual platform for education consulting. i18n routing, SEO optimization, and a role-based admin dashboard integrated with external media CDNs.
+                        </p>
+                        <div class="project-tech">
+                            <span>Next.js</span>
+                            <span>Prisma</span>
+                            <span>Cloudinary</span>
+                        </div>
+                    </div>
+                </div>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="far fa-lightbulb text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">Light Bulb Placement</h3>
-							<p class="text-slate-600 mb-4">Light Bulb Placement Game - JavaScript Project.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">JavaScript</span>
-							</div>
-							<a href="https://github.com/jafarov01/Light-Bulb-Placement" target="_blank"
-								class="project-link">View on GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
+                <!-- Project 5 -->
+                <div class="project-card card-glass">
+                    <div class="project-card-inner">
+                        <div class="project-top">
+                            <i data-feather="smartphone" class="project-icon"></i>
+                            <div class="project-links">
+                                <a href="https://github.com/jafarov01/ServxProduction" aria-label="GitHub"><i data-feather="github"></i></a>
+                            </div>
+                        </div>
+                        <h3 class="project-title">Servx Marketplace</h3>
+                        <p class="project-desc">
+                            Multi-state iOS booking application resolving concurrency updates. Powered by a robust Spring Boot backend employing STOMP/WebSockets.
+                        </p>
+                        <div class="project-tech">
+                            <span>Swift</span>
+                            <span>Java</span>
+                            <span>Spring Boot</span>
+                        </div>
+                    </div>
+                </div>
 
-					<div class="card">
-						<div class="bg-blue-600 h-52 flex items-center justify-center">
-							<i class="fab fa-php text-6xl text-amber-300"></i>
-						</div>
-						<div class="card-content">
-							<h3 class="text-2xl font-bold text-blue-800 mb-3">PoolGram</h3>
-							<p class="text-slate-600 mb-4">PoolGram PHP project.</p>
-							<div class="mb-4">
-								<span
-									class="inline-block bg-amber-200 text-amber-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">PHP</span>
-							</div>
-							<a href="https://github.com/jafarov01/PoolGram" target="_blank" class="project-link">View on
-								GitHub <i class="fab fa-github ml-1"></i></a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+            </div>
+        </section>
 
-		<section id="academics" class="py-16 md:py-24 bg-slate-100">
-			<div class="container mx-auto px-4">
-				<h2 class="section-title">Academic <span class="highlight">Journey</span></h2>
-				<div class="max-w-3xl mx-auto bg-white p-8 md:p-10 rounded-xl shadow-xl">
-					<div class="flex items-center mb-6">
-						<i class="fas fa-graduation-cap text-5xl text-blue-700 mr-6"></i>
-						<div>
-							<h3 class="text-2xl md:text-3xl font-bold text-blue-800">BSc of Computer Science</h3>
-							<p class="text-lg text-slate-600">Eötvös Loránd University - Budapest, Hungary</p>
-							<p class="text-md text-amber-600 font-semibold">September 2021 - July 2025 (Expected)</p>
-						</div>
-					</div>
-					<div class="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-md mb-6 shadow">
-						<p class="font-semibold">Award: Stipendium Hungaricum Scholarship</p>
-						<p class="text-sm">Honored to receive this prestigious scholarship sponsored by the Hungarian
-							Government and the Ministry of Science and Education of Azerbaijan.</p>
-					</div>
-					<div>
-						<h4 class="text-xl font-semibold text-blue-700 mb-2">Thesis Project Highlight:</h4>
-						<p class="text-slate-700">My thesis involved the end-to-end development of the 'Servx'
-							application, encompassing backend architecture with Java/Spring Boot and a native iOS
-							frontend using SwiftUI. This project provided invaluable experience in full-stack
-							development and project management.</p>
-					</div>
-				</div>
-			</div>
-		</section>
+        <!-- Skills Section -->
+        <section id="skills" class="section reveal">
+            <div class="section-header">
+                <h2><span class="section-num">03.</span> System.getCapabilities()</h2>
+                <div class="section-line"></div>
+            </div>
+            <div class="skills-container">
+                <div class="skill-category card-glass">
+                    <div class="skill-header">
+                        <i data-feather="code"></i>
+                        <h3>Runtime Environments</h3>
+                    </div>
+                    <div class="skill-tags">
+                        <span>Python</span>
+                        <span>C++</span>
+                        <span>Java</span>
+                        <span>Swift</span>
+                        <span>TypeScript</span>
+                    </div>
+                </div>
 
-		<section id="favourites" class="py-16 md:py-24 bg-white">
-			<div class="container mx-auto px-4">
-				<h2 class="section-title">My <span class="highlight">Favourites</span></h2>
-				<p class="text-center text-slate-600 mb-10 max-w-xl mx-auto">Beyond coding, here are a few things I
-					enjoy!</p>
-				<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-center">
-					<div class="card p-6">
-						<i class="fas fa-hiking text-5xl text-blue-600 mb-4"></i>
-						<h3 class="text-xl font-semibold text-blue-700 mb-2">Outdoor & Fitness</h3>
-						<p class="text-slate-600">I love staying active by cycling, hitting the gym, and hiking.
-							Exploring the outdoors is always a refreshing experience.</p>
-					</div>
-					<div class="card p-6">
-						<i class="fas fa-laptop-code text-5xl text-blue-600 mb-4"></i>
-						<h3 class="text-xl font-semibold text-blue-700 mb-2">Tech & Learning</h3>
-						<p class="text-slate-600">Passionate about coding, especially with Java & Spring Boot for
-							backends and C++ for system-level tasks. Always keen on learning new technologies.</p>
-					</div>
-					<div class="card p-6">
-						<div class="flex justify-center items-center mb-4 space-x-3">
-							<i class="fas fa-utensils text-5xl text-blue-600"></i>
-							<i class="fab fa-youtube text-5xl text-red-600"></i>
-						</div>
-						<h3 class="text-xl font-semibold text-blue-700 mb-2">Culinary & Hobbies</h3>
-						<p class="text-slate-600">I enjoy trying new cuisines like Plov and traditional Azerbaijani
-							Dolma. I also like to cook, often finding new recipes by watching YouTube videos.</p>
-					</div>
-				</div>
-			</div>
-		</section>
+                <div class="skill-category card-glass">
+                    <div class="skill-header">
+                        <i data-feather="server"></i>
+                        <h3>Architecture & DB</h3>
+                    </div>
+                    <div class="skill-tags">
+                        <span>Spring Boot</span>
+                        <span>FastAPI</span>
+                        <span>PostgreSQL</span>
+                        <span>MySQL</span>
+                        <span>Firestore</span>
+                    </div>
+                </div>
 
-		<section id="contact" class="py-16 md:py-24 bg-gradient-to-br from-blue-800 to-blue-900 text-white">
-			<div class="container mx-auto px-4 text-center">
-				<h2 class="text-3xl md:text-4xl font-bold mb-4">Get In <span class="text-amber-400">Touch</span></h2>
-				<p class="text-lg text-slate-300 mb-10 max-w-xl mx-auto">I'm always open to discussing new projects,
-					creative ideas, or opportunities to be part of something great. Feel free to reach out!</p>
-				<div class="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-10">
-					<a href="mailto:makhlugjafarov@gmail.com"
-						class="flex items-center text-lg hover:text-amber-300 transition-colors">
-						<i class="fas fa-envelope text-2xl text-amber-400 mr-3"></i>
-						makhlugjafarov@gmail.com
-					</a>
-					<a href="https://www.linkedin.com/in/jafarov01/" target="_blank"
-						class="flex items-center text-lg hover:text-amber-300 transition-colors">
-						<i class="fab fa-linkedin text-2xl text-amber-400 mr-3"></i>
-						LinkedIn
-					</a>
-					<a href="https://github.com/jafarov01" target="_blank"
-						class="flex items-center text-lg hover:text-amber-300 transition-colors">
-						<i class="fab fa-github text-2xl text-amber-400 mr-3"></i>
-						GitHub
-					</a>
-				</div>
-				<p class="mt-8 text-slate-300"><i class="fas fa-phone-alt text-amber-400 mr-2"></i> (+36) 20 581-32-96
-				</p>
-			</div>
-		</section>
-	</main>
+                <div class="skill-category card-glass">
+                    <div class="skill-header">
+                        <i data-feather="cloud"></i>
+                        <h3>Cloud & DevOps</h3>
+                    </div>
+                    <div class="skill-tags">
+                        <span>GCP</span>
+                        <span>AWS</span>
+                        <span>Docker</span>
+                        <span>Terraform</span>
+                        <span>Jenkins</span>
+                        <span>CMake</span>
+                    </div>
+                </div>
 
-	<footer class="bg-slate-900 text-slate-400 py-10 text-center">
-		<div class="container mx-auto px-4">
-			<p>&copy; <span id="currentYear"></span> Makhlug Jafarov. All rights reserved.</p>
-			<p class="text-sm mt-2">Designed with <i class="fas fa-heart text-red-500"></i> using Tailwind CSS.</p>
-		</div>
-	</footer>
+                <div class="skill-category card-glass">
+                    <div class="skill-header">
+                        <i data-feather="cpu"></i>
+                        <h3>AI / LLM Tooling</h3>
+                    </div>
+                    <div class="skill-tags">
+                        <span>RAG Pipelines</span>
+                        <span>Google Gemini</span>
+                        <span>Vertex AI</span>
+                        <span>Agentic Workflows</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-	<script>
-		const mobileMenuButton = document.getElementById('mobile-menu-button');
-		const fullScreenMenu = document.getElementById('full-screen-menu');
-		const closeMenuButton = document.getElementById('close-menu-button');
-		const menuItems = fullScreenMenu.querySelectorAll('.menu-item');
+        <!-- Education Section -->
+        <section id="education" class="section reveal">
+            <div class="section-header">
+                <h2><span class="section-num">04.</span> Knowledge Acquisition</h2>
+                <div class="section-line"></div>
+            </div>
+            <div class="education-grid">
+                <div class="education-card card-glass">
+                    <div class="edu-top">
+                        <span class="edu-date">Oct 2025 – Aug 2027</span>
+                        <span class="badge outline">MSc Degree</span>
+                    </div>
+                    <h3 class="edu-title">Computer Science</h3>
+                    <h4 class="edu-school">University of Padova — Padova, Italy</h4>
+                    <p class="edu-desc">Awarded Regional Scholarship.</p>
+                </div>
+                <div class="education-card card-glass">
+                    <div class="edu-top">
+                        <span class="edu-date">Sep 2021 – Jul 2025</span>
+                        <span class="badge outline">BSc Degree</span>
+                    </div>
+                    <h3 class="edu-title">Computer Science</h3>
+                    <h4 class="edu-school">Eötvös Loránd University — Budapest, Hungary</h4>
+                    <p class="edu-desc">Stipendium Hungaricum pass winner. Thesis: Servx iOS App & scalable Spring Boot Backend platform.</p>
+                </div>
+            </div>
+        </section>
 
-		mobileMenuButton.addEventListener('click', () => {
-			fullScreenMenu.classList.toggle('hidden');
-			fullScreenMenu.classList.toggle('flex');
-		});
+        <!-- Contact Section -->
+        <section id="contact" class="section reveal contact-section">
+            <div class="contact-card card-glass">
+                <h2 class="contact-title">Initiate Handshake</h2>
+                <p class="contact-text">Currently exploring opportunities where I can apply robust backend architecture and AI integration to complex system problems. My inbox is open.</p>
+                <a href="mailto:makhlugjafarov@gmail.com" class="btn btn-primary lg">sys.stdout.write("Hello") <i data-feather="send"></i></a>
+                
+                <div class="contact-socials">
+                    <a href="https://github.com/jafarov01" target="_blank" aria-label="GitHub"><i data-feather="github"></i></a>
+                    <a href="https://www.linkedin.com/in/jafarov01/" target="_blank" aria-label="LinkedIn"><i data-feather="linkedin"></i></a>
+                </div>
+            </div>
+        </section>
+    </main>
 
-		closeMenuButton.addEventListener('click', () => {
-			fullScreenMenu.classList.add('hidden');
-			fullScreenMenu.classList.remove('flex');
-		});
+    <footer class="footer">
+        <p>Developed by Makhlug Jafarov.</p>
+        <p class="footer-sub">© <span id="year"></span> All processes executed successfully.</p>
+    </footer>
 
-		menuItems.forEach(item => {
-			item.addEventListener('click', () => {
-				fullScreenMenu.classList.add('hidden');
-				fullScreenMenu.classList.remove('flex');
-			});
-		});
-
-		document.getElementById('currentYear').textContent = new Date().getFullYear();
-	</script>
-
+    <script src="main.js"></script>
+    <script>
+        feather.replace();
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
-
 </html>
